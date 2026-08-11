@@ -1,333 +1,47 @@
-```html
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Browser VC</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: white;
-}
-
-button,
-input {
-  font: inherit;
-}
-
-button {
-  border: 0;
-  border-radius: 9px;
-  padding: 11px 16px;
-  margin: 4px;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-button:hover {
-  background: #1d4ed8;
-}
-
-button.red {
-  background: #dc2626;
-}
-
-button.gray {
-  background: #475569;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin: 6px 0;
-  border: 1px solid #334155;
-  border-radius: 9px;
-  outline: none;
-  background: #020617;
-  color: white;
-}
-
-.container {
-  width: min(950px, 94%);
-  margin: 30px auto;
-}
-
-.card {
-  background: #1e293b;
-  border-radius: 16px;
-  padding: 22px;
-  margin-bottom: 18px;
-  box-shadow: 0 8px 25px rgba(0,0,0,.25);
-}
-
-h1,
-h2 {
-  margin-top: 0;
-}
-
-.hidden {
-  display: none !important;
-}
-
-.status-box {
-  background: #020617;
-  padding: 12px;
-  border-radius: 9px;
-  margin: 8px 0;
-}
-
-.online {
-  color: #22c55e;
-}
-
-.offline {
-  color: #94a3b8;
-}
-
-.center {
-  text-align: center;
-}
-
-.mic-icon {
-  font-size: 60px;
-  margin: 15px;
-}
-
-#message {
-  min-height: 25px;
-  margin-top: 10px;
-}
-
-.user-item {
-  padding: 12px;
-  background: #020617;
-  border-radius: 9px;
-  margin: 7px 0;
-}
-
-.party-id {
-  font-size: 22px;
-  font-weight: bold;
-  letter-spacing: 2px;
-}
-
-.small {
-  color: #94a3b8;
-  font-size: 13px;
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-  <div class="card">
-    <h1>🎙️ Browser VC</h1>
-    <p>ブラウザだけで使えるボイスチャット</p>
-  </div>
-
-
-  <!-- =========================
-       AUTH
-  ========================== -->
-
-  <section id="authScreen" class="card">
-
-    <h2>🔐 ログイン</h2>
-
-    <input
-      id="usernameInput"
-      type="text"
-      placeholder="ユーザー名"
-      maxlength="20"
-      autocomplete="username"
-    >
-
-    <input
-      id="passwordInput"
-      type="password"
-      placeholder="パスワード"
-      maxlength="72"
-      autocomplete="current-password"
-    >
-
-    <button id="loginButton">
-      ログイン
-    </button>
-
-    <button id="createAccountButton">
-      アカウント作成
-    </button>
-
-    <div id="message"></div>
-
-    <p class="small">
-      ※ メールアドレスは使用しません。
-    </p>
-
-  </section>
-
-
-  <!-- =========================
-       MAIN
-  ========================== -->
-
-  <section id="mainScreen" class="hidden">
-
-    <!-- ACCOUNT -->
-
-    <div class="card">
-
-      <h2>👤 アカウント</h2>
-
-      <div class="status-box">
-        ユーザー名：
-        <strong id="displayUsername"></strong>
-      </div>
-
-      <div class="status-box">
-        状態：
-        <span id="displayStatus" class="online">
-          ● オンライン
-        </span>
-      </div>
-
-      <button
-        id="logoutButton"
-        class="red"
-      >
-        ログアウト
-      </button>
-
-    </div>
-
-
-    <!-- =========================
-         VOICE CHAT
-    ========================== -->
-
-    <div class="card">
-
-      <h2>🎤 ボイスチャット</h2>
-
-      <div class="center">
-
-        <div
-          id="micIcon"
-          class="mic-icon"
-        >
-          🔇
-        </div>
-
-        <p id="micStatus">
-          マイクOFF
-        </p>
-
-        <button id="micButton">
-          🎙️ マイクON
-        </button>
-
-        <button
-          id="voiceLeaveButton"
-          class="red"
-        >
-          VC退出
-        </button>
-
-      </div>
-
-    </div>
-
-
-    <!-- =========================
-         FRIENDS
-    ========================== -->
-
-    <div class="card">
-
-      <h2>👥 フレンド</h2>
-
-      <input
-        id="friendUsernameInput"
-        type="text"
-        placeholder="フレンドのユーザー名"
-        maxlength="20"
-      >
-
-      <button id="friendRequestButton">
-        フレンド申請
-      </button>
-
-      <div id="friendList">
-        <p class="small">
-          フレンドはいません。
-        </p>
-      </div>
-
-    </div>
-
-
-    <!-- =========================
-         PARTY
-    ========================== -->
-
-    <div class="card">
-
-      <h2>🎮 パーティー</h2>
-
-      <button id="createPartyButton">
-        パーティー作成
-      </button>
-
-      <button id="joinPartyButton">
-        パーティー参加
-      </button>
-
-      <button
-        id="leavePartyButton"
-        class="red"
-      >
-        パーティー退出
-      </button>
-
-      <div
-        id="partyStatus"
-        class="status-box"
-      >
-        パーティーに参加していません。
-      </div>
-
-      <div
-        id="partyMembers"
-        class="status-box hidden"
-      >
-      </div>
-
-    </div>
-
-  </section>
+<!-- アカウント作成・ログイン部分 -->
+
+<div id="authScreen" class="card">
+
+  <h2>🔐 アカウント</h2>
+
+  <input
+    id="usernameInput"
+    type="text"
+    placeholder="ユーザー名"
+    maxlength="20"
+    autocomplete="username"
+  >
+
+  <input
+    id="passwordInput"
+    type="password"
+    placeholder="パスワード"
+    maxlength="72"
+    autocomplete="current-password"
+  >
+
+  <button id="loginButton">
+    ログイン
+  </button>
+
+  <button id="createAccountButton">
+    アカウント作成
+  </button>
+
+  <button id="guestButton" class="gray">
+    仮アカウントで始める
+  </button>
+
+  <div id="message"></div>
 
 </div>
 
 
 <script>
 
-/* ==================================================
-   SUPABASE
-================================================== */
+/* =========================
+   Supabase
+========================= */
 
 const SUPABASE_URL =
   "YOUR_SUPABASE_URL";
@@ -342,15 +56,9 @@ const supabaseClient =
   );
 
 
-/* ==================================================
+/* =========================
    DOM
-================================================== */
-
-const authScreen =
-  document.getElementById("authScreen");
-
-const mainScreen =
-  document.getElementById("mainScreen");
+========================= */
 
 const usernameInput =
   document.getElementById("usernameInput");
@@ -364,107 +72,32 @@ const loginButton =
 const createAccountButton =
   document.getElementById("createAccountButton");
 
-const logoutButton =
-  document.getElementById("logoutButton");
+const guestButton =
+  document.getElementById("guestButton");
 
 const message =
   document.getElementById("message");
 
-const displayUsername =
-  document.getElementById("displayUsername");
 
-const displayStatus =
-  document.getElementById("displayStatus");
+/* =========================
+   メッセージ
+========================= */
 
-const micButton =
-  document.getElementById("micButton");
-
-const micIcon =
-  document.getElementById("micIcon");
-
-const micStatus =
-  document.getElementById("micStatus");
-
-const voiceLeaveButton =
-  document.getElementById("voiceLeaveButton");
-
-const friendUsernameInput =
-  document.getElementById(
-    "friendUsernameInput"
-  );
-
-const friendRequestButton =
-  document.getElementById(
-    "friendRequestButton"
-  );
-
-const friendList =
-  document.getElementById("friendList");
-
-const createPartyButton =
-  document.getElementById(
-    "createPartyButton"
-  );
-
-const joinPartyButton =
-  document.getElementById(
-    "joinPartyButton"
-  );
-
-const leavePartyButton =
-  document.getElementById(
-    "leavePartyButton"
-  );
-
-const partyStatus =
-  document.getElementById(
-    "partyStatus"
-  );
-
-const partyMembers =
-  document.getElementById(
-    "partyMembers"
-  );
-
-
-/* ==================================================
-   STATE
-================================================== */
-
-let currentUser = null;
-
-let microphoneStream = null;
-
-let microphoneEnabled = false;
-
-let currentPartyId = null;
-
-let partyChannel = null;
-
-
-/* ==================================================
-   MESSAGE
-================================================== */
-
-function setMessage(
-  text,
-  error = false
-) {
+function showMessage(text, error = false) {
 
   message.textContent = text;
 
   message.style.color =
-    error
-      ? "#ef4444"
-      : "#22c55e";
+    error ? "#ef4444" : "#22c55e";
+
 }
 
 
-/* ==================================================
-   USERNAME VALIDATION
-================================================== */
+/* =========================
+   ユーザー名チェック
+========================= */
 
-function isValidUsername(username) {
+function validUsername(username) {
 
   return /^[a-zA-Z0-9_ぁ-んァ-ヶ一-龠]{3,20}$/
     .test(username);
@@ -472,9 +105,9 @@ function isValidUsername(username) {
 }
 
 
-/* ==================================================
-   ACCOUNT CREATE
-================================================== */
+/* =========================
+   アカウント作成
+========================= */
 
 createAccountButton.addEventListener(
   "click",
@@ -487,9 +120,9 @@ createAccountButton.addEventListener(
       passwordInput.value;
 
 
-    if (!isValidUsername(username)) {
+    if (!validUsername(username)) {
 
-      setMessage(
+      showMessage(
         "ユーザー名は3～20文字で入力してください。",
         true
       );
@@ -500,7 +133,7 @@ createAccountButton.addEventListener(
 
     if (password.length < 6) {
 
-      setMessage(
+      showMessage(
         "パスワードは6文字以上にしてください。",
         true
       );
@@ -517,22 +150,20 @@ createAccountButton.addEventListener(
       const {
         data,
         error
-      } =
-        await supabaseClient
-          .rpc(
-            "create_user_account",
-            {
-              p_username: username,
-              p_password: password
-            }
-          );
+      } = await supabaseClient.rpc(
+        "create_user_account",
+        {
+          p_username: username,
+          p_password: password
+        }
+      );
 
 
       if (error) {
 
         console.error(error);
 
-        setMessage(
+        showMessage(
           "アカウント作成に失敗しました。",
           true
         );
@@ -543,7 +174,7 @@ createAccountButton.addEventListener(
 
       if (!data) {
 
-        setMessage(
+        showMessage(
           "そのユーザー名は既に使用されています。",
           true
         );
@@ -552,13 +183,21 @@ createAccountButton.addEventListener(
       }
 
 
-      setMessage(
-        "アカウントを作成しました！ログインしてください。"
+      showMessage(
+        "アカウントを作成しました！"
       );
-
 
       passwordInput.value = "";
 
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        "エラーが発生しました。",
+        true
+      );
 
     } finally {
 
@@ -570,9 +209,9 @@ createAccountButton.addEventListener(
 );
 
 
-/* ==================================================
-   LOGIN
-================================================== */
+/* =========================
+   ログイン
+========================= */
 
 loginButton.addEventListener(
   "click",
@@ -587,7 +226,7 @@ loginButton.addEventListener(
 
     if (!username || !password) {
 
-      setMessage(
+      showMessage(
         "ユーザー名とパスワードを入力してください。",
         true
       );
@@ -604,22 +243,20 @@ loginButton.addEventListener(
       const {
         data,
         error
-      } =
-        await supabaseClient
-          .rpc(
-            "login_user",
-            {
-              p_username: username,
-              p_password: password
-            }
-          );
+      } = await supabaseClient.rpc(
+        "login_user",
+        {
+          p_username: username,
+          p_password: password
+        }
+      );
 
 
       if (error) {
 
         console.error(error);
 
-        setMessage(
+        showMessage(
           "ログインに失敗しました。",
           true
         );
@@ -630,7 +267,7 @@ loginButton.addEventListener(
 
       if (!data) {
 
-        setMessage(
+        showMessage(
           "ユーザー名またはパスワードが違います。",
           true
         );
@@ -639,20 +276,52 @@ loginButton.addEventListener(
       }
 
 
-      currentUser =
+      const user =
         typeof data === "string"
           ? JSON.parse(data)
           : data;
 
 
+      const account = {
+        id: user.id,
+        username: user.username,
+        is_guest: false,
+        status: "online"
+      };
+
+
       localStorage.setItem(
         "browser_vc_user",
-        JSON.stringify(currentUser)
+        JSON.stringify(account)
       );
 
 
-      await enterMainScreen();
+      showMessage(
+        "ログインしました！"
+      );
 
+
+      /*
+        既存のメイン画面がある場合
+      */
+
+      if (typeof enterMainScreen === "function") {
+
+        currentUser = account;
+
+        await enterMainScreen();
+
+      }
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        "ログインエラーが発生しました。",
+        true
+      );
 
     } finally {
 
@@ -664,889 +333,75 @@ loginButton.addEventListener(
 );
 
 
-/* ==================================================
-   MAIN SCREEN
-================================================== */
+/* =========================
+   仮アカウント
+========================= */
 
-async function enterMainScreen() {
-
-  authScreen.classList.add(
-    "hidden"
-  );
-
-  mainScreen.classList.remove(
-    "hidden"
-  );
-
-
-  displayUsername.textContent =
-    currentUser.username;
-
-
-  await updateOnlineStatus(
-    "online"
-  );
-
-
-  await loadFriends();
-
-}
-
-
-/* ==================================================
-   ONLINE STATUS
-================================================== */
-
-async function updateOnlineStatus(
-  status
-) {
-
-  if (!currentUser) return;
-
-
-  const {
-    error
-  } =
-    await supabaseClient
-      .from("users")
-      .update({
-        status: status,
-        updated_at:
-          new Date().toISOString()
-      })
-      .eq(
-        "id",
-        currentUser.id
-      );
-
-
-  if (error) {
-
-    console.error(
-      "status error:",
-      error
-    );
-
-  }
-
-
-  if (status === "online") {
-
-    displayStatus.textContent =
-      "● オンライン";
-
-    displayStatus.className =
-      "online";
-
-  } else {
-
-    displayStatus.textContent =
-      "● オフライン";
-
-    displayStatus.className =
-      "offline";
-
-  }
-
-}
-
-
-/* ==================================================
-   LOGOUT
-================================================== */
-
-logoutButton.addEventListener(
+guestButton.addEventListener(
   "click",
   async () => {
 
-    await stopMicrophone();
+    guestButton.disabled = true;
 
-    await leaveParty();
 
-    await updateOnlineStatus(
-      "offline"
-    );
+    try {
 
+      const random =
+        Math.random()
+          .toString(36)
+          .substring(2, 8);
 
-    localStorage.removeItem(
-      "browser_vc_user"
-    );
 
+      const account = {
 
-    currentUser = null;
+        id:
+          "guest_" +
+          crypto.randomUUID(),
 
+        username:
+          "Guest_" + random,
 
-    mainScreen.classList.add(
-      "hidden"
-    );
+        is_guest: true,
 
-    authScreen.classList.remove(
-      "hidden"
-    );
+        status: "online"
 
+      };
 
-    usernameInput.value = "";
-    passwordInput.value = "";
 
-    setMessage("");
-
-  }
-);
-
-
-/* ==================================================
-   MICROPHONE
-================================================== */
-
-async function startMicrophone() {
-
-  try {
-
-    microphoneStream =
-      await navigator.mediaDevices
-        .getUserMedia({
-          audio: true
-        });
-
-
-    microphoneEnabled = true;
-
-
-    micIcon.textContent =
-      "🎙️";
-
-    micStatus.textContent =
-      "マイクON";
-
-    micButton.textContent =
-      "🔇 マイクOFF";
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    micStatus.textContent =
-      "マイクを使用できません。";
-
-  }
-
-}
-
-
-async function stopMicrophone() {
-
-  if (microphoneStream) {
-
-    microphoneStream
-      .getTracks()
-      .forEach(
-        track => track.stop()
-      );
-
-    microphoneStream = null;
-
-  }
-
-
-  microphoneEnabled = false;
-
-
-  micIcon.textContent =
-    "🔇";
-
-  micStatus.textContent =
-    "マイクOFF";
-
-  micButton.textContent =
-    "🎙️ マイクON";
-
-}
-
-
-micButton.addEventListener(
-  "click",
-  async () => {
-
-    if (microphoneEnabled) {
-
-      await stopMicrophone();
-
-    } else {
-
-      await startMicrophone();
-
-    }
-
-  }
-);
-
-
-voiceLeaveButton.addEventListener(
-  "click",
-  async () => {
-
-    await stopMicrophone();
-
-    alert(
-      "VCから退出しました。"
-    );
-
-  }
-);
-
-
-/* ==================================================
-   FRIEND REQUEST
-================================================== */
-
-friendRequestButton.addEventListener(
-  "click",
-  async () => {
-
-    if (!currentUser) return;
-
-
-    const username =
-      friendUsernameInput
-        .value
-        .trim();
-
-
-    if (!username) {
-
-      alert(
-        "ユーザー名を入力してください。"
-      );
-
-      return;
-    }
-
-
-    if (
-      username ===
-      currentUser.username
-    ) {
-
-      alert(
-        "自分自身には申請できません。"
-      );
-
-      return;
-    }
-
-
-    const {
-      data: target,
-      error
-    } =
-      await supabaseClient
-        .from("users")
-        .select(
-          "id,username"
-        )
-        .eq(
-          "username",
-          username
-        )
-        .maybeSingle();
-
-
-    if (error || !target) {
-
-      alert(
-        "ユーザーが見つかりません。"
-      );
-
-      return;
-    }
-
-
-    const {
-      error: requestError
-    } =
-      await supabaseClient
-        .from("friend_requests")
-        .insert({
-
-          sender_id:
-            currentUser.id,
-
-          receiver_id:
-            target.id,
-
-          status:
-            "pending"
-
-        });
-
-
-    if (requestError) {
-
-      console.error(
-        requestError
-      );
-
-      alert(
-        "フレンド申請に失敗しました。"
-      );
-
-      return;
-    }
-
-
-    friendUsernameInput.value = "";
-
-
-    alert(
-      `${target.username} さんにフレンド申請を送りました！`
-    );
-
-  }
-);
-
-
-/* ==================================================
-   FRIEND LIST
-================================================== */
-
-async function loadFriends() {
-
-  if (!currentUser) return;
-
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .from("friendships")
-      .select(`
-        friend_id,
-        users:friend_id(
-          username,
-          status
-        )
-      `)
-      .eq(
-        "user_id",
-        currentUser.id
+      localStorage.setItem(
+        "browser_vc_user",
+        JSON.stringify(account)
       );
 
 
-  if (error) {
+      currentUser = account;
 
-    console.error(error);
-
-    friendList.innerHTML =
-      "<p>フレンドを読み込めませんでした。</p>";
-
-    return;
-  }
-
-
-  friendList.innerHTML = "";
-
-
-  if (!data || data.length === 0) {
-
-    friendList.innerHTML =
-      '<p class="small">フレンドはいません。</p>';
-
-    return;
-  }
-
-
-  for (const friend of data) {
-
-    const user =
-      friend.users;
-
-
-    const div =
-      document.createElement(
-        "div"
-      );
-
-
-    div.className =
-      "user-item";
-
-
-    const name =
-      document.createElement(
-        "strong"
-      );
-
-    name.textContent =
-      user.username;
-
-
-    const status =
-      document.createElement(
-        "span"
-      );
-
-
-    status.textContent =
-      user.status === "online"
-        ? " ● オンライン"
-        : " ● オフライン";
-
-
-    status.className =
-      user.status === "online"
-        ? "online"
-        : "offline";
-
-
-    div.appendChild(name);
-
-    div.appendChild(status);
-
-    friendList.appendChild(div);
-
-  }
-
-}
-
-
-/* ==================================================
-   PARTY CREATE
-================================================== */
-
-createPartyButton.addEventListener(
-  "click",
-  async () => {
-
-    if (!currentUser) return;
-
-
-    await leaveParty();
-
-
-    currentPartyId =
-      crypto.randomUUID()
-        .replaceAll("-", "")
-        .substring(0, 8)
-        .toUpperCase();
-
-
-    await joinPartyChannel(
-      currentPartyId
-    );
-
-
-    partyStatus.innerHTML =
-      `
-      <div>パーティー作成済み</div>
-      <div class="party-id">
-        ${currentPartyId}
-      </div>
-      <div class="small">
-        このIDをフレンドに共有してください。
-      </div>
-      `;
-
-  }
-);
-
-
-/* ==================================================
-   PARTY JOIN
-================================================== */
-
-joinPartyButton.addEventListener(
-  "click",
-  async () => {
-
-    const id =
-      prompt(
-        "パーティーIDを入力してください。"
-      );
-
-
-    if (!id) return;
-
-
-    const partyId =
-      id.trim().toUpperCase();
-
-
-    if (!/^[A-Z0-9]{4,20}$/.test(partyId)) {
-
-      alert(
-        "正しいパーティーIDを入力してください。"
-      );
-
-      return;
-    }
-
-
-    await leaveParty();
-
-
-    currentPartyId =
-      partyId;
-
-
-    await joinPartyChannel(
-      currentPartyId
-    );
-
-
-    partyStatus.innerHTML =
-      `
-      <div>パーティー参加中</div>
-      <div class="party-id">
-        ${currentPartyId}
-      </div>
-      `;
-
-  }
-);
-
-
-/* ==================================================
-   PARTY CHANNEL
-================================================== */
-
-async function joinPartyChannel(
-  partyId
-) {
-
-  if (!currentUser) return;
-
-
-  partyChannel =
-    supabaseClient.channel(
-      "party-" + partyId,
-      {
-        config: {
-          presence: {
-            key:
-              currentUser.id
-          }
-        }
-      }
-    );
-
-
-  partyChannel
-    .on(
-      "presence",
-      {
-        event: "sync"
-      },
-      () => {
-
-        updatePartyMembers();
-
-      }
-    );
-
-
-  partyChannel
-    .on(
-      "presence",
-      {
-        event: "join"
-      },
-      () => {
-
-        updatePartyMembers();
-
-      }
-    );
-
-
-  partyChannel
-    .on(
-      "presence",
-      {
-        event: "leave"
-      },
-      () => {
-
-        updatePartyMembers();
-
-      }
-    );
-
-
-  await partyChannel.subscribe(
-    async status => {
 
       if (
-        status === "SUBSCRIBED"
+        typeof enterMainScreen === "function"
       ) {
 
-        await partyChannel.track({
-
-          username:
-            currentUser.username,
-
-          user_id:
-            currentUser.id,
-
-          online_at:
-            new Date().toISOString()
-
-        });
+        await enterMainScreen();
 
       }
 
-    }
-  );
 
-}
+    } catch (error) {
 
+      console.error(error);
 
-/* ==================================================
-   PARTY MEMBERS
-================================================== */
-
-function updatePartyMembers() {
-
-  if (!partyChannel) return;
-
-
-  const state =
-    partyChannel.presenceState();
-
-
-  const members = [];
-
-
-  Object.values(state)
-    .forEach(
-      entries => {
-
-        entries.forEach(
-          entry => {
-
-            members.push(entry);
-
-          }
-        );
-
-      }
-    );
-
-
-  partyMembers.classList.remove(
-    "hidden"
-  );
-
-
-  partyMembers.innerHTML =
-    "<strong>参加者</strong><br>";
-
-
-  members.forEach(
-    member => {
-
-      const div =
-        document.createElement(
-          "div"
-        );
-
-
-      div.textContent =
-        "🟢 " +
-        member.username;
-
-
-      partyMembers.appendChild(
-        div
+      showMessage(
+        "仮アカウントの作成に失敗しました。",
+        true
       );
 
-    }
-  );
+    } finally {
 
-}
-
-
-/* ==================================================
-   PARTY LEAVE
-================================================== */
-
-async function leaveParty() {
-
-  if (partyChannel) {
-
-    try {
-
-      await partyChannel.untrack();
-
-    } catch {}
-
-    try {
-
-      await supabaseClient.removeChannel(
-        partyChannel
-      );
-
-    } catch {}
-
-    partyChannel = null;
-
-  }
-
-
-  currentPartyId = null;
-
-
-  partyMembers.classList.add(
-    "hidden"
-  );
-
-
-  partyStatus.textContent =
-    "パーティーに参加していません。";
-
-}
-
-
-leavePartyButton.addEventListener(
-  "click",
-  async () => {
-
-    await leaveParty();
-
-  }
-);
-
-
-/* ==================================================
-   SESSION RESTORE
-================================================== */
-
-async function restoreSession() {
-
-  const saved =
-    localStorage.getItem(
-      "browser_vc_user"
-    );
-
-
-  if (!saved) return;
-
-
-  try {
-
-    currentUser =
-      JSON.parse(saved);
-
-
-    if (
-      !currentUser ||
-      !currentUser.id ||
-      !currentUser.username
-    ) {
-
-      throw new Error(
-        "Invalid session"
-      );
-
-    }
-
-
-    /*
-      DBにユーザーが存在するか確認
-    */
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .from("users")
-        .select(
-          "id,username,status"
-        )
-        .eq(
-          "id",
-          currentUser.id
-        )
-        .maybeSingle();
-
-
-    if (
-      error ||
-      !data
-    ) {
-
-      localStorage.removeItem(
-        "browser_vc_user"
-      );
-
-      currentUser = null;
-
-      return;
-    }
-
-
-    currentUser =
-      data;
-
-
-    localStorage.setItem(
-      "browser_vc_user",
-      JSON.stringify(
-        currentUser
-      )
-    );
-
-
-    await enterMainScreen();
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    localStorage.removeItem(
-      "browser_vc_user"
-    );
-
-    currentUser = null;
-
-  }
-
-}
-
-
-/* ==================================================
-   PAGE CLOSE
-================================================== */
-
-window.addEventListener(
-  "beforeunload",
-  () => {
-
-    if (microphoneStream) {
-
-      microphoneStream
-        .getTracks()
-        .forEach(
-          track => track.stop()
-        );
+      guestButton.disabled = false;
 
     }
 
   }
 );
-
-
-/* ==================================================
-   START
-================================================== */
-
-restoreSession();
 
 </script>
-
-</body>
-</html>
-```
