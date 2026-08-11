@@ -2,470 +2,52 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>CYBER-MATRIX // ボイスチェンジャー</title>
+<title>簡易ボイスチャット</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap');
-
-  :root {
-    --bg-base: #0a0b10;
-    --bg-panel: #121520;
-    --bg-element: #1a1e2e;
-    --accent-cyan: #00f0ff;
-    --accent-purple: #9d00ff;
-    --accent-pink: #ff007f;
-    --accent-yellow: #f3e600;
-    --text-main: #f0f3f6;
-    --text-muted: #8e9297;
-    --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.4);
-    --glow-pink: 0 0 15px rgba(255, 0, 127, 0.4);
-    --glow-yellow: 0 0 15px rgba(243, 230, 0, 0.5);
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    background: var(--bg-base);
-    color: var(--text-main);
-    font-family: 'Noto Sans JP', 'Rajdhani', sans-serif;
-    font-size: 15px;
-    height: 100vh;
-    display: flex;
-    overflow: hidden;
-    background-image: 
-      radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%);
-  }
-
-  .sidebar {
-    width: 320px;
-    background: var(--bg-panel);
-    border-right: 1px solid rgba(0, 240, 255, 0.15);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    overflow-y: auto;
-    box-shadow: 5px 0 25px rgba(0,0,0,0.5);
-  }
-
-  .brand {
-    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
-    font-weight: 900;
-    font-size: 18px;
-    color: var(--accent-cyan);
-    text-shadow: var(--glow-cyan);
-    letter-spacing: 1.5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-  }
-
-  h3 {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 1px;
-    margin: 10px 0 5px;
-  }
-
-  select, button {
-    width: 100%;
-    padding: 12px;
-    background: var(--bg-element);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: var(--text-main);
-    border-radius: 6px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  select:hover, button:hover {
-    border-color: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-  }
-
-  select {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-    padding-right: 35px;
-  }
-
-  .effect-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .effect-btn {
-    background: var(--bg-element);
-    border: 1px solid rgba(255,255,255,0.05);
-    padding: 10px 6px;
-    text-align: center;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-muted);
-    transition: 0.2s;
-  }
-
-  .effect-btn:hover {
-    color: var(--text-main);
-    border-color: rgba(0, 240, 255, 0.4);
-  }
-
-  .effect-btn.active {
-    background: rgba(0, 240, 255, 0.1);
-    color: var(--accent-cyan);
-    border-color: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-  }
-
-  /* 音割れボタン専用の特別スタイル */
-  .effect-btn.glitch-active {
-    background: rgba(243, 230, 0, 0.15) !important;
-    color: var(--accent-yellow) !important;
-    border-color: var(--accent-yellow) !important;
-    box-shadow: var(--glow-yellow) !important;
-  }
-
-  .main {
-    flex: 1;
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    overflow-y: auto;
-  }
-
-  .card {
-    background: var(--bg-panel);
-    border: 1px solid rgba(255,255,255,0.06);
-    padding: 25px;
-    border-radius: 12px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    background: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-  }
-
-  .card h2 {
-    font-size: 17px;
-    font-weight: 900;
-    margin-top: 0;
-    color: var(--text-main);
-    letter-spacing: 1px;
-  }
-
-  #vcStatus {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-
-  .slider-group { margin-top: 15px; }
-
-  input[type=range] {
-    width: 100%;
-    height: 6px;
-    background: var(--bg-element);
-    border-radius: 3px;
-    outline: none;
-    appearance: none;
-    accent-color: var(--accent-cyan);
-  }
-
-  input[type=range]::-webkit-slider-thumb {
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-    cursor: pointer;
-  }
-
-  #powerBtn {
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-    color: #fff;
-    font-family: 'Noto Sans JP', sans-serif;
-    letter-spacing: 1px;
-    font-weight: 900;
-    font-size: 15px;
-    border: none;
-    box-shadow: var(--glow-cyan);
-    margin-top: auto;
-  }
-
-  #powerBtn.active {
-    background: linear-gradient(135deg, var(--accent-pink), #ff3333);
-    box-shadow: var(--glow-pink);
-  }
-
-  .cyber-badge {
-    font-size: 11px;
-    font-family: 'Orbitron', sans-serif;
-    background: rgba(0, 240, 255, 0.1);
-    color: var(--accent-cyan);
-    padding: 3px 8px;
-    border-radius: 4px;
-    border: 1px solid rgba(0, 240, 255, 0.3);
-  }
+  body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #2f3136; color: #dcddde; }
+  button { padding: 12px 24px; font-size: 16px; background: #5865f2; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+  button:hover { background: #4752c4; }
+  .card { background: #36393f; display: inline-block; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 </style>
 </head>
 <body>
 
-  <div class="sidebar">
-    <div class="brand">
-      <span>⚡</span> サイバーマトリクス
-    </div>
-
-    <h3>🎙️ 音声入力 // マイク選択</h3>
-    <select id="micInputSelect"></select>
-
-    <h3>🎧 仮想出力 // 仮想マイク</h3>
-    <select id="audioOutputSelect"></select>
-    <div style="font-size:11px; color:var(--text-muted); line-height: 1.4;">
-      ※VB-Cable等を指定してフォートナイトへ接続
-    </div>
-
-    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:5px 0;">
-
-    <h3>🎛️ ボイスエフェクト種類</h3>
-    <div class="effect-grid">
-      <button class="effect-btn active" onclick="setEffect('normal')">ノーマル</button>
-      <button class="effect-btn" onclick="setEffect('female')">👩 女声風</button>
-      <button class="effect-btn" onclick="setEffect('male')">👨 男声風</button>
-      <button class="effect-btn" onclick="setEffect('chipmunk')">🐿️ シマリス</button>
-      <button class="effect-btn" onclick="setEffect('demon')">😈 悪魔・低音</button>
-      <button class="effect-btn" onclick="setEffect('robot')">🤖 サイボーグ</button>
-      <button class="effect-btn" onclick="setEffect('radio')">📻 無線機</button>
-      <button class="effect-btn" onclick="setEffect('megaphone')">📢 拡声器</button>
-      <button class="effect-btn" onclick="setEffect('cave')">🦇 洞窟・エコー</button>
-      <button class="effect-btn" onclick="setEffect('crush')" style="color: var(--accent-yellow); border-color: rgba(243,230,0,0.3);">💥 音割れ(爆音)</button>
-    </div>
-
-    <button id="powerBtn" onclick="toggleVoiceChanger()">システム起動</button>
+  <div class="card">
+    <h2>🎙️ ブラウザ音声通話テスト</h2>
+    <p>自分のマイクの音声をスピーカーからループ再生してテストします。</p>
+    <button onclick="startVoiceChat()">通話（マイク）開始</button>
+    <button onclick="stopVoiceChat()" style="background: #ed4245;">停止</button>
   </div>
 
-  <div class="main">
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-        <h2>システムステータス</h2>
-        <span class="cyber-badge">ONLINE SYNC</span>
-      </div>
-      <p id="vcStatus" style="color: var(--accent-pink);">【 システム停止中 】 起動ボタンを押してください</p>
-    </div>
-    
-    <div class="card" style="border-left-color: var(--accent-purple);">
-      <h2>周波数マトリクス・微調整</h2>
-      <div class="slider-group">
-        <label style="font-size: 13px; color: var(--text-muted);">カットオフ周波数: <span id="freqVal" style="color: var(--accent-cyan); font-weight:700;">1000</span> Hz</label>
-        <input type="range" id="freqRange" min="100" max="8000" step="100" value="1000" oninput="updateFreq(this.value)">
-      </div>
-    </div>
-  </div>
+  <!-- 相手の音声や自分のテスト音声を鳴らすための音声要素 -->
+  <audio id="remoteAudio" autoplay></audio>
 
 <script>
-let audioCtx;
-let mediaStream;
-let sourceNode;
-let filterNode;
-let distortionNode;
-let gainNode;
-let currentEffect = 'normal';
+let localStream;
 
-async function getDevices() {
+async function startVoiceChat() {
   try {
-    await navigator.mediaDevices.getUserMedia({ audio: true });
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const micSelect = document.getElementById("micInputSelect");
-    const outSelect = document.getElementById("audioOutputSelect");
+    // 1. マイクの権限を取得して音声ストリームを取得
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     
-    micSelect.innerHTML = "";
-    outSelect.innerHTML = "";
-
-    devices.forEach(device => {
-      const opt = document.createElement('option');
-      opt.value = device.deviceId;
-      opt.text = device.label || `${device.kind} (${device.deviceId.slice(0,5)})`;
-      
-      if (device.kind === 'audioinput') micSelect.appendChild(opt);
-      else if (device.kind === 'audiooutput') outSelect.appendChild(opt);
-    });
-  } catch (e) {
-    console.error("デバイス取得エラー:", e);
-  }
-}
-
-// 歪み（音割れ）用のカーブを生成する関数
-function makeDistortionCurve(amount) {
-  const k = typeof amount === 'number' ? amount : 50;
-  const n_samples = 44100;
-  const curve = new Float32Array(n_samples);
-  const deg = Math.PI / 180;
-  for (let i = 0; i < n_samples; ++i) {
-    const x = (i * 2) / n_samples - 1;
-    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-  }
-  return curve;
-}
-
-async function toggleVoiceChanger() {
-  const statusElem = document.getElementById("vcStatus");
-  const powerBtn = document.getElementById("powerBtn");
-  
-  if (audioCtx) {
-    audioCtx.close();
-    audioCtx = null;
-    if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-    statusElem.textContent = "【 システム停止中 】 起動ボタンを押してください";
-    statusElem.style.color = "var(--accent-pink)";
-    powerBtn.classList.remove('active');
-    powerBtn.textContent = "システム起動";
-    return;
-  }
-
-  try {
-    const micId = document.getElementById("micInputSelect").value;
-    const outputId = document.getElementById("audioOutputSelect").value;
-
-    mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: { deviceId: micId ? { exact: micId } : undefined, echoCancellation: true, noiseSuppression: true }
-    });
-
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+    // 2. 音声出力先の設定（本来はWebRTCで相手のストリームをここに入れます）
+    const audioEl = document.getElementById('remoteAudio');
+    audioEl.srcObject = localStream;
     
-    filterNode = audioCtx.createBiquadFilter();
-    distortionNode = audioCtx.createWaveShaper();
-    gainNode = audioCtx.createGain();
-
-    // 接続ルート: マイク -> フィルター -> ディストーション(音割れ) -> ゲイン -> 出力
-    sourceNode.connect(filterNode);
-    filterNode.connect(distortionNode);
-    distortionNode.connect(gainNode);
-
-    const dummyAudio = new Audio();
-    const dest = audioCtx.createMediaStreamDestination();
-    gainNode.connect(dest);
-    dummyAudio.srcObject = dest.stream;
-    
-    if (typeof dummyAudio.setSinkId === 'function' && outputId) {
-      await dummyAudio.setSinkId(outputId);
-    }
-    dummyAudio.play();
-
-    applyEffectParameters(currentEffect);
-
-    statusElem.textContent = "【 稼働中 】 音声変換・仮想マイクへ出力中 (フォートナイト対応)";
-    statusElem.style.color = "var(--accent-cyan)";
-    powerBtn.classList.add('active');
-    powerBtn.textContent = "システム停止";
-
+    alert("マイクが正常に接続され、音声の入出力テストが開始されました！");
   } catch (err) {
-    alert("初期化エラー: " + err.message);
+    alert("マイクへのアクセスが拒否されたか、エラーが発生しました: " + err.message);
   }
 }
 
-function setEffect(type) {
-  currentEffect = type;
-  document.querySelectorAll('.effect-btn').forEach(b => {
-    b.classList.remove('active');
-    b.classList.remove('glitch-active');
-  });
-  
-  const clickedBtn = event.currentTarget;
-  if (type === 'crush') {
-    clickedBtn.classList.add('glitch-active');
-  } else {
-    clickedBtn.classList.add('active');
-  }
-  
-  applyEffectParameters(type);
-}
-
-function applyEffectParameters(type) {
-  if (!filterNode || !distortionNode || !audioCtx) return;
-  
-  filterNode.type = 'allpass';
-  distortionNode.curve = null; // デフォルトは歪みなし
-  gainNode.gain.value = 1.0;
-
-  switch(type) {
-    case 'normal':
-      break;
-    case 'female':
-      filterNode.type = 'highpass';
-      filterNode.frequency.value = 450;
-      gainNode.gain.value = 1.2;
-      break;
-    case 'male':
-      filterNode.type = 'lowpass';
-      filterNode.frequency.value = 550;
-      gainNode.gain.value = 1.1;
-      break;
-    case 'chipmunk':
-      filterNode.type = 'highpass';
-      filterNode.frequency.value = 800;
-      break;
-    case 'demon':
-      filterNode.type = 'lowpass';
-      filterNode.frequency.value = 350;
-      break;
-    case 'robot':
-      filterNode.type = 'bandpass';
-      filterNode.frequency.value = 1000;
-      filterNode.Q.value = 5;
-      break;
-    case 'radio':
-      filterNode.type = 'bandpass';
-      filterNode.frequency.value = 1800;
-      filterNode.Q.value = 3;
-      break;
-    case 'megaphone':
-      filterNode.type = 'bandpass';
-      filterNode.frequency.value = 1500;
-      filterNode.Q.value = 2;
-      gainNode.gain.value = 1.5;
-      break;
-    case 'cave':
-      filterNode.type = 'lowpass';
-      filterNode.frequency.value = 600;
-      break;
-    case 'crush': // 💥 音割れ演出モード
-      filterNode.type = 'bandpass';
-      filterNode.frequency.value = 1200;
-      distortionNode.curve = makeDistortionCurve(800); // 激しく波形を潰して音割れさせる
-      gainNode.gain.value = 2.5; // 爆音化
-      break;
-  }
-  document.getElementById('freqRange').value = filterNode.frequency.value || 1000;
-  document.getElementById('freqVal').textContent = filterNode.frequency.value || 1000;
-}
-
-function updateFreq(val) {
-  document.getElementById('freqVal').textContent = val;
-  if (filterNode) {
-    filterNode.frequency.value = parseFloat(val);
+function stopVoiceChat() {
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    document.getElementById('remoteAudio').srcObject = null;
+    alert("通話を停止しました。");
   }
 }
-
-getDevices();
 </script>
+
 </body>
 </html>
