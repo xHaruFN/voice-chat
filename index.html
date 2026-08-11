@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LINE Style Chat</title>
+<title>LINE Style Chat & Voice</title>
 <style>
 :root {
   --line-green: #06C755;
   --bg-chat: #8cabd9;
   --bubble-mine: #85e249;
   --border-color: #e2e8f0;
+  --call-red: #ff3b30;
+  --call-green: #34c759;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -50,6 +52,42 @@ body, html { height: 100%; background: #1e1e1e; display: flex; justify-content: 
 .btn-link { background: none; border: none; color: #64748b; text-decoration: underline; font-size: 0.85rem; margin-top: 16px; cursor: pointer; width: 100%; text-align: center; }
 .error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 12px; text-align: center; }
 
+/* 通話中オーバーレイバー */
+.call-bar {
+  display: none;
+  background: #2c3e50;
+  color: white;
+  padding: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  z-index: 5;
+}
+.call-bar.active { display: flex; }
+.call-status { display: flex; align-items: center; gap: 8px; }
+.pulse-icon { width: 10px; height: 10px; background: var(--call-green); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+/* 通話着信モーダル */
+.call-modal {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 20;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  gap: 20px;
+}
+.call-modal.active { display: flex; }
+.caller-avatar { width: 80px; height: 80px; border-radius: 50%; background: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; }
+.call-actions { display: flex; gap: 32px; margin-top: 20px; }
+.btn-call { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.btn-call.accept { background: var(--call-green); }
+.btn-call.reject { background: var(--call-red); }
+
 /* チャット画面 */
 .chat-screen {
   display: none;
@@ -69,8 +107,8 @@ header {
   color: white;
 }
 header h3 { font-size: 1.05rem; }
-.user-info { font-size: 0.8rem; opacity: 0.9; margin-right: 8px; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
+.btn-icon { background: rgba(255, 255, 255, 0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; }
 .btn-small { background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 6px 10px; border-radius: 14px; font-size: 0.75rem; cursor: pointer; }
 
 /* メッセージリスト */
@@ -167,15 +205,35 @@ header h3 { font-size: 1.05rem; }
     <div id="auth-error" class="error-msg"></div>
   </div>
 
+  <!-- 着信画面モーダル -->
+  <div id="call-modal" class="call-modal">
+    <div id="caller-avatar" class="caller-avatar">?</div>
+    <div id="caller-name" style="font-size: 1.2rem; font-weight: bold;">相手</div>
+    <div>ボイスチャット着信中...</div>
+    <div class="call-actions">
+      <button id="accept-call-btn" class="btn-call accept">📞</button>
+      <button id="reject-call-btn" class="btn-call reject">📵</button>
+    </div>
+  </div>
+
   <!-- チャット画面 -->
   <div id="chat-screen" class="chat-screen">
     <header>
-      <h3>グループトーク</h3>
+      <h3>トーク</h3>
       <div class="header-actions">
-        <span id="current-user-display" class="user-info"></span>
+        <button id="start-call-btn" class="btn-icon" title="ボイスチャット開始">📞</button>
         <button id="logout-btn" class="btn-small">ログアウト</button>
       </div>
     </header>
+
+    <!-- 通話状態バー -->
+    <div id="call-bar" class="call-bar">
+      <div class="call-status">
+        <div class="pulse-icon"></div>
+        <span id="call-status-text">通話中...</span>
+      </div>
+      <button id="end-call-btn" class="btn-small" style="background: var(--call-red);">切断</button>
+    </div>
 
     <div id="message-list" class="message-list"></div>
 
@@ -186,24 +244,20 @@ header h3 { font-size: 1.05rem; }
   </div>
 </div>
 
+<!-- 音声再生用要素 (隠し) -->
+<audio id="remote-audio" autoplay></audio>
+
 <script>
-  // ローカルストレージ管理
+  // ローカルストレージキー
   const STORAGE_USERS = 'chat_app_users';
   const STORAGE_MESSAGES = 'chat_app_messages';
   const STORAGE_CURRENT_USER = 'chat_app_current_user';
+  const STORAGE_SIGNAL = 'chat_app_call_signal';
 
-  function getUsers() {
-    return JSON.parse(localStorage.getItem(STORAGE_USERS) || '{}');
-  }
-  function saveUsers(users) {
-    localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
-  }
-  function getMessages() {
-    return JSON.parse(localStorage.getItem(STORAGE_MESSAGES) || '[]');
-  }
-  function saveMessages(msgs) {
-    localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(msgs));
-  }
+  function getUsers() { return JSON.parse(localStorage.getItem(STORAGE_USERS) || '{}'); }
+  function saveUsers(users) { localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
+  function getMessages() { return JSON.parse(localStorage.getItem(STORAGE_MESSAGES) || '[]'); }
+  function saveMessages(msgs) { localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(msgs)); }
 
   // UI 要素
   const authScreen = document.getElementById('auth-screen');
@@ -216,16 +270,35 @@ header h3 { font-size: 1.05rem; }
   const authSubmitBtn = document.getElementById('auth-submit-btn');
   const toggleAuthBtn = document.getElementById('toggle-auth-btn');
   const authError = document.getElementById('auth-error');
-  const currentUserDisplay = document.getElementById('current-user-display');
   const messageList = document.getElementById('message-list');
   const messageInput = document.getElementById('message-input');
   const sendBtn = document.getElementById('send-btn');
   const logoutBtn = document.getElementById('logout-btn');
 
+  // ボイスチャット用 UI
+  const startCallBtn = document.getElementById('start-call-btn');
+  const callBar = document.getElementById('call-bar');
+  const endCallBtn = document.getElementById('end-call-btn');
+  const callModal = document.getElementById('call-modal');
+  const acceptCallBtn = document.getElementById('accept-call-btn');
+  const rejectCallBtn = document.getElementById('reject-call-btn');
+  const callerAvatar = document.getElementById('caller-avatar');
+  const callerName = document.getElementById('caller-name');
+  const remoteAudio = document.getElementById('remote-audio');
+
   let isSignUpMode = false;
   let currentUser = null;
 
-  // 初期読み込み時の認証チェック
+  // WebRTC 変数
+  let localStream = null;
+  let peerConnection = null;
+  let incomingSignalData = null;
+
+  const rtcConfig = {
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  };
+
+  // --- 初期化 ---
   function initAuth() {
     const savedUser = localStorage.getItem(STORAGE_CURRENT_USER);
     if (savedUser) {
@@ -244,11 +317,10 @@ header h3 { font-size: 1.05rem; }
   function showChatScreen() {
     authScreen.style.display = 'none';
     chatScreen.style.display = 'flex';
-    currentUserDisplay.textContent = currentUser.name;
     loadMessages();
   }
 
-  // 画面切り替え（ログイン / 新規登録）
+  // --- ログイン・登録処理 ---
   toggleAuthBtn.addEventListener('click', () => {
     isSignUpMode = !isSignUpMode;
     authError.textContent = '';
@@ -265,7 +337,6 @@ header h3 { font-size: 1.05rem; }
     }
   });
 
-  // ログイン / アカウント作成 処理
   authSubmitBtn.addEventListener('click', () => {
     const userid = useridInput.value.trim();
     const password = passwordInput.value.trim();
@@ -280,14 +351,8 @@ header h3 { font-size: 1.05rem; }
     const users = getUsers();
 
     if (isSignUpMode) {
-      if (!name) {
-        authError.textContent = '表示名を入力してください。';
-        return;
-      }
-      if (users[userid]) {
-        authError.textContent = 'このユーザーIDは既に使用されています。';
-        return;
-      }
+      if (!name) { authError.textContent = '表示名を入力してください。'; return; }
+      if (users[userid]) { authError.textContent = 'このユーザーIDは使用されています。'; return; }
       users[userid] = { password: password, name: name };
       saveUsers(users);
 
@@ -296,7 +361,7 @@ header h3 { font-size: 1.05rem; }
       showChatScreen();
     } else {
       if (!users[userid] || users[userid].password !== password) {
-        authError.textContent = 'ユーザーIDまたはパスワードが正しくありません。';
+        authError.textContent = 'IDまたはパスワードが正しくありません。';
         return;
       }
       currentUser = { id: userid, name: users[userid].name };
@@ -305,17 +370,14 @@ header h3 { font-size: 1.05rem; }
     }
   });
 
-  // ログアウト
   logoutBtn.addEventListener('click', () => {
+    closeVoiceCall();
     localStorage.removeItem(STORAGE_CURRENT_USER);
     currentUser = null;
-    useridInput.value = '';
-    passwordInput.value = '';
-    nameInput.value = '';
     showAuthScreen();
   });
 
-  // メッセージ送信
+  // --- テキストチャット機能 ---
   function sendMessage() {
     const text = messageInput.value.trim();
     if (!text || !currentUser) return;
@@ -324,26 +386,22 @@ header h3 { font-size: 1.05rem; }
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
 
-    const newMsg = {
+    messages.push({
       id: Date.now(),
       userId: currentUser.id,
       userName: currentUser.name,
       text: text,
       time: timeStr
-    };
+    });
 
-    messages.push(newMsg);
     saveMessages(messages);
     messageInput.value = '';
     loadMessages();
   }
 
   sendBtn.addEventListener('click', sendMessage);
-  messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-  });
+  messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-  // メッセージ読み込み・描画
   function loadMessages() {
     const messages = getMessages();
     messageList.innerHTML = '';
@@ -378,10 +436,138 @@ header h3 { font-size: 1.05rem; }
     messageList.scrollTop = messageList.scrollHeight;
   }
 
-  // 他のタブでの変更をリアルタイム同期
-  window.addEventListener('storage', (e) => {
+  // --- WebRTC ボイスチャット処理 ---
+
+  // シグナリング情報の送信（ローカルストレージ経由）
+  function sendSignal(type, data) {
+    const signal = {
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      type: type,
+      data: data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_SIGNAL, JSON.stringify(signal));
+  }
+
+  // マイクの初期化
+  async function setupLocalStream() {
+    if (!localStream) {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } catch (err) {
+        alert('マイクへのアクセスが許可されていません。');
+        throw err;
+      }
+    }
+  }
+
+  // PeerConnection の生成
+  function createPeerConnection() {
+    peerConnection = new RTCPeerConnection(rtcConfig);
+
+    // 自分の音声トラックを追加
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    // 相手の音声トラックを受信
+    peerConnection.ontrack = (event) => {
+      remoteAudio.srcObject = event.streams[0];
+    };
+
+    // ICE Candidate の収集
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        sendSignal('candidate', event.candidate);
+      }
+    };
+  }
+
+  // 1. 発信開始
+  startCallBtn.addEventListener('click', async () => {
+    try {
+      await setupLocalStream();
+      createPeerConnection();
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+
+      sendSignal('offer', offer);
+      callBar.classList.add('active');
+      document.getElementById('call-status-text').textContent = '呼び出し中...';
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  // 2. 着信受話
+  acceptCallBtn.addEventListener('click', async () => {
+    callModal.classList.remove('active');
+    try {
+      await setupLocalStream();
+      createPeerConnection();
+
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(incomingSignalData.data));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      sendSignal('answer', answer);
+      callBar.classList.add('active');
+      document.getElementById('call-status-text').textContent = '通話中';
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  // 3. 着信拒否
+  rejectCallBtn.addEventListener('click', () => {
+    callModal.classList.remove('active');
+    sendSignal('reject', null);
+  });
+
+  // 4. 切断処理
+  endCallBtn.addEventListener('click', () => {
+    sendSignal('hangup', null);
+    closeVoiceCall();
+  });
+
+  function closeVoiceCall() {
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
+    }
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+    callBar.classList.remove('active');
+    callModal.classList.remove('active');
+  }
+
+  // 信号検知（別タブからのシグナル受信）
+  window.addEventListener('storage', async (e) => {
     if (e.key === STORAGE_MESSAGES && currentUser) {
       loadMessages();
+    }
+
+    if (e.key === STORAGE_SIGNAL && currentUser) {
+      const signal = JSON.parse(e.newValue);
+      if (!signal || signal.senderId === currentUser.id) return;
+
+      if (signal.type === 'offer') {
+        incomingSignalData = signal;
+        callerName.textContent = signal.senderName;
+        callerAvatar.textContent = signal.senderName.charAt(0);
+        callModal.classList.add('active');
+      } else if (signal.type === 'answer' && peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.data));
+        document.getElementById('call-status-text').textContent = '通話中';
+      } else if (signal.type === 'candidate' && peerConnection) {
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(signal.data));
+        } catch (err) { console.error(err); }
+      } else if (signal.type === 'reject' || signal.type === 'hangup') {
+        closeVoiceCall();
+      }
     }
   });
 
@@ -391,7 +577,6 @@ header h3 { font-size: 1.05rem; }
     );
   }
 
-  // 起動
   initAuth();
 </script>
 
