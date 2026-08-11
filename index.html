@@ -1,14 +1,22 @@
 ```html
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>Voice Chat</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+
     * {
       box-sizing: border-box;
     }
@@ -77,6 +85,18 @@
 
     .logout {
       background: #dc2626;
+    }
+
+    .green {
+      background: #22c55e;
+    }
+
+    .red {
+      background: #dc2626;
+    }
+
+    .gray {
+      background: #4b5563;
     }
 
     .user {
@@ -148,26 +168,14 @@
       font-size: 13px;
     }
 
-    .offline {
-      color: #9ca3af;
+    .away {
+      color: #f59e0b;
       font-size: 13px;
     }
 
-    .friend button {
-      padding: 8px 14px;
-      margin: 0 0 0 5px;
-    }
-
-    .green {
-      background: #22c55e;
-    }
-
-    .red {
-      background: #dc2626;
-    }
-
-    .gray {
-      background: #4b5563;
+    .offline {
+      color: #9ca3af;
+      font-size: 13px;
     }
 
     .request {
@@ -189,19 +197,21 @@
       padding: 15px 0;
     }
 
-    .hidden {
-      display: none;
-    }
   </style>
+
 </head>
 
+
 <body>
+
 
 <header>
   🎙️ Voice Chat
 </header>
 
+
 <main>
+
 
   <!-- ==========================================
        アカウント
@@ -215,12 +225,14 @@
       id="email"
       type="email"
       placeholder="メールアドレス"
+      autocomplete="email"
     >
 
     <input
       id="password"
       type="password"
       placeholder="パスワード"
+      autocomplete="current-password"
     >
 
     <button onclick="signUp()">
@@ -274,6 +286,7 @@
       メールアドレス変更
     </button>
 
+
     <h3>🔑 パスワード変更</h3>
 
     <input
@@ -319,7 +332,9 @@
 
     </div>
 
+
     <br>
+
 
     <button
       id="micButton"
@@ -327,6 +342,7 @@
     >
       🎤 マイクON
     </button>
+
 
     <div id="status">
       マイクをONにするとここに状態が表示されます。
@@ -346,32 +362,45 @@
 
     <h2>👥 フレンド</h2>
 
+
     <input
       id="friendSearch"
       type="text"
       placeholder="🔍 プレイヤーを検索"
     >
 
-    <button onclick="searchFriend()">
+
+    <button
+      onclick="searchFriend()"
+    >
       🔍 検索
     </button>
 
+
     <div id="searchResult"></div>
+
 
     <h3>フレンドリスト</h3>
 
+
     <div id="friendList">
+
       <div class="empty">
         フレンドはいません。
       </div>
+
     </div>
+
 
     <h3>📨 フレンド申請</h3>
 
+
     <div id="requestList">
+
       <div class="empty">
         フレンド申請はありません。
       </div>
+
     </div>
 
   </div>
@@ -395,18 +424,23 @@
       ＋ パーティー作成
     </button>
 
+
     <div id="partyArea">
+
       <div class="empty">
         パーティーに参加していません。
       </div>
+
     </div>
 
   </div>
+
 
 </main>
 
 
 <script>
+
 
   // ==========================================
   // Supabase設定
@@ -415,8 +449,16 @@
   const SUPABASE_URL =
     "https://znzwsbumfqderjoehrwd.supabase.co";
 
+
+  /*
+    ↓↓↓ ここだけ自分のPublishable keyに変更 ↓↓↓
+
+    Secret key / service_role key は絶対に入れない。
+  */
+
   const SUPABASE_KEY =
     "sb_publishable_HbZtKu-et14XUIGwIegw0g_ltLcrBhl";
+
 
   const supabaseClient =
     window.supabase.createClient(
@@ -425,15 +467,21 @@
     );
 
 
+  // ==========================================
+  // 状態
+  // ==========================================
+
   let currentUser = null;
+
   let guestMode = false;
 
   let microphone = null;
+
   let micEnabled = false;
 
 
   // ==========================================
-  // UI更新
+  // ログインUI
   // ==========================================
 
   function setLoggedInUI(name) {
@@ -442,61 +490,116 @@
       "username"
     ).textContent = name;
 
+
     document.getElementById(
       "onlineStatus"
-    ).textContent = "🟢 オンライン";
+    ).textContent =
+      "🟢 オンライン";
+
 
     document.getElementById(
       "accountStatus"
-    ).textContent = "✅ ログイン中";
+    ).textContent =
+      "✅ ログイン中";
+
 
     document.getElementById(
       "logoutButton"
-    ).style.display = "inline-block";
+    ).style.display =
+      "inline-block";
+
 
     document.getElementById(
       "settingsCard"
-    ).style.display = "block";
+    ).style.display =
+      "block";
+
 
     document.getElementById(
       "friendCard"
-    ).style.display = "block";
+    ).style.display =
+      "block";
+
 
     document.getElementById(
       "partyCard"
-    ).style.display = "block";
+    ).style.display =
+      "block";
+
   }
 
+
+  // ==========================================
+  // ログアウトUI
+  // ==========================================
 
   function setLoggedOutUI() {
 
     document.getElementById(
       "username"
-    ).textContent = "未ログイン";
+    ).textContent =
+      "未ログイン";
+
 
     document.getElementById(
       "onlineStatus"
-    ).textContent = "⚪ オフライン";
+    ).textContent =
+      "⚪ オフライン";
+
 
     document.getElementById(
       "accountStatus"
-    ).textContent = "ログインしていません";
+    ).textContent =
+      "ログインしていません";
+
 
     document.getElementById(
       "logoutButton"
-    ).style.display = "none";
+    ).style.display =
+      "none";
+
 
     document.getElementById(
       "settingsCard"
-    ).style.display = "none";
+    ).style.display =
+      "none";
+
 
     document.getElementById(
       "friendCard"
-    ).style.display = "none";
+    ).style.display =
+      "none";
+
 
     document.getElementById(
       "partyCard"
-    ).style.display = "none";
+    ).style.display =
+      "none";
+
+
+    document.getElementById(
+      "friendList"
+    ).innerHTML =
+      '<div class="empty">フレンドはいません。</div>';
+
+
+    document.getElementById(
+      "requestList"
+    ).innerHTML =
+      '<div class="empty">フレンド申請はありません。</div>';
+
+
+    document.getElementById(
+      "searchResult"
+    ).innerHTML =
+      "";
+
+
+    document.getElementById(
+      "partyArea"
+    ).innerHTML =
+      '<div class="empty">パーティーに参加していません。</div>';
+
   }
 
 
@@ -511,10 +614,12 @@
         "email"
       ).value.trim();
 
+
     const password =
       document.getElementById(
         "password"
       ).value;
+
 
     if (!email || !password) {
 
@@ -525,6 +630,7 @@
       return;
     }
 
+
     if (password.length < 6) {
 
       alert(
@@ -534,29 +640,115 @@
       return;
     }
 
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.auth.signUp({
-        email: email,
-        password: password
-      });
 
-    if (error) {
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
 
       alert(
-        "アカウント作成エラー: " +
-        error.message
+        "正しいメールアドレス形式で入力してください。"
       );
 
       return;
     }
 
-    alert(
-      "アカウントを作成しました！\n\n" +
-      "メール確認が有効の場合はメールを確認してください。"
-    );
+
+    try {
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.auth.signUp({
+          email: email,
+          password: password
+        });
+
+
+      if (error) {
+
+        console.error(
+          "Supabase signUp error:",
+          error
+        );
+
+
+        alert(
+          "アカウント作成エラー:\n" +
+          error.message
+        );
+
+        return;
+      }
+
+
+      if (data.user) {
+
+        currentUser =
+          data.user;
+
+        guestMode = false;
+
+
+        setLoggedInUI(
+          data.user.email
+        );
+
+
+        /*
+          profilesテーブルに
+          ユーザーを登録
+        */
+
+        const username =
+          email.split("@")[0];
+
+
+        const {
+          error: profileError
+        } =
+          await supabaseClient
+            .from("profiles")
+            .insert({
+              id: data.user.id,
+              username: username,
+              online: true,
+              status: "online"
+            });
+
+
+        if (profileError) {
+
+          console.warn(
+            "profiles登録:",
+            profileError
+          );
+        }
+
+
+        alert(
+          "アカウントを作成しました！"
+        );
+
+
+        await loadFriends();
+
+        await loadFriendRequests();
+
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+
+      alert(
+        "通信エラーが発生しました。\n\n" +
+        error.message
+      );
+
+    }
+
   }
 
 
@@ -571,10 +763,12 @@
         "email"
       ).value.trim();
 
+
     const password =
       document.getElementById(
         "password"
       ).value;
+
 
     if (!email || !password) {
 
@@ -585,34 +779,73 @@
       return;
     }
 
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
 
-    if (error) {
+    try {
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+
+      if (error) {
+
+        alert(
+          "ログインエラー:\n" +
+          error.message
+        );
+
+        return;
+      }
+
+
+      currentUser =
+        data.user;
+
+      guestMode = false;
+
+
+      await updateOnlineStatus(
+        true
+      );
+
+
+      const {
+        data: profile
+      } =
+        await supabaseClient
+          .from("profiles")
+          .select("username")
+          .eq(
+            "id",
+            currentUser.id
+          )
+          .maybeSingle();
+
+
+      setLoggedInUI(
+        profile?.username ||
+        currentUser.email
+      );
+
+
+      await loadFriends();
+
+      await loadFriendRequests();
+
+    } catch (error) {
 
       alert(
-        "ログインエラー: " +
+        "ログイン通信エラー:\n" +
         error.message
       );
 
-      return;
     }
 
-    currentUser = data.user;
-    guestMode = false;
-
-    setLoggedInUI(
-      currentUser.email
-    );
-
-    await loadFriends();
-    await loadFriendRequests();
   }
 
 
@@ -622,12 +855,19 @@
 
   async function signOut() {
 
+    if (!currentUser) {
+      return;
+    }
+
+
     if (guestMode) {
 
       currentUser = null;
+
       guestMode = false;
 
       setLoggedOutUI();
+
 
       alert(
         "仮アカウントからログアウトしました。"
@@ -636,35 +876,36 @@
       return;
     }
 
+
+    await updateOnlineStatus(
+      false
+    );
+
+
     const {
       error
     } =
       await supabaseClient.auth.signOut();
 
+
     if (error) {
 
       alert(
-        "ログアウトに失敗しました: " +
+        "ログアウトに失敗しました:\n" +
         error.message
       );
 
       return;
     }
 
+
     currentUser = null;
+
     guestMode = false;
+
 
     setLoggedOutUI();
 
-    document.getElementById(
-      "friendList"
-    ).innerHTML =
-      '<div class="empty">フレンドはいません。</div>';
-
-    document.getElementById(
-      "requestList"
-    ).innerHTML =
-      '<div class="empty">フレンド申請はありません。</div>';
   }
 
 
@@ -674,6 +915,16 @@
 
   function createGuest() {
 
+    if (currentUser) {
+
+      alert(
+        "すでにログインしています。"
+      );
+
+      return;
+    }
+
+
     const guestName =
       "Guest_" +
       Math.floor(
@@ -681,16 +932,26 @@
         Math.random() * 900000
       );
 
+
     currentUser = {
-      id: "guest_" + Date.now(),
-      email: guestName
+
+      id:
+        "guest_" +
+        Date.now(),
+
+      email:
+        guestName
+
     };
 
+
     guestMode = true;
+
 
     setLoggedInUI(
       guestName
     );
+
 
     document.getElementById(
       "accountStatus"
@@ -698,25 +959,73 @@
       "👻 仮アカウント: " +
       guestName;
 
+
     document.getElementById(
       "friendList"
     ).innerHTML =
-      '<div class="empty">仮アカウントではフレンド機能を利用できません。</div>';
+      '<div class="empty">仮アカウントではフレンドを表示できません。</div>';
+
 
     document.getElementById(
       "requestList"
     ).innerHTML =
       '<div class="empty">仮アカウントではフレンド申請を利用できません。</div>';
 
+
     alert(
       "仮アカウントを作成しました！\n\n" +
       guestName
     );
+
   }
 
 
   // ==========================================
-  // メールアドレス変更
+  // オンライン状態変更
+  // ==========================================
+
+  async function updateOnlineStatus(
+    online,
+    status = "online"
+  ) {
+
+    if (
+      !currentUser ||
+      guestMode
+    ) {
+      return;
+    }
+
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from("profiles")
+        .update({
+          online: online,
+          status: status
+        })
+        .eq(
+          "id",
+          currentUser.id
+        );
+
+
+    if (error) {
+
+      console.warn(
+        "オンライン状態更新:",
+        error
+      );
+
+    }
+
+  }
+
+
+  // ==========================================
+  // メール変更
   // ==========================================
 
   async function changeEmail() {
@@ -730,10 +1039,12 @@
       return;
     }
 
+
     const newEmail =
       document.getElementById(
         "newEmail"
       ).value.trim();
+
 
     if (!newEmail) {
 
@@ -744,6 +1055,7 @@
       return;
     }
 
+
     const {
       error
     } =
@@ -751,24 +1063,28 @@
         email: newEmail
       });
 
+
     if (error) {
 
       alert(
-        "メールアドレス変更エラー: " +
+        "メールアドレス変更エラー:\n" +
         error.message
       );
 
       return;
     }
 
+
     document.getElementById(
       "settingsStatus"
     ).textContent =
       "✅ メールアドレス変更を受け付けました。";
 
+
     document.getElementById(
       "newEmail"
     ).value = "";
+
   }
 
 
@@ -787,21 +1103,16 @@
       return;
     }
 
+
     const newPassword =
       document.getElementById(
         "newPassword"
       ).value;
 
-    if (!newPassword) {
 
-      alert(
-        "新しいパスワードを入力してください。"
-      );
-
-      return;
-    }
-
-    if (newPassword.length < 6) {
+    if (
+      newPassword.length < 6
+    ) {
 
       alert(
         "パスワードは6文字以上にしてください。"
@@ -810,6 +1121,7 @@
       return;
     }
 
+
     const {
       error
     } =
@@ -817,24 +1129,28 @@
         password: newPassword
       });
 
+
     if (error) {
 
       alert(
-        "パスワード変更エラー: " +
+        "パスワード変更エラー:\n" +
         error.message
       );
 
       return;
     }
 
+
     document.getElementById(
       "settingsStatus"
     ).textContent =
       "✅ パスワードを変更しました。";
 
+
     document.getElementById(
       "newPassword"
     ).value = "";
+
   }
 
 
@@ -854,12 +1170,15 @@
               audio: true
             });
 
+
         micEnabled = true;
+
 
         document.getElementById(
           "micButton"
         ).textContent =
           "🔇 マイクOFF";
+
 
         document.getElementById(
           "status"
@@ -871,29 +1190,41 @@
         alert(
           "マイクへのアクセスが許可されませんでした。"
         );
+
       }
 
     } else {
 
-      microphone
-        .getTracks()
-        .forEach(track => {
-          track.stop();
-        });
+      if (microphone) {
+
+        microphone
+          .getTracks()
+          .forEach(
+            track =>
+              track.stop()
+          );
+
+      }
+
 
       microphone = null;
+
       micEnabled = false;
+
 
       document.getElementById(
         "micButton"
       ).textContent =
         "🎤 マイクON";
 
+
       document.getElementById(
         "status"
       ).textContent =
         "🔇 マイクOFF";
+
     }
+
   }
 
 
@@ -903,7 +1234,10 @@
 
   async function searchFriend() {
 
-    if (!currentUser || guestMode) {
+    if (
+      !currentUser ||
+      guestMode
+    ) {
 
       alert(
         "ログインしてください。"
@@ -912,19 +1246,22 @@
       return;
     }
 
+
     const name =
       document.getElementById(
         "friendSearch"
       ).value.trim();
 
+
     if (!name) {
 
       alert(
-        "検索する名前を入力してください。"
+        "検索するプレイヤー名を入力してください。"
       );
 
       return;
     }
+
 
     const {
       data,
@@ -932,36 +1269,48 @@
     } =
       await supabaseClient
         .from("profiles")
-        .select("id, username")
-        .ilike("username", "%" + name + "%")
+        .select(
+          "id, username, online, status"
+        )
+        .ilike(
+          "username",
+          "%" + name + "%"
+        )
         .limit(10);
 
-    if (error) {
-
-      console.error(error);
-
-      document.getElementById(
-        "searchResult"
-      ).innerHTML =
-        '<div class="empty">検索に失敗しました。Supabaseのprofilesテーブルを確認してください。</div>';
-
-      return;
-    }
 
     const result =
       document.getElementById(
         "searchResult"
       );
 
+
     result.innerHTML = "";
+
+
+    if (error) {
+
+      console.error(error);
+
+
+      result.innerHTML =
+        '<div class="empty">プレイヤー検索に失敗しました。</div>';
+
+      return;
+    }
+
 
     const users =
       (data || []).filter(
         user =>
-          user.id !== currentUser.id
+          user.id !==
+          currentUser.id
       );
 
-    if (users.length === 0) {
+
+    if (
+      users.length === 0
+    ) {
 
       result.innerHTML =
         '<div class="empty">プレイヤーが見つかりません。</div>';
@@ -969,31 +1318,61 @@
       return;
     }
 
-    users.forEach(user => {
 
-      const div =
-        document.createElement("div");
+    users.forEach(
+      user => {
 
-      div.className = "friend";
+        const div =
+          document.createElement(
+            "div"
+          );
 
-      div.innerHTML = `
-        <div class="friendAvatar">👤</div>
 
-        <div class="friendInfo">
-          <strong>${escapeHTML(user.username)}</strong>
-          <span class="offline">プレイヤー</span>
-        </div>
+        div.className =
+          "friend";
 
-        <button
-          class="green"
-          onclick="sendFriendRequest('${user.id}')"
-        >
-          ＋ 追加
-        </button>
-      `;
 
-      result.appendChild(div);
-    });
+        div.innerHTML = `
+
+          <div class="friendAvatar">
+            👤
+          </div>
+
+          <div class="friendInfo">
+
+            <strong>
+              ${escapeHTML(user.username)}
+            </strong>
+
+            <span class="${
+              getStatusClass(user)
+            }">
+
+              ● ${
+                getStatusText(user)
+              }
+
+            </span>
+
+          </div>
+
+          <button
+            class="green"
+            onclick="sendFriendRequest('${user.id}')"
+          >
+            ＋ 追加
+          </button>
+
+        `;
+
+
+        result.appendChild(
+          div
+        );
+
+      }
+    );
+
   }
 
 
@@ -1001,9 +1380,14 @@
   // フレンド申請
   // ==========================================
 
-  async function sendFriendRequest(userId) {
+  async function sendFriendRequest(
+    userId
+  ) {
 
-    if (!currentUser || guestMode) {
+    if (
+      !currentUser ||
+      guestMode
+    ) {
 
       alert(
         "ログインしてください。"
@@ -1012,14 +1396,18 @@
       return;
     }
 
-    if (userId === currentUser.id) {
+
+    if (
+      userId === currentUser.id
+    ) {
 
       alert(
-        "自分自身にはフレンド申請できません。"
+        "自分自身には申請できません。"
       );
 
       return;
     }
+
 
     const {
       error
@@ -1027,24 +1415,32 @@
       await supabaseClient
         .from("friend_requests")
         .insert({
-          sender_id: currentUser.id,
-          receiver_id: userId,
-          status: "pending"
+          sender_id:
+            currentUser.id,
+
+          receiver_id:
+            userId,
+
+          status:
+            "pending"
         });
+
 
     if (error) {
 
       alert(
-        "フレンド申請エラー: " +
+        "フレンド申請エラー:\n" +
         error.message
       );
 
       return;
     }
 
+
     alert(
       "フレンド申請を送りました！"
     );
+
   }
 
 
@@ -1054,9 +1450,13 @@
 
   async function loadFriends() {
 
-    if (!currentUser || guestMode) {
+    if (
+      !currentUser ||
+      guestMode
+    ) {
       return;
     }
+
 
     const {
       data,
@@ -1069,7 +1469,8 @@
           profiles!friendships_friend_id_fkey (
             id,
             username,
-            online
+            online,
+            status
           )
         `)
         .eq(
@@ -1077,26 +1478,19 @@
           currentUser.id
         );
 
-    if (error) {
-
-      console.error(error);
-
-      document.getElementById(
-        "friendList"
-      ).innerHTML =
-        '<div class="empty">フレンドはいません。</div>';
-
-      return;
-    }
 
     const list =
       document.getElementById(
         "friendList"
       );
 
+
     list.innerHTML = "";
 
-    if (!data || data.length === 0) {
+
+    if (error) {
+
+      console.error(error);
 
       list.innerHTML =
         '<div class="empty">フレンドはいません。</div>';
@@ -1104,60 +1498,116 @@
       return;
     }
 
-    data.forEach(row => {
 
-      const friend =
-        row.profiles;
+    if (
+      !data ||
+      data.length === 0
+    ) {
 
-      if (!friend) {
-        return;
-      }
+      list.innerHTML =
+        '<div class="empty">フレンドはいません。</div>';
 
-      const div =
-        document.createElement("div");
+      return;
+    }
 
-      div.className = "friend";
 
-      div.innerHTML = `
-        <div class="friendAvatar">👤</div>
+    let count = 0;
 
-        <div class="friendInfo">
-          <strong>${escapeHTML(friend.username)}</strong>
 
-          <span class="${
-            friend.online
-              ? "online"
-              : "offline"
-          }">
-            ● ${
-              friend.online
-                ? "オンライン"
-                : "オフライン"
-            }
-          </span>
-        </div>
+    data.forEach(
+      row => {
 
-        ${
-          friend.online
-            ? `<button
-                 class="green"
-                 onclick="joinFriend('${friend.id}')"
-               >
-                 参加
-               </button>`
-            : ""
+        const friend =
+          row.profiles;
+
+
+        if (!friend) {
+          return;
         }
 
-        <button
-          class="red"
-          onclick="removeFriend('${friend.id}')"
-        >
-          削除
-        </button>
-      `;
 
-      list.appendChild(div);
-    });
+        count++;
+
+
+        const div =
+          document.createElement(
+            "div"
+          );
+
+
+        div.className =
+          "friend";
+
+
+        const statusText =
+          getStatusText(
+            friend
+          );
+
+
+        const statusClass =
+          getStatusClass(
+            friend
+          );
+
+
+        div.innerHTML = `
+
+          <div class="friendAvatar">
+            👤
+          </div>
+
+          <div class="friendInfo">
+
+            <strong>
+              ${escapeHTML(friend.username)}
+            </strong>
+
+            <span class="${statusClass}">
+              ● ${statusText}
+            </span>
+
+          </div>
+
+          ${
+            friend.online &&
+            friend.status !== "away"
+              ? `
+                <button
+                  class="green"
+                  onclick="joinFriend('${friend.id}')"
+                >
+                  参加
+                </button>
+              `
+              : ""
+          }
+
+          <button
+            class="red"
+            onclick="removeFriend('${friend.id}')"
+          >
+            削除
+          </button>
+
+        `;
+
+
+        list.appendChild(
+          div
+        );
+
+      }
+    );
+
+
+    if (count === 0) {
+
+      list.innerHTML =
+        '<div class="empty">フレンドはいません。</div>';
+
+    }
+
   }
 
 
@@ -1167,9 +1617,13 @@
 
   async function loadFriendRequests() {
 
-    if (!currentUser || guestMode) {
+    if (
+      !currentUser ||
+      guestMode
+    ) {
       return;
     }
+
 
     const {
       data,
@@ -1193,21 +1647,19 @@
           "pending"
         );
 
-    if (error) {
-
-      console.error(error);
-
-      return;
-    }
 
     const list =
       document.getElementById(
         "requestList"
       );
 
+
     list.innerHTML = "";
 
-    if (!data || data.length === 0) {
+
+    if (error) {
+
+      console.error(error);
 
       list.innerHTML =
         '<div class="empty">フレンド申請はありません。</div>';
@@ -1215,49 +1667,82 @@
       return;
     }
 
-    data.forEach(request => {
 
-      const name =
-        request.profiles
-          ? request.profiles.username
-          : "Unknown";
+    if (
+      !data ||
+      data.length === 0
+    ) {
 
-      const div =
-        document.createElement("div");
+      list.innerHTML =
+        '<div class="empty">フレンド申請はありません。</div>';
 
-      div.className = "request";
+      return;
+    }
 
-      div.innerHTML = `
-        <strong>
-          ${escapeHTML(name)}
-        </strong>
 
-        <p>
-          フレンド申請が届いています。
-        </p>
+    data.forEach(
+      request => {
 
-        <button
-          class="green"
-          onclick="acceptFriend('${request.id}', '${request.sender_id}')"
-        >
-          ✓ 承認
-        </button>
+        const name =
+          request.profiles
+            ? request.profiles.username
+            : "Unknown";
 
-        <button
-          class="red"
-          onclick="rejectFriend('${request.id}')"
-        >
-          ✕ 拒否
-        </button>
-      `;
 
-      list.appendChild(div);
-    });
+        const div =
+          document.createElement(
+            "div"
+          );
+
+
+        div.className =
+          "request";
+
+
+        div.innerHTML = `
+
+          <strong>
+            ${escapeHTML(name)}
+          </strong>
+
+          <p>
+            フレンド申請が届いています。
+          </p>
+
+          <button
+            class="green"
+            onclick="acceptFriend(
+              '${request.id}',
+              '${request.sender_id}'
+            )"
+          >
+            ✓ 承認
+          </button>
+
+          <button
+            class="red"
+            onclick="rejectFriend(
+              '${request.id}'
+            )"
+          >
+            ✕ 拒否
+          </button>
+
+        `;
+
+
+        list.appendChild(
+          div
+        );
+
+      }
+    );
+
   }
 
 
   // ==========================================
-  // フレンド申請承認
+  // 承認
   // ==========================================
 
   async function acceptFriend(
@@ -1265,31 +1750,40 @@
     senderId
   ) {
 
-    if (!currentUser || guestMode) {
+    if (
+      !currentUser ||
+      guestMode
+    ) {
       return;
     }
 
+
     const {
-      error: requestError
+      error:
+        requestError
     } =
       await supabaseClient
         .from("friend_requests")
         .update({
-          status: "accepted"
+          status:
+            "accepted"
         })
         .eq(
           "id",
           requestId
         );
 
+
     if (requestError) {
 
       alert(
-        "申請処理に失敗しました。"
+        "申請処理に失敗しました:\n" +
+        requestError.message
       );
 
       return;
     }
+
 
     const {
       error
@@ -1297,40 +1791,56 @@
       await supabaseClient
         .from("friendships")
         .insert([
+
           {
-            user_id: currentUser.id,
-            friend_id: senderId
+            user_id:
+              currentUser.id,
+
+            friend_id:
+              senderId
           },
+
           {
-            user_id: senderId,
-            friend_id: currentUser.id
+            user_id:
+              senderId,
+
+            friend_id:
+              currentUser.id
           }
+
         ]);
+
 
     if (error) {
 
       alert(
-        "フレンド登録に失敗しました: " +
+        "フレンド登録に失敗しました:\n" +
         error.message
       );
 
       return;
     }
 
+
     alert(
       "フレンドになりました！"
     );
 
+
     await loadFriends();
+
     await loadFriendRequests();
+
   }
 
 
   // ==========================================
-  // フレンド申請拒否
+  // 拒否
   // ==========================================
 
-  async function rejectFriend(requestId) {
+  async function rejectFriend(
+    requestId
+  ) {
 
     const {
       error
@@ -1338,12 +1848,14 @@
       await supabaseClient
         .from("friend_requests")
         .update({
-          status: "rejected"
+          status:
+            "rejected"
         })
         .eq(
           "id",
           requestId
         );
+
 
     if (error) {
 
@@ -1354,7 +1866,9 @@
       return;
     }
 
+
     await loadFriendRequests();
+
   }
 
 
@@ -1362,13 +1876,26 @@
   // フレンド削除
   // ==========================================
 
-  async function removeFriend(friendId) {
+  async function removeFriend(
+    friendId
+  ) {
 
-    if (!confirm(
-      "このフレンドを削除しますか？"
-    )) {
+    if (
+      !currentUser ||
+      guestMode
+    ) {
       return;
     }
+
+
+    if (
+      !confirm(
+        "このフレンドを削除しますか？"
+      )
+    ) {
+      return;
+    }
+
 
     const {
       error
@@ -1380,17 +1907,20 @@
           `and(user_id.eq.${currentUser.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${currentUser.id})`
         );
 
+
     if (error) {
 
       alert(
-        "フレンド削除エラー: " +
+        "フレンド削除エラー:\n" +
         error.message
       );
 
       return;
     }
 
+
     await loadFriends();
+
   }
 
 
@@ -1398,11 +1928,14 @@
   // フレンドのパーティー参加
   // ==========================================
 
-  function joinFriend(friendId) {
+  function joinFriend(
+    friendId
+  ) {
 
     alert(
-      "このフレンドのパーティー参加機能を準備中です。"
+      "このフレンドのパーティー参加機能は準備中です。"
     );
+
   }
 
 
@@ -1421,6 +1954,7 @@
       return;
     }
 
+
     if (guestMode) {
 
       alert(
@@ -1430,11 +1964,13 @@
       return;
     }
 
+
     const partyCode =
       Math.random()
         .toString(36)
         .substring(2, 8)
         .toUpperCase();
+
 
     const {
       data,
@@ -1443,35 +1979,47 @@
       await supabaseClient
         .from("parties")
         .insert({
-          owner_id: currentUser.id,
-          party_code: partyCode
+          owner_id:
+            currentUser.id,
+
+          party_code:
+            partyCode
         })
         .select()
         .single();
 
+
     if (error) {
 
       alert(
-        "パーティー作成エラー: " +
+        "パーティー作成エラー:\n" +
         error.message
       );
 
       return;
     }
 
+
     document.getElementById(
       "partyArea"
     ).innerHTML = `
+
       <div class="partyBox">
 
-        <h3>🎉 パーティー作成済み</h3>
+        <h3>
+          🎉 パーティー作成済み
+        </h3>
 
         <p>
           パーティーコード
         </p>
 
-        <strong style="font-size:24px;">
-          ${escapeHTML(data.party_code)}
+        <strong
+          style="font-size:24px;"
+        >
+          ${escapeHTML(
+            data.party_code
+          )}
         </strong>
 
         <br>
@@ -1484,15 +2032,27 @@
         </button>
 
       </div>
+
     `;
+
   }
 
 
   // ==========================================
-  // パーティー退出
+  // パーティー解散
   // ==========================================
 
-  async function leaveParty(partyId) {
+  async function leaveParty(
+    partyId
+  ) {
+
+    if (
+      !currentUser ||
+      guestMode
+    ) {
+      return;
+    }
+
 
     const {
       error
@@ -1509,19 +2069,81 @@
           currentUser.id
         );
 
+
     if (error) {
 
       alert(
-        "パーティーを解散できませんでした。"
+        "パーティーを解散できませんでした:\n" +
+        error.message
       );
 
       return;
     }
 
+
     document.getElementById(
       "partyArea"
     ).innerHTML =
       '<div class="empty">パーティーに参加していません。</div>';
+
+  }
+
+
+  // ==========================================
+  // ステータス
+  // ==========================================
+
+  function getStatusText(
+    user
+  ) {
+
+    if (
+      user.status === "away"
+    ) {
+
+      return "離席中";
+
+    }
+
+
+    if (
+      user.online
+    ) {
+
+      return "オンライン";
+
+    }
+
+
+    return "オフライン";
+
+  }
+
+
+  function getStatusClass(
+    user
+  ) {
+
+    if (
+      user.status === "away"
+    ) {
+
+      return "away";
+
+    }
+
+
+    if (
+      user.online
+    ) {
+
+      return "online";
+
+    }
+
+
+    return "offline";
+
   }
 
 
@@ -1529,14 +2151,37 @@
   // HTMLエスケープ
   // ==========================================
 
-  function escapeHTML(value) {
+  function escapeHTML(
+    value
+  ) {
 
     return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+
+      .replaceAll(
+        "&",
+        "&amp;"
+      )
+
+      .replaceAll(
+        "<",
+        "&lt;"
+      )
+
+      .replaceAll(
+        ">",
+        "&gt;"
+      )
+
+      .replaceAll(
+        '"',
+        "&quot;"
+      )
+
+      .replaceAll(
+        "'",
+        "&#039;"
+      );
+
   }
 
 
@@ -1546,67 +2191,137 @@
 
   async function checkUser() {
 
-    const {
-      data: {
-        user
+    try {
+
+      const {
+        data: {
+          user
+        }
+      } =
+        await supabaseClient.auth.getUser();
+
+
+      if (!user) {
+
+        currentUser = null;
+
+        guestMode = false;
+
+        setLoggedOutUI();
+
+        return;
       }
-    } =
-      await supabaseClient.auth.getUser();
 
-    if (user) {
 
-      currentUser = user;
+      currentUser =
+        user;
+
       guestMode = false;
 
+
+      await updateOnlineStatus(
+        true
+      );
+
+
+      const {
+        data: profile
+      } =
+        await supabaseClient
+          .from("profiles")
+          .select(
+            "username"
+          )
+          .eq(
+            "id",
+            user.id
+          )
+          .maybeSingle();
+
+
       setLoggedInUI(
+        profile?.username ||
         user.email
       );
 
+
       await loadFriends();
+
       await loadFriendRequests();
 
-    } else {
+    } catch (error) {
+
+      console.error(
+        "checkUser error:",
+        error
+      );
 
       setLoggedOutUI();
+
     }
+
   }
 
 
   // ==========================================
-  // 認証状態変更監視
+  // 認証状態変更
   // ==========================================
 
   supabaseClient.auth.onAuthStateChange(
-    async (event, session) => {
+    async (
+      event,
+      session
+    ) => {
 
-      if (session && session.user) {
+      if (
+        session &&
+        session.user
+      ) {
 
         currentUser =
           session.user;
 
         guestMode = false;
 
+
         setLoggedInUI(
           session.user.email
         );
 
+
         await loadFriends();
+
         await loadFriendRequests();
 
-      } else if (!guestMode) {
+      }
 
-        currentUser = null;
+      else if (
+        !guestMode
+      ) {
+
+        currentUser =
+          null;
 
         setLoggedOutUI();
+
       }
+
     }
   );
 
 
+  // ==========================================
+  // 初期化
+  // ==========================================
+
   checkUser();
+
 
 </script>
 
+
 </body>
+
 </html>
 ```
+
