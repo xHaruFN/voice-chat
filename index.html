@@ -48,6 +48,10 @@
       margin-top: 0;
     }
 
+    h3 {
+      margin-top: 25px;
+    }
+
     input {
       width: 100%;
       padding: 12px;
@@ -101,8 +105,13 @@
       color: #9ca3af;
     }
 
-    #accountStatus {
+    #accountStatus,
+    #settingsStatus {
       color: #9ca3af;
+    }
+
+    #settingsCard {
+      display: none;
     }
   </style>
 </head>
@@ -117,6 +126,7 @@
 
   <!-- アカウント -->
   <div class="card" id="accountCard">
+
     <h2>👤 アカウント</h2>
 
     <input
@@ -153,6 +163,45 @@
     <p id="accountStatus">
       ログインしていません
     </p>
+
+  </div>
+
+
+  <!-- アカウント設定 -->
+  <div
+    class="card"
+    id="settingsCard"
+  >
+
+    <h2>⚙️ アカウント設定</h2>
+
+    <h3>📧 メールアドレス変更</h3>
+
+    <input
+      id="newEmail"
+      type="email"
+      placeholder="新しいメールアドレス"
+    >
+
+    <button onclick="changeEmail()">
+      メールアドレス変更
+    </button>
+
+
+    <h3>🔑 パスワード変更</h3>
+
+    <input
+      id="newPassword"
+      type="password"
+      placeholder="新しいパスワード"
+    >
+
+    <button onclick="changePassword()">
+      パスワード変更
+    </button>
+
+    <p id="settingsStatus"></p>
+
   </div>
 
 
@@ -206,7 +255,9 @@
       フレンド機能は次の段階で追加します。
     </p>
 
-    <button onclick="addFriend()">
+    <button
+      onclick="alert('フレンド機能を追加予定です！')"
+    >
       ＋ フレンド追加
     </button>
 
@@ -218,11 +269,9 @@
 
     <h2>🎉 パーティー</h2>
 
-    <p>
-      パーティーを作成してフレンドと遊ぼう！
-    </p>
-
-    <button onclick="createParty()">
+    <button
+      onclick="alert('パーティー機能を追加予定です！')"
+    >
       ＋ パーティー作成
     </button>
 
@@ -242,7 +291,6 @@
 
   const SUPABASE_KEY =
     "sb_publishable_HbZtKu-et14XUIGwIegw0g_ltLcrBhl";
-
 
   const supabaseClient =
     window.supabase.createClient(
@@ -291,13 +339,9 @@
       return;
     }
 
-    document.getElementById(
-      "accountStatus"
-    ).textContent =
-      "✅ アカウントを作成しました";
-
     alert(
-      "アカウントを作成しました！"
+      "アカウントを作成しました！\n" +
+      "メール確認が必要な設定の場合はメールを確認してください。"
     );
   }
 
@@ -381,6 +425,11 @@
       "accountStatus"
     ).textContent =
       "ログアウトしました";
+
+    document.getElementById(
+      "settingsCard"
+    ).style.display =
+      "none";
   }
 
 
@@ -444,28 +493,108 @@
       "accountStatus"
     ).textContent =
       "✅ ログイン中";
+
+    document.getElementById(
+      "settingsCard"
+    ).style.display =
+      "block";
   }
 
 
   // ==========================================
-  // ログイン状態確認
+  // メールアドレス変更
   // ==========================================
 
-  async function checkUser() {
+  async function changeEmail() {
+
+    const newEmail =
+      document.getElementById(
+        "newEmail"
+      ).value.trim();
+
+    if (!newEmail) {
+
+      alert(
+        "新しいメールアドレスを入力してください。"
+      );
+
+      return;
+    }
 
     const {
-      data: {
-        user
-      }
+      error
     } =
-      await supabaseClient.auth.getUser();
+      await supabaseClient.auth.updateUser({
+        email: newEmail
+      });
 
-    if (user) {
-      updateUserUI(user);
+    if (error) {
+
+      alert(
+        "メールアドレス変更エラー: " +
+        error.message
+      );
+
+      return;
     }
+
+    document.getElementById(
+      "settingsStatus"
+    ).textContent =
+      "✅ メールアドレス変更を受け付けました。";
+
+    document.getElementById(
+      "newEmail"
+    ).value = "";
   }
 
-  checkUser();
+
+  // ==========================================
+  // パスワード変更
+  // ==========================================
+
+  async function changePassword() {
+
+    const newPassword =
+      document.getElementById(
+        "newPassword"
+      ).value;
+
+    if (!newPassword) {
+
+      alert(
+        "新しいパスワードを入力してください。"
+      );
+
+      return;
+    }
+
+    const {
+      error
+    } =
+      await supabaseClient.auth.updateUser({
+        password: newPassword
+      });
+
+    if (error) {
+
+      alert(
+        "パスワード変更エラー: " +
+        error.message
+      );
+
+      return;
+    }
+
+    document.getElementById(
+      "settingsStatus"
+    ).textContent =
+      "✅ パスワードを変更しました。";
+
+    document.getElementById(
+      "newPassword"
+    ).value = "";
+  }
 
 
   // ==========================================
@@ -474,7 +603,6 @@
 
   let microphone = null;
   let micEnabled = false;
-
 
   async function toggleMic() {
 
@@ -533,27 +661,24 @@
 
 
   // ==========================================
-  // フレンド
+  // ログイン状態の確認
   // ==========================================
 
-  function addFriend() {
+  async function checkUser() {
 
-    alert(
-      "フレンド機能は次の段階で追加します！"
-    );
+    const {
+      data: {
+        user
+      }
+    } =
+      await supabaseClient.auth.getUser();
+
+    if (user) {
+      updateUserUI(user);
+    }
   }
 
-
-  // ==========================================
-  // パーティー
-  // ==========================================
-
-  function createParty() {
-
-    alert(
-      "パーティー作成機能は次の段階で追加します！"
-    );
-  }
+  checkUser();
 
 </script>
 
