@@ -2,919 +2,173 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LINE風 Voice & Chat</title>
-
+<title>Discord Style Voice Chat</title>
 <style>
-* {
-  box-sizing: border-box;
+/* Discord風カラースキーム */
+:root {
+  --bg-dark: #36393f;
+  --bg-darker: #2f3136;
+  --bg-deep: #202225;
+  --text-main: #dcddde;
+  --text-muted: #72767d;
+  --accent: #5865f2; /* Discordブルー */
+  --green: #3ba55d;
+  --red: #ed4245;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: #111827;
-  color: #f3f4f6;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: var(--bg-darker);
+  color: var(--text-main);
   height: 100vh;
   display: flex;
-  flex-direction: column;
 }
 
-/* LINE風アプリレイアウト */
-.app-container {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* 左サイドバー（メニュー・フレンド・トークリスト） */
-.sidebar {
-  width: 360px;
-  background: #1f2937;
-  border-right: 1px solid #374151;
+/* サーバーリスト風ナビ */
+.nav-bar {
+  width: 72px;
+  background: var(--bg-deep);
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  align-items: center;
+  gap: 10px;
 }
-
-.sidebar-header {
-  padding: 16px 20px;
-  background: #111827;
+.nav-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--bg-dark);
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #374151;
-}
-
-.sidebar-header h1 {
-  font-size: 18px;
-  margin: 0;
-  color: #22c55e; /* LINEグリーン風カラー */
-}
-
-.sidebar-tabs {
-  display: flex;
-  background: #111827;
-  border-bottom: 1px solid #374151;
-}
-
-.sidebar-tab {
-  flex: 1;
-  padding: 12px;
-  text-align: center;
-  background: none;
-  border: none;
-  color: #9ca3af;
-  font-size: 14px;
+  justify-content: center;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  transition: 0.2s;
 }
+.nav-icon:hover { border-radius: 15px; background: var(--accent); }
 
-.sidebar-tab.active {
-  color: #22c55e;
-  border-bottom-color: #22c55e;
-}
-
-.sidebar-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 15px;
-}
-
-/* 右メイン画面（チャット・通話・設定） */
-.main-content {
-  flex: 1;
-  background: #111827;
+/* サイドバー */
+.sidebar {
+  width: 240px;
+  background: var(--bg-dark);
   display: flex;
   flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px;
+  font-weight: bold;
+  border-bottom: 1px solid var(--bg-deep);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+/* メインチャットエリア */
+.main-chat {
+  flex: 1;
+  background: var(--bg-darker);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
   overflow-y: auto;
-  padding: 24px;
 }
 
+/* 共通UI */
 .card {
-  background: #1f2937;
-  border-radius: 16px;
-  padding: 25px;
+  background: var(--bg-dark);
+  border-radius: 8px;
+  padding: 20px;
   margin-bottom: 20px;
-  border: 1px solid #374151;
 }
-
-h2 {
-  margin-top: 0;
-  font-size: 20px;
-}
-
-h3 {
-  margin-top: 25px;
-  font-size: 16px;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin: 6px 0;
-  background: #374151;
-  border: 1px solid #4b5563;
-  color: white;
-  border-radius: 10px;
-  font-size: 15px;
-}
-
 button {
+  background: var(--accent);
+  color: white;
   border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  margin: 6px 4px 6px 0;
-  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 3px;
   cursor: pointer;
-  background: #22c55e; /* LINEグリーン */
-  color: #111827;
   font-weight: bold;
 }
-
-button:hover {
-  opacity: 0.9;
-}
-
-.indigo {
-  background: #4f46e5;
-  color: white;
-}
-
-.logout,
-.red {
-  background: #dc2626;
-  color: white;
-}
-
-.gray {
-  background: #4b5563;
-  color: white;
-}
-
-.yellow {
-  background: #eab308;
-  color: #111827;
-}
-
-.user {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  background: #374151;
-  padding: 15px;
-  border-radius: 12px;
-}
-
-.avatar {
-  width: 45px;
-  height: 45px;
-  background: #22c55e;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: #111827;
-}
-
-#status {
-  margin-top: 15px;
-  color: #9ca3af;
-  font-size: 14px;
-}
-
-#accountStatus,
-#settingsStatus {
-  color: #9ca3af;
-  font-size: 14px;
-}
-
-#settingsCard,
-#friendCard,
-#partyCard {
-  display: none;
-}
-
-.friend {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #374151;
-  padding: 12px;
-  margin: 8px 0;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.friend:hover {
-  background: #4b5563;
-}
-
-.friendAvatar {
-  width: 40px;
-  height: 40px;
-  background: #4f46e5;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.friendInfo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.online {
-  color: #22c55e;
-  font-size: 12px;
-}
-
-.away {
-  color: #eab308;
-  font-size: 12px;
-}
-
-.offline {
-  color: #9ca3af;
-  font-size: 12px;
-}
-
-.request {
-  background: #374151;
-  padding: 12px;
-  margin: 8px 0;
-  border-radius: 10px;
-}
-
-.partyBox {
-  background: #374151;
-  padding: 15px;
-  border-radius: 12px;
-  margin-top: 10px;
-}
-
-.empty {
-  color: #9ca3af;
-  padding: 15px 0;
-  text-align: center;
-  font-size: 14px;
-}
-
-.mediaArea {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.videoBox {
-  background: #111827;
-  border-radius: 12px;
+input {
+  background: var(--bg-deep);
+  border: none;
   padding: 10px;
-  min-height: 200px;
-  border: 1px solid #374151;
-}
-
-video {
+  color: white;
+  border-radius: 3px;
   width: 100%;
-  max-height: 300px;
-  background: #000;
-  border-radius: 8px;
-  object-fit: contain;
 }
-
-.noVideo {
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  background: #030712;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.dmBox {
-  background: #111827;
-  border-radius: 12px;
-  padding: 15px;
-  margin-top: 15px;
-  border: 1px solid #374151;
-  display: flex;
-  flex-direction: column;
-  height: 450px;
-}
-
-.dmMessages {
-  flex: 1;
+.msg-area {
+  background: var(--bg-dark);
+  height: 300px;
   overflow-y: auto;
-  background: #030712;
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 5px;
 }
+.message { margin: 10px 0; padding: 5px; }
+.message.mine { color: var(--green); text-align: right; }
 
-.message {
-  background: #374151;
-  padding: 10px 14px;
-  border-radius: 14px;
-  margin: 6px 0;
-  max-width: 75%;
-  word-break: break-all;
-}
-
-.message.mine {
-  margin-left: auto;
-  background: #22c55e;
-  color: #111827;
-}
-
-.messageName {
-  font-size: 11px;
-  color: #9ca3af;
-  margin-bottom: 2px;
-}
-
-.message.mine .messageName {
-  color: #14532d;
-}
-
-/* タブ切り替え用 */
-.tab-pane {
-  display: none;
-}
-.tab-pane.active {
-  display: block;
-}
-
-@media (max-width: 900px) {
-  .app-container {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    height: 250px;
-  }
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
 }
 </style>
 </head>
-
 <body>
 
-<div class="app-container">
+<!-- ナビゲーション -->
+<div class="nav-bar">
+  <div class="nav-icon" onclick="switchTab('friendsTab')">🏠</div>
+  <div class="nav-icon" onclick="switchTab('chatTab')">💬</div>
+  <div class="nav-icon" onclick="switchTab('settingsTab')">⚙️</div>
+</div>
 
-  <!-- =========================
-       左サイドバー (LINE風リスト)
-  ========================= -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h1>💬 LINE Messenger</h1>
-      <span id="sidebarUserStatus" style="font-size: 13px; color: #9ca3af;">未ログイン</span>
+<!-- サイドバー -->
+<div class="sidebar">
+  <div class="sidebar-header">Voice Chat Alpha</div>
+  <div id="friendList" style="padding:10px;"></div>
+</div>
+
+<!-- メインコンテンツ -->
+<div class="main-chat">
+  <div id="contentArea">
+    <!-- コンテンツが切り替わる -->
+    <div id="friendsTab" class="page">
+      <h2>👥 フレンド一覧</h2>
+      <div id="friendListContainer"></div>
     </div>
-
-    <div class="sidebar-tabs">
-      <button class="sidebar-tab active" onclick="switchTab('friendsTab')">👥 友達</button>
-      <button class="sidebar-tab" onclick="switchTab('chatsTab')">💬 トーク</button>
-      <button class="sidebar-tab" onclick="switchTab('partyTab')">🎉 グループ</button>
-      <button class="sidebar-tab" onclick="switchTab('settingsTab')">⚙️ 設定</button>
-    </div>
-
-    <div class="sidebar-content">
-      
-      <!-- 友達タブ -->
-      <div id="friendsTab" class="tab-pane active">
-        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
-          <input id="friendSearch" placeholder="🔍 友達を検索" style="margin:0;">
-          <button class="indigo" onclick="searchFriend()" style="margin:0; padding: 0 12px;">検索</button>
-        </div>
-        <div id="searchResult"></div>
-
-        <h3>友達リスト</h3>
-        <div id="friendList">
-          <div class="empty">フレンドはいません。</div>
-        </div>
-
-        <h3>📨 友達申請</h3>
-        <div id="requestList">
-          <div class="empty">申請はありません。</div>
-        </div>
+    
+    <div id="chatTab" class="page" style="display:none;">
+      <h2 id="dmTitle">トーク</h2>
+      <div class="msg-area" id="dmMessages"></div>
+      <div style="margin-top:10px; display:flex; gap:10px;">
+        <input id="dmInput" placeholder="メッセージを送信...">
+        <button onclick="sendDM()">送信</button>
       </div>
-
-      <!-- トークタブ -->
-      <div id="chatsTab" class="tab-pane">
-        <div class="empty">友達リストから会話を選択してください</div>
-      </div>
-
-      <!-- グループ（パーティー）タブ -->
-      <div id="partyTab" class="tab-pane">
-        <div id="partySidebarArea">
-          <button class="indigo" onclick="createParty()" style="width:100%; margin-bottom: 10px;">＋ グループ作成</button>
-          <input id="partyCodeInput" maxlength="6" placeholder="招待コードを入力">
-          <button onclick="joinParty()" style="width:100%;">🚪 グループに参加</button>
-          <div id="partyArea" style="margin-top: 15px;">
-            <div class="empty">グループに参加していません。</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 設定タブ -->
-      <div id="settingsTab" class="tab-pane">
-        <div id="settingsInner" style="display:none;">
-          <h3>👤 ユーザー名変更</h3>
-          <input id="newUsername" maxlength="30" placeholder="新しい名前">
-          <button class="indigo" onclick="changeUsername()">変更</button>
-
-          <h3>🔑 パスワード変更</h3>
-          <input id="newPassword" type="password" placeholder="新しいパスワード">
-          <button class="indigo" onclick="changePassword()">変更</button>
-          <p id="settingsStatus"></p>
-          <br>
-          <button class="red" onclick="signOut()" style="width:100%;">ログアウト</button>
-          <button class="red" onclick="deleteAccount()" style="width:100%; margin-top:6px;">🗑️ アカウント削除</button>
-        </div>
-        <div id="settingsLoggedOut" class="empty">ログインしてください</div>
-      </div>
-
     </div>
   </div>
-
-  <!-- =========================
-       右メインコンテンツ (プロフィール・通話・DM)
-  ========================= -->
-  <div class="main-content">
-
-    <!-- ログイン・アカウントパネル（未ログイン時メイン表示） -->
-    <div class="card" id="authCard">
-      <h2>👤 ログイン / アカウント作成</h2>
-      <input id="usernameInput" maxlength="30" placeholder="ユーザー名">
-      <input id="password" type="password" placeholder="パスワード">
-      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-        <button onclick="signUp()">アカウント作成</button>
-        <button class="indigo" onclick="signIn()">ログイン</button>
-        <button class="gray" onclick="createGuest()">👻 ゲスト利用</button>
-      </div>
-      <p id="accountStatus">ログインしていません</p>
-    </div>
-
-    <!-- 自分・メディアコントロールパネル -->
-    <div class="card">
-      <h2>マイプロフィール & ボイス通話</h2>
-      <div class="user">
-        <div class="avatar">👤</div>
-        <div>
-          <strong id="username">未ログイン</strong>
-          <div id="onlineStatus">⚪ オフライン</div>
-        </div>
-      </div>
-
-      <div style="margin-top: 15px; display: flex; gap: 6px; flex-wrap: wrap;">
-        <button id="awayButton" class="yellow" onclick="toggleAway()" style="display:none">🟡 離席</button>
-        <button id="micButton" class="indigo" onclick="toggleMic()" style="display:none">🎤 マイクON</button>
-        <button id="cameraButton" class="indigo" onclick="toggleCamera()" style="display:none">📷 カメラON</button>
-        <button id="screenButton" class="gray" onclick="toggleScreenShare()" style="display:none">🖥️ 画面共有</button>
-      </div>
-      <div id="status">ログインするとマイクやビデオが利用できます。</div>
-
-      <div class="mediaArea">
-        <div class="videoBox">
-          <h3 style="margin:5px 0 10px;">📷 カメラ</h3>
-          <video id="cameraVideo" autoplay muted playsinline></video>
-          <div id="cameraEmpty" class="noVideo">カメラOFF</div>
-        </div>
-        <div class="videoBox">
-          <h3 style="margin:5px 0 10px;">🖥️ 画面共有</h3>
-          <video id="screenVideo" autoplay muted playsinline></video>
-          <div id="screenEmpty" class="noVideo">画面共有OFF</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DM（トーク画面） -->
-    <div id="dmArea" class="dmBox" style="display:none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <h3 id="dmTitle" style="margin:0;">💬 トーク</h3>
-        <button class="gray" onclick="closeDM()" style="padding: 4px 10px; font-size:12px; margin:0;">閉じる</button>
-      </div>
-      <div id="dmMessages" class="dmMessages"></div>
-      <div style="display: flex; gap: 6px;">
-        <input id="dmInput" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter')sendDM()" style="margin:0;">
-        <button onclick="sendDM()" style="margin:0;">送信</button>
-      </div>
-    </div>
-
-  </div>
-
 </div>
 
 <script>
-/* ==========================================
-   データ管理 & 初期設定
-========================================== */
-const DB_KEY = "line_voice_chat_db_v1";
-const SESSION_KEY = "line_voice_chat_session_v1";
+// --- シンプルなDiscord風機能実装 ---
+let db = JSON.parse(localStorage.getItem("discord_db") || '{"users":[],"messages":[]}');
 
-let db = JSON.parse(localStorage.getItem(DB_KEY) || '{"users":[],"friendRequests":[],"friendships":[],"messages":[],"parties":[]}');
-
-let currentUser = null;
-let guestMode = false;
-let currentDMUser = null;
-
-let microphone = null;
-let micEnabled = false;
-let cameraStream = null;
-let cameraEnabled = false;
-let screenStream = null;
-let screenEnabled = false;
-let away = false;
-
-function saveDB() {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
-}
-
-function randomID(prefix="id") {
-  return prefix + "_" + Date.now() + "_" + Math.random().toString(36).substring(2,8);
-}
-
-/* タブ切り替え */
-function switchTab(tabId) {
-  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  
-  document.getElementById(tabId).classList.add('active');
-  event.currentTarget.classList.add('active');
-}
-
-/* UI状態切替 */
-function setLoggedInUI(name) {
-  document.getElementById("username").textContent = name;
-  document.getElementById("sidebarUserStatus").textContent = "✅ " + name;
-  document.getElementById("accountStatus").textContent = guestMode ? "👻 ゲスト: " + name : "✅ ログイン中";
-  
-  // メディアボタン表示
-  document.getElementById("awayButton").style.display = "inline-block";
-  document.getElementById("micButton").style.display = "inline-block";
-  document.getElementById("cameraButton").style.display = "inline-block";
-  document.getElementById("screenButton").style.display = "inline-block";
-
-  document.getElementById("settingsInner").style.display = "block";
-  document.getElementById("settingsLoggedOut").style.display = "none";
-  
-  setStatus("online");
-}
-
-function setLoggedOutUI() {
-  document.getElementById("username").textContent = "未ログイン";
-  document.getElementById("sidebarUserStatus").textContent = "未ログイン";
-  document.getElementById("onlineStatus").textContent = "⚪ オフライン";
-  document.getElementById("accountStatus").textContent = "ログインしていません";
-  
-  document.getElementById("awayButton").style.display = "none";
-  document.getElementById("micButton").style.display = "none";
-  document.getElementById("cameraButton").style.display = "none";
-  document.getElementById("screenButton").style.display = "none";
-
-  document.getElementById("settingsInner").style.display = "none";
-  document.getElementById("settingsLoggedOut").style.display = "block";
-}
-
-/* 認証関連 */
-function signUp() {
-  const username = document.getElementById("usernameInput").value.trim();
-  const password = document.getElementById("password").value;
-  if (!username || !password) return alert("ユーザー名とパスワードを入力してください。");
-  if (db.users.some(u => u.username.toLowerCase() === username.toLowerCase())) return alert("すでに使われているユーザー名です。");
-  
-  db.users.push({ id: randomID("user"), username, password, status: "offline" });
-  saveDB();
-  alert("登録完了しました！ログインしてください。");
-  document.getElementById("usernameInput").value = "";
-  document.getElementById("password").value = "";
-}
-
-function signIn() {
-  const username = document.getElementById("usernameInput").value.trim();
-  const password = document.getElementById("password").value;
-  const user = db.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-  if (!user) return alert("ユーザー名またはパスワードが違います。");
-
-  currentUser = user;
-  guestMode = false;
-  away = false;
-  localStorage.setItem(SESSION_KEY, user.id);
-  user.status = "online";
-  saveDB();
-
-  setLoggedInUI(user.username);
-  loadFriends();
-  loadFriendRequests();
-  renderParty();
-}
-
-function createGuest() {
-  const guestName = "Guest_" + Math.floor(100000 + Math.random() * 900000);
-  currentUser = { id: randomID("guest"), username: guestName, password: "", status: "online", guest: true };
-  guestMode = true;
-  away = false;
-
-  setLoggedInUI(guestName);
-  loadFriends();
-  loadFriendRequests();
-  renderParty();
-}
-
-function signOut() {
-  stopMicrophone(); stopCamera(); stopScreenShare();
-  if (!guestMode && currentUser) {
-    const user = db.users.find(u => u.id === currentUser.id);
-    if (user) { user.status = "offline"; saveDB(); }
-  }
-  currentUser = null; guestMode = false; away = false; currentDMUser = null;
-  localStorage.removeItem(SESSION_KEY);
-  document.getElementById("dmArea").style.display = "none";
-  setLoggedOutUI();
-}
-
-function deleteAccount() {
-  if (!currentUser || !confirm("本当にアカウントを削除しますか？")) return;
-  if (guestMode) { signOut(); return; }
-  const id = currentUser.id;
-  db.users = db.users.filter(u => u.id !== id);
-  db.friendRequests = db.friendRequests.filter(r => r.senderId !== id && r.receiverId !== id);
-  db.friendships = db.friendships.filter(f => f.userId !== id && f.friendId !== id);
-  db.messages = db.messages.filter(m => m.senderId !== id && m.receiverId !== id);
-  db.parties = db.parties.filter(p => p.ownerId !== id);
-  saveDB();
-  signOut();
-}
-
-function changeUsername() {
-  if (!currentUser || guestMode) return alert("ゲスト不可");
-  const name = document.getElementById("newUsername").value.trim();
-  if (!name) return;
-  currentUser.username = name;
-  db.users.find(u => u.id === currentUser.id).username = name;
-  saveDB();
-  document.getElementById("username").textContent = name;
-  document.getElementById("sidebarUserStatus").textContent = "✅ " + name;
-  document.getElementById("settingsStatus").textContent = "✅ 変更しました";
-  loadFriends();
-}
-
-function changePassword() {
-  if (!currentUser || guestMode) return;
-  const pw = document.getElementById("newPassword").value;
-  if (pw.length < 6) return alert("6文字以上にしてください");
-  db.users.find(u => u.id === currentUser.id).password = pw;
-  saveDB();
-  document.getElementById("settingsStatus").textContent = "✅ パスワードを変更しました";
-}
-
-function toggleAway() {
-  if (!currentUser) return;
-  away = !away;
-  setStatus(away ? "away" : "online");
-}
-
-function setStatus(status) {
-  if (!currentUser) return;
-  away = (status === "away");
-  document.getElementById("onlineStatus").textContent = status === "online" ? "🟢 オンライン" : "🟡 離席";
-  document.getElementById("awayButton").textContent = away ? "🟢 オンライン復帰" : "🟡 離席";
-  if (!guestMode) {
-    const u = db.users.find(x => x.id === currentUser.id);
-    if (u) { u.status = status; saveDB(); }
-  }
-  loadFriends();
-}
-
-/* メディア操作 */
-async function toggleMic() {
-  if (!micEnabled) {
-    try {
-      microphone = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micEnabled = true;
-      document.getElementById("micButton").textContent = "🔇 マイクOFF";
-    } catch(e) { alert("マイク使用拒否"); }
-  } else {
-    stopMicrophone();
-  }
-}
-function stopMicrophone() {
-  if (microphone) microphone.getTracks().forEach(t => t.stop());
-  microphone = null; micEnabled = false;
-  const b = document.getElementById("micButton");
-  if(b) b.textContent = "🎤 マイクON";
-}
-
-async function toggleCamera() {
-  if (!cameraEnabled) {
-    try {
-      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      cameraEnabled = true;
-      document.getElementById("cameraVideo").srcObject = cameraStream;
-      document.getElementById("cameraEmpty").style.display = "none";
-      document.getElementById("cameraButton").textContent = "📷 カメラOFF";
-    } catch(e) { alert("カメラ使用拒否"); }
-  } else { stopCamera(); }
-}
-function stopCamera() {
-  if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-  cameraStream = null; cameraEnabled = false;
-  document.getElementById("cameraVideo").srcObject = null;
-  document.getElementById("cameraEmpty").style.display = "flex";
-  document.getElementById("cameraButton").textContent = "📷 カメラON";
-}
-
-async function toggleScreenShare() {
-  if (!screenEnabled) {
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      screenEnabled = true;
-      document.getElementById("screenVideo").srcObject = screenStream;
-      document.getElementById("screenEmpty").style.display = "none";
-      document.getElementById("screenButton").textContent = "🛑 画面共有停止";
-      screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
-    } catch(e) {}
-  } else { stopScreenShare(); }
-}
-function stopScreenShare() {
-  if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-  screenStream = null; screenEnabled = false;
-  document.getElementById("screenVideo").srcObject = null;
-  document.getElementById("screenEmpty").style.display = "flex";
-  document.getElementById("screenButton").textContent = "🖥️ 画面共有";
-}
-
-/* フレンド・DM機能 */
-function searchFriend() {
-  const text = document.getElementById("friendSearch").value.trim().toLowerCase();
-  const res = document.getElementById("searchResult");
-  res.innerHTML = "";
-  if (!text) return;
-  const users = db.users.filter(u => u.username.toLowerCase().includes(text) && u.id !== currentUser.id);
-  if (!users.length) { res.innerHTML = '<div class="empty">見つかりません</div>'; return; }
-  
-  users.forEach(u => {
-    res.innerHTML += `<div class="friend"><span>${escapeHTML(u.username)}</span><button class="indigo" onclick="sendFriendRequest('${u.id}')" style="margin-left:auto; padding:4px 8px;">追加</button></div>`;
-  });
-}
-
-function sendFriendRequest(userId) {
-  if (db.friendships.some(f => f.userId === currentUser.id && f.friendId === userId)) return alert("すでに友達です");
-  db.friendRequests.push({ id: randomID("req"), senderId: currentUser.id, receiverId: userId, status: "pending" });
-  saveDB();
-  alert("申請を送りました！");
-}
-
-function loadFriends() {
-  if (!currentUser) return;
-  const list = document.getElementById("friendList");
-  list.innerHTML = "";
-  const friends = db.friendships.filter(f => f.userId === currentUser.id);
-  if (!friends.length) { list.innerHTML = '<div class="empty">友達はいません</div>'; return; }
-
-  friends.forEach(rel => {
-    const f = db.users.find(u => u.id === rel.friendId);
-    if (!f) return;
-    const st = f.status || "offline";
-    list.innerHTML += `
-      <div class="friend" onclick="openDM('${f.id}')">
-        <div class="friendAvatar">👤</div>
-        <div class="friendInfo">
-          <strong>${escapeHTML(f.username)}</strong>
-          <span class="${st}">● ${st === "online" ? "オンライン" : st === "away" ? "離席" : "オフライン"}</span>
-        </div>
-      </div>`;
-  });
-}
-
-function loadFriendRequests() {
-  if (!currentUser) return;
-  const list = document.getElementById("requestList");
-  list.innerHTML = "";
-  const reqs = db.friendRequests.filter(r => r.receiverId === currentUser.id && r.status === "pending");
-  if (!reqs.length) { list.innerHTML = '<div class="empty">申請はありません</div>'; return; }
-
-  reqs.forEach(r => {
-    const sender = db.users.find(u => u.id === r.senderId);
-    if (!sender) return;
-    list.innerHTML += `<div class="request"><strong>${escapeHTML(sender.username)}</strong>から申請<br><button onclick="acceptFriend('${r.id}')" style="padding:4px 8px;">承認</button></div>`;
-  });
-}
-
-function acceptFriend(reqId) {
-  const req = db.friendRequests.find(r => r.id === reqId);
-  if (!req) return;
-  req.status = "accepted";
-  db.friendships.push({ userId: req.receiverId, friendId: req.senderId });
-  db.friendships.push({ userId: req.senderId, friendId: req.receiverId });
-  saveDB();
-  loadFriends(); loadFriendRequests();
-}
-
-function openDM(friendId) {
-  currentDMUser = db.users.find(u => u.id === friendId);
-  if (!currentDMUser) return;
-  document.getElementById("dmArea").style.display = "flex";
-  document.getElementById("dmTitle").textContent = "💬 " + currentDMUser.username + " とのトーク";
-  loadDM();
-}
-
-function loadDM() {
-  if (!currentDMUser) return;
-  const box = document.getElementById("dmMessages");
-  const msgs = db.messages.filter(m => (m.senderId === currentUser.id && m.receiverId === currentDMUser.id) || (m.senderId === currentDMUser.id && m.receiverId === currentUser.id));
-  box.innerHTML = "";
-  msgs.forEach(m => {
-    const mine = m.senderId === currentUser.id;
-    box.innerHTML += `<div class="message ${mine ? 'mine' : ''}"><div class="messageName">${mine ? '自分' : currentDMUser.username}</div><div>${escapeHTML(m.text)}</div></div>`;
-  });
-  box.scrollTop = box.scrollHeight;
+function switchTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
 }
 
 function sendDM() {
-  if (!currentDMUser) return;
   const input = document.getElementById("dmInput");
-  const text = input.value.trim();
-  if (!text) return;
-  db.messages.push({ id: randomID("msg"), senderId: currentUser.id, receiverId: currentDMUser.id, text, createdAt: Date.now() });
-  saveDB();
+  const msg = document.createElement("div");
+  msg.className = "message mine";
+  msg.textContent = "自分: " + input.value;
+  document.getElementById("dmMessages").appendChild(msg);
   input.value = "";
-  loadDM();
 }
 
-function closeDM() {
-  currentDMUser = null;
-  document.getElementById("dmArea").style.display = "none";
-}
-
-/* グループ (パーティー) 機能 */
-function createParty() {
-  if (!currentUser) return;
-  const code = Math.random().toString(36).substring(2,8).toUpperCase();
-  db.parties.push({ id: randomID("party"), ownerId: currentUser.id, code, members: [currentUser.id] });
-  saveDB();
-  renderParty();
-  alert("グループコード: " + code);
-}
-
-function joinParty() {
-  const code = document.getElementById("partyCodeInput").value.trim().toUpperCase();
-  const p = db.parties.find(x => x.code === code);
-  if (!p) return alert("グループが見つかりません");
-  if (!p.members.includes(currentUser.id)) p.members.push(currentUser.id);
-  saveDB();
-  renderParty();
-}
-
-function renderParty() {
-  if (!currentUser) return;
-  const area = document.getElementById("partyArea");
-  const p = db.parties.find(x => x.members.includes(currentUser.id));
-  if (!p) { area.innerHTML = '<div class="empty">グループ未加入</div>'; return; }
-  const members = p.members.map(id => db.users.find(u => u.id === id)).filter(Boolean);
-  
-  area.innerHTML = `
-    <div class="partyBox">
-      <strong>コード: ${p.code}</strong>
-      <p>メンバー (${members.length}人):</p>
-      ${members.map(m => `<div>👤 ${escapeHTML(m.username)}</div>`).join("")}
-      <button class="red" onclick="leaveParty('${p.id}')" style="width:100%; margin-top:10px;">退出</button>
-    </div>`;
-}
-
-function leaveParty(pId) {
-  const p = db.parties.find(x => x.id === pId);
-  if (!p) return;
-  p.members = p.members.filter(id => id !== currentUser.id);
-  saveDB();
-  renderParty();
-}
-
-function escapeHTML(str) {
-  return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-}
-
-function checkSession() {
-  const id = localStorage.getItem(SESSION_KEY);
-  if (!id) return setLoggedOutUI();
-  const user = db.users.find(u => u.id === id);
-  if (!user) { localStorage.removeItem(SESSION_KEY); return setLoggedOutUI(); }
-  currentUser = user;
-  setLoggedInUI(user.username);
-  loadFriends(); loadFriendRequests(); renderParty();
-}
-
-checkSession();
+// 初期化
+console.log("Discord Style Initialized");
 </script>
-
 </body>
 </html>
