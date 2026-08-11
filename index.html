@@ -360,7 +360,7 @@ input[type="text"]:focus {
       <div class="join-box">
         <input type="text" id="usernameInput" placeholder="表示名" value="ユーザー">
         <input type="text" id="roomIdInput" placeholder="ルームIDを入力">
-        <button class="btn" onclick="joinOrCreateRoom()">🚪 ルームに参加 / 作成</button>
+        <button id="joinBtn" class="btn" onclick="joinOrCreateRoom()">🚪 ルームに参加 / 作成</button>
       </div>
     </div>
 
@@ -402,8 +402,6 @@ let isMicOn = true;
 let isCamOn = false;
 let isScreenSharing = false;
 
-// 接続中Peer管理マップ
-// key: peerId -> value: { dataConn, call, name, stream }
 const peers = {};
 
 /* DOM要素 */
@@ -427,7 +425,7 @@ async function initLocalStream() {
       video: false
     });
   } catch (err) {
-    console.warn("マイクアクセス不可:", err);
+    addSystemMessage("⚠️ マイクへのアクセスが拒否されたか、利用できません。");
     localStream = new MediaStream();
     isMicOn = false;
     updateControlsUI();
@@ -435,7 +433,7 @@ async function initLocalStream() {
 }
 
 /* ==========================================
-   ルーム参加・接続調停ロジック
+   ルーム参加・接続調停（タイムアウト＋フォールバック付き）
 ========================================== */
 function joinOrCreateRoom() {
   myName = document.getElementById('usernameInput').value.trim() || 'ユーザー';
@@ -452,45 +450,75 @@ function joinOrCreateRoom() {
     myPeer.destroy();
   }
 
-  // 1. まず自身が固定ホストIDでPeerを作成できるか判定
-  myPeer = new Peer(hostPeerId);
+  addSystemMessage(`接続を開始しています... [${currentRoomId}]`);
+
+  let isHandled = false;
+
+  // ホストIDとして登録を試みる
+  myPeer = new Peer(hostPeerId, {
+    debug: 2
+  });
+
+  // サーバーからの応答遅延対策：2.5秒以内にホストとして確立しなければゲストモードへ移行
+  const timeoutTimer = setTimeout(() => {
+    if (!isHandled) {
+      isHandled = true;
+      addSystemMessage("既存の部屋を検出しました。ゲストとして参加を試みます...");
+      initAsGuest(hostPeerId);
+    }
+  }, 2500);
 
   myPeer.on('open', (id) => {
-    // 自分がこの部屋の最初のホストになれた場合
+    if (isHandled) return;
+    isHandled = true;
+    clearTimeout(timeoutTimer);
+    
     myPeerId = id;
     onJoinedRoom(true);
   });
 
   myPeer.on('error', (err) => {
-    // ホストIDが既に使用済み（=既に部屋が存在する）場合
+    if (isHandled) return;
+    
+    // ホストIDの衝突エラー
     if (err.type === 'unavailable-id') {
-      // ランダムIDを発行して自分をゲストとして作成
-      myPeer = new Peer();
-      
-      myPeer.on('open', (id) => {
-        myPeerId = id;
-        onJoinedRoom(false);
-        // 既存ホストに接続リクエストを送信
-        connectToTarget(hostPeerId);
-      });
-
-      setupPeerEvents(myPeer);
+      isHandled = true;
+      clearTimeout(timeoutTimer);
+      initAsGuest(hostPeerId);
     } else {
-      console.error("PeerJS Error:", err);
+      addSystemMessage(`❌ 接続エラー: ${err.type || err.message}`);
     }
   });
 
   setupPeerEvents(myPeer);
 }
 
+function initAsGuest(hostPeerId) {
+  if (myPeer && !myPeer.destroyed) {
+    myPeer.destroy();
+  }
+
+  myPeer = new Peer({ debug: 2 });
+
+  myPeer.on('open', (id) => {
+    myPeerId = id;
+    onJoinedRoom(false);
+    connectToTarget(hostPeerId);
+  });
+
+  myPeer.on('error', (err) => {
+    addSystemMessage(`❌ ゲスト接続エラー: ${err.type || err.message}`);
+  });
+
+  setupPeerEvents(myPeer);
+}
+
 function setupPeerEvents(peer) {
-  // メディア着信
   peer.on('call', (call) => {
     call.answer(getActiveVideoStream());
     setupCallEvents(call);
   });
 
-  // データ通信着信
   peer.on('connection', (conn) => {
     setupDataConnection(conn);
   });
@@ -498,19 +526,16 @@ function setupPeerEvents(peer) {
 
 function onJoinedRoom(isHost) {
   document.getElementById('currentRoomDisplay').textContent = currentRoomId;
-  addSystemMessage(`ルーム [${currentRoomId}] に参加しました。`);
+  addSystemMessage(`✅ ルーム [${currentRoomId}] に参加しました (${isHost ? 'ホスト' : 'ゲスト'})`);
   renderUserTile(myPeerId, myName, getActiveVideoStream(), true);
 }
 
-/* 指定相手との相互接続を開始（Data ＋ Call 双方を同時に確立） */
 function connectToTarget(targetPeerId) {
   if (peers[targetPeerId] || targetPeerId === myPeerId) return;
 
-  // データ接続の開始
   const conn = myPeer.connect(targetPeerId, { metadata: { name: myName } });
   setupDataConnection(conn);
 
-  // 通話接続の開始
   const call = myPeer.call(targetPeerId, getActiveVideoStream(), { metadata: { name: myName } });
   setupCallEvents(call);
 }
@@ -522,7 +547,6 @@ function setupDataConnection(conn) {
     if (!peers[targetPeerId]) peers[targetPeerId] = {};
     peers[targetPeerId].dataConn = conn;
 
-    // ハンドシェイク（名前とPeerID通知）
     conn.send({ type: 'HANDSHAKE', name: myName, peerId: myPeerId });
 
     if (isScreenSharing) {
@@ -537,7 +561,7 @@ function setupDataConnection(conn) {
         peers[data.peerId].dataConn = conn;
         peers[data.peerId].name = data.name;
 
-        // ホストの場合、新参加者に部屋の「既存参加者一覧」を同期送信する
+        // ホストの場合、他のメンバー一覧を同期する
         if (myPeerId === `room-host-${currentRoomId}`) {
           const currentMembers = Object.keys(peers).concat(myPeerId);
           broadcastData({ type: 'MEMBER_SYNC', members: currentMembers });
@@ -545,7 +569,6 @@ function setupDataConnection(conn) {
         break;
 
       case 'MEMBER_SYNC':
-        // ホストから届いた参加者一覧に基づき、まだ未接続の参加者全員へ個別にメッシュ接続を張る
         data.members.forEach(memberId => {
           if (memberId !== myPeerId && !peers[memberId]) {
             connectToTarget(memberId);
@@ -583,7 +606,6 @@ function setupCallEvents(call) {
   call.on('stream', (remoteStream) => {
     peers[remotePeerId].stream = remoteStream;
 
-    // 音声タグ生成・再生
     let audioEl = document.getElementById(`audio-${remotePeerId}`);
     if (!audioEl) {
       audioEl = document.createElement('audio');
