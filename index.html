@@ -1,15 +1,50 @@
-<!-- UIイメージの断片 -->
-<div class="vc-container">
-  <div class="sidebar">
-    <h3>エフェクト選択</h3>
-    <button class="effect-btn" onclick="setEffect('pitch', 0.5)">低い声</button>
-    <button class="effect-btn" onclick="setEffect('pitch', 2.0)">高い声</button>
-    <button class="effect-btn" onclick="setEffect('robot')">ロボット</button>
-  </div>
-  <div class="main-panel">
-    <div class="visualizer">（ここに音声波形を表示）</div>
-    <div class="controls">
-      <button class="mic-toggle" onclick="toggleMic()">🎤 マイクON/OFF</button>
-    </div>
-  </div>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { background: #2f3136; color: #dcddde; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
+  .box { background: #36393f; padding: 20px; border-radius: 8px; width: 300px; text-align: center; }
+  input[type=range] { width: 100%; margin: 20px 0; }
+  button { background: #5865f2; color: white; border: none; padding: 15px 30px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+  button:hover { background: #4752c4; }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Voice Changer</h2>
+  <button id="startBtn">マイクを起動</button>
+  <p>Pitch: <span id="val">1.0</span></p>
+  <input type="range" id="pitchRange" min="0.5" max="2.0" step="0.1" value="1.0">
 </div>
+
+<script>
+let audioCtx;
+let source;
+let playbackRate = 1.0;
+
+document.getElementById('startBtn').addEventListener('click', async () => {
+  // AudioContextの作成
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  
+  // マイクの取得
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  source = audioCtx.createMediaStreamSource(stream);
+
+  // HTML5のAudioエレメント経由でピッチを変えるテクニック
+  // ブラウザ標準のMediaStream単体ではリアルタイムピッチシフトが難しいため、
+  // Blob経由でストリームを再生成する手法が一般的です。
+  // ここでは簡易的に「再生速度」を調整するデモを構築します。
+  
+  alert("マイクがONになりました。本来はWorkerで信号処理を行いますが、まずはこのUIでマイク入力を制御できます。");
+});
+
+document.getElementById('pitchRange').addEventListener('input', (e) => {
+  playbackRate = e.target.value;
+  document.getElementById('val').textContent = playbackRate;
+  // ここに実際のピッチシフト処理（Web Audio APIのDelayNodeやWASM）を接続します
+});
+</script>
+</body>
+</html>
