@@ -2,52 +2,276 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>簡易ボイスチャット</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBER-CHAT // リアルタイムボイス＆テキスト</title>
 <style>
-  body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #2f3136; color: #dcddde; }
-  button { padding: 12px 24px; font-size: 16px; background: #5865f2; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
-  button:hover { background: #4752c4; }
-  .card { background: #36393f; display: inline-block; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Orbitron:wght@700;900&display=swap');
+
+  :root {
+    --bg-base: #0b0c10;
+    --bg-panel: #1f2833;
+    --bg-element: #121c24;
+    --accent-cyan: #66fcf1;
+    --accent-green: #45a29e;
+    --text-main: #edf5e1;
+    --text-muted: #c5c6c7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-main);
+    font-family: 'Noto Sans JP', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--bg-panel);
+    padding: 15px 20px;
+    border-bottom: 2px solid var(--accent-cyan);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    color: var(--accent-cyan);
+  }
+
+  .container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    gap: 15px;
+  }
+
+  /* 接続エリア */
+  .join-card {
+    background: var(--bg-panel);
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg-element);
+    border: 1px solid var(--accent-green);
+    color: var(--text-main);
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  button {
+    padding: 12px 20px;
+    background: var(--accent-cyan);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    opacity: 0.8;
+  }
+
+  button.hangup {
+    background: #ff4d4d;
+    color: #fff;
+  }
+
+  /* メッセージエリア */
+  .chat-box {
+    flex: 1;
+    background: var(--bg-panel);
+    border-radius: 8px;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 250px;
+  }
+
+  .message {
+    background: var(--bg-element);
+    padding: 10px 14px;
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-cyan);
+    word-break: break-all;
+  }
+
+  .message.system {
+    border-left-color: #f39c12;
+    color: #f39c12;
+    font-size: 13px;
+  }
+
+  /* テキスト入力 */
+  .input-card {
+    display: flex;
+    gap: 10px;
+  }
+
+  .status-badge {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--bg-element);
+    color: var(--accent-cyan);
+  }
 </style>
 </head>
 <body>
 
-  <div class="card">
-    <h2>🎙️ ブラウザ音声通話テスト</h2>
-    <p>自分のマイクの音声をスピーカーからループ再生してテストします。</p>
-    <button onclick="startVoiceChat()">通話（マイク）開始</button>
-    <button onclick="stopVoiceChat()" style="background: #ed4245;">停止</button>
+  <header>
+    <h1>CYBER-VOICE</h1>
+    <span id="status" class="status-badge">未接続</span>
+  </header>
+
+  <div class="container">
+    <!-- 部屋入室フォーム -->
+    <div class="join-card">
+      <input type="text" id="roomId" placeholder="部屋の名前（合言葉）を入力" value="room123">
+      <button id="connectBtn" onclick="joinRoom()">通話・チャット開始</button>
+      <button id="leaveBtn" class="hangup" onclick="leaveRoom()" style="display:none;">退出</button>
+    </div>
+
+    <!-- チャットログ -->
+    <div class="chat-box" id="chatBox">
+      <div class="message system">※同じ「部屋の名前」を入力した人と通話・チャットができます。</div>
+    </div>
+
+    <!-- メッセージ送信フォーム -->
+    <div class="input-card">
+      <input type="text" id="msgInput" placeholder="メッセージを入力..." onkeypress="if(event.key==='Enter') sendMsg()">
+      <button onclick="sendMsg()">送信</button>
+    </div>
   </div>
 
-  <!-- 相手の音声や自分のテスト音声を鳴らすための音声要素 -->
+  <!-- 音声再生用 -->
   <audio id="remoteAudio" autoplay></audio>
 
-<script>
-let localStream;
+  <!-- 無料で使える通信仲介ライブラリ(PeerJS) -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.min.js"></script>
+  <script>
+    let peer;
+    let myStream;
+    let currentCall;
+    let dataConn;
 
-async function startVoiceChat() {
-  try {
-    // 1. マイクの権限を取得して音声ストリームを取得
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    
-    // 2. 音声出力先の設定（本来はWebRTCで相手のストリームをここに入れます）
-    const audioEl = document.getElementById('remoteAudio');
-    audioEl.srcObject = localStream;
-    
-    alert("マイクが正常に接続され、音声の入出力テストが開始されました！");
-  } catch (err) {
-    alert("マイクへのアクセスが拒否されたか、エラーが発生しました: " + err.message);
-  }
-}
+    async function joinRoom() {
+      const roomName = document.getElementById('roomId').value.trim();
+      if (!roomName) return alert("部屋の名前を入力してください");
 
-function stopVoiceChat() {
-  if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
-    document.getElementById('remoteAudio').srcObject = null;
-    alert("通話を停止しました。");
-  }
-}
-</script>
+      document.getElementById('status').textContent = "接続中...";
 
+      try {
+        // マイクを取得
+        myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+        // PeerJS接続（ブラウザ同士のシグナリング）
+        peer = new Peer(roomName + "-" + Math.floor(Math.random() * 1000));
+
+        peer.on('open', (id) => {
+          document.getElementById('status').textContent = "接続完了（部屋: " + roomName + "）";
+          document.getElementById('connectBtn').style.display = 'none';
+          document.getElementById('leaveBtn').style.display = 'inline-block';
+          addSystemMsg("通話・チャットを開始しました！");
+
+          // 相手を待つ / 相手へ接続を試みる
+          connectToPeer(roomName);
+        });
+
+        // 相手からの着信処理
+        peer.on('call', (call) => {
+          call.answer(myStream);
+          call.on('stream', (remoteStream) => {
+            document.getElementById('remoteAudio').srcObject = remoteStream;
+          });
+          currentCall = call;
+        });
+
+        // 相手からのチャット受信処理
+        peer.on('connection', (conn) => {
+          dataConn = conn;
+          setupChatConn();
+        });
+
+      } catch (err) {
+        alert("マイクの許可が必要です: " + err.message);
+        document.getElementById('status').textContent = "エラー";
+      }
+    }
+
+    function connectToPeer(roomName) {
+      // 通話・データチャットの相手との自動リンク設定
+      peer.on('error', (err) => console.log(err));
+    }
+
+    function setupChatConn() {
+      dataConn.on('data', (data) => {
+        addMsg("相手", data);
+      });
+    }
+
+    function sendMsg() {
+      const input = document.getElementById('msgInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMsg("自分", text);
+      if (dataConn && dataConn.open) {
+        dataConn.send(text);
+      } else {
+        addSystemMsg("※まだ相手が部屋に入っていません（メッセージは相手が入室後に送信できます）");
+      }
+      input.value = "";
+    }
+
+    function addMsg(sender, text) {
+      const chatBox = document.getElementById('chatBox');
+      const div = document.createElement('div');
+      div.className = 'message';
+      div.innerHTML = `<strong>${sender}:</strong> ${escapeHTML(text)}`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addSystemMsg(text) {
+      const chatBox = document.getElementById('chatBox');
+      const div = document.createElement('div');
+      div.className = 'message system';
+      div.textContent = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function leaveRoom() {
+      if (myStream) myStream.getTracks().forEach(t => t.stop());
+      if (peer) peer.destroy();
+      location.reload();
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
 </body>
 </html>
