@@ -45,7 +45,7 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 .spotlight-area video { width: 100%; max-height: 480px; object-fit: contain; display: block; }
 .spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; color: #818cf8; z-index: 10; }
 
-/* メンバー表示グリッド (最大5〜6人に対応する可変レイアウト) */
+/* メンバー表示グリッド */
 .video-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .user-tile { background: var(--bg-card); border-radius: 16px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
 .user-tile video { width: 100%; height: 100%; object-fit: cover; }
@@ -92,15 +92,12 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 
 <div class="app-container">
   <div class="stage-container">
-    <!-- スポットライト（画面共有用） -->
     <div id="spotlightArea" class="spotlight-area">
       <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
       <video id="spotlightVideo" autoplay playsinline></video>
     </div>
 
-    <!-- 参加者一覧グリッド -->
     <div id="videoGrid" class="video-grid">
-      <!-- 自分のタイル -->
       <div class="user-tile" id="tile-self">
         <div id="avatarSelf" class="avatar">自</div>
         <video id="videoSelf" autoplay playsinline muted style="display:none;"></video>
@@ -134,7 +131,6 @@ let myPeerId = '';
 let roomName = '';
 let myName = 'ユーザー';
 
-// 接続中の全ピア管理マップ { peerId: { dataConn, mediaCall, name, isCamOn, isSharing, stream } }
 const peers = {};
 
 let localStream = null;
@@ -169,7 +165,6 @@ async function joinRoom() {
     updateControlsUI();
   }
 
-  // ルーム用PrefixベースでピアIDを発行
   myPeerId = `room-${roomName}-${Math.floor(Math.random() * 1000000)}`;
   peer = new Peer(myPeerId);
 
@@ -186,35 +181,27 @@ async function joinRoom() {
   });
 }
 
-// 他の参加者からの接続要求を受信
 function setupIncomingHandlers() {
-  // チャット・制御用データチャネルの受信用
   peer.on('connection', (conn) => {
     setupDataConnection(conn);
   });
 
-  // 音声・映像通話の受信用
   peer.on('call', (call) => {
     call.answer(getActiveStream());
     setupMediaCall(call);
   });
 }
 
-// すでに部屋内にいるホスト・メンバーの発見（簡易シグナリング）
 function discoverAndConnectPeers() {
-  // ホストの固定IDおよび複数候補へ接続試行
   const hostId = `room-${roomName}-host`;
   
   if (myPeerId !== hostId) {
-    // 自身がホスト名でない場合、固定ホストの取得を試みる
     const tempHostPeer = new Peer(hostId);
     tempHostPeer.on('open', () => {
-      // 自分がホストになれた場合（最初の1人目）
       tempHostPeer.destroy();
       reconnectAsHost(hostId);
     });
     tempHostPeer.on('error', () => {
-      // 既にホストが存在するため、ゲストとしてホストへ接続を開始
       connectToPeer(hostId);
     });
   }
@@ -245,7 +232,6 @@ function setupDataConnection(conn) {
   peers[peerId].dataConn = conn;
 
   conn.on('open', () => {
-    // 初期ハンドシェイク（自分の情報を送信し、他メンバーの一覧を要求）
     conn.send({
       type: 'HANDSHAKE',
       name: myName,
@@ -287,7 +273,6 @@ function handleSignalData(peerId, data) {
     createPeerTile(peerId, data.name);
     updatePeerTile(peerId);
 
-    // 未接続の別メンバー情報があればメッシュ接続を補完（最大5人連携）
     if (data.knownPeers && Array.isArray(data.knownPeers)) {
       data.knownPeers.forEach(id => {
         if (id !== myPeerId && !peers[id]) {
@@ -316,7 +301,6 @@ function getActiveStream() {
   return isScreenSharing && screenStream ? screenStream : localStream;
 }
 
-// 参加者のDOM要素タイル生成
 function createPeerTile(peerId, name) {
   if (document.getElementById(`tile-${peerId}`)) return;
 
@@ -344,20 +328,17 @@ function updatePeerTile(peerId) {
 
   if (!videoEl || !avatarEl) return;
 
-  // 1. 相手が画面共有を行っている場合
   if (p.isSharing && p.stream) {
     setSpotlight(`${p.name} の画面`, p.stream, false, peerId);
     videoEl.style.display = 'none';
     avatarEl.style.display = 'flex';
   } 
-  // 2. 相手がカメラONの場合
   else if (p.isCamOn && p.stream) {
     if (activeSpotlightPeerId === peerId) removeSpotlight();
     videoEl.srcObject = p.stream;
     videoEl.style.display = 'block';
     avatarEl.style.display = 'none';
   } 
-  // 3. 通常時（アバター表示）
   else {
     if (activeSpotlightPeerId === peerId) removeSpotlight();
     videoEl.style.display = 'none';
@@ -391,7 +372,6 @@ function attachRemoteAudio(peerId, stream) {
   audio.srcObject = stream;
 }
 
-// 発声音量解析（マイク光るエフェクトの同期）
 function setupAudioAnalysis(stream) {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   const analyser = ctx.createAnalyser();
@@ -480,7 +460,6 @@ function stopScreenShare() {
   updateControlsUI();
 }
 
-// 参加中の全ユーザーに対して映像トラックを一括差し替え
 function replaceTracksAll(track) {
   Object.values(peers).forEach(p => {
     if (p.mediaCall && p.mediaCall.peerConnection) {
