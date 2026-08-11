@@ -2,402 +2,391 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>スーパーマリオ風 2Dアクション</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LINE Style Chat</title>
+<!-- Firebase Web SDK (v10) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged,
+    updateProfile 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    query, 
+    orderBy, 
+    onSnapshot, 
+    serverTimestamp 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // ★★★ Firebase コンソールから取得した設定情報をここに貼り付けてください ★★★
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  // Firebase の初期化
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  // --- UI 要素の取得 ---
+  const authScreen = document.getElementById('auth-screen');
+  const chatScreen = document.getElementById('chat-screen');
+  const authTitle = document.getElementById('auth-title');
+  const nameField = document.getElementById('name-field');
+  const nameInput = document.getElementById('name-input');
+  const emailInput = document.getElementById('email-input');
+  const passwordInput = document.getElementById('password-input');
+  const authSubmitBtn = document.getElementById('auth-submit-btn');
+  const toggleAuthBtn = document.getElementById('toggle-auth-btn');
+  const authError = document.getElementById('auth-error');
+  const messageList = document.getElementById('message-list');
+  const messageInput = document.getElementById('message-input');
+  const sendBtn = document.getElementById('send-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  let isSignUpMode = false;
+
+  // --- 画面切り替え（新規登録 / ログイン） ---
+  toggleAuthBtn.addEventListener('click', () => {
+    isSignUpMode = !isSignUpMode;
+    authError.textContent = '';
+    if (isSignUpMode) {
+      authTitle.textContent = 'アカウント新規登録';
+      nameField.style.display = 'block';
+      authSubmitBtn.textContent = '登録する';
+      toggleAuthBtn.textContent = 'すでにアカウントをお持ちの方（ログイン）';
+    } else {
+      authTitle.textContent = 'ログイン';
+      nameField.style.display = 'none';
+      authSubmitBtn.textContent = 'ログイン';
+      toggleAuthBtn.textContent = '新規登録はこちら';
+    }
+  });
+
+  // --- アカウント作成 / ログイン 処理 ---
+  authSubmitBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    const displayName = nameInput.value.trim();
+    authError.textContent = '';
+
+    if (!email || !password) {
+      authError.textContent = 'メールアドレスとパスワードを入力してください。';
+      return;
+    }
+
+    try {
+      if (isSignUpMode) {
+        if (!displayName) {
+          authError.textContent = '表示名を入力してください。';
+          return;
+        }
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: displayName });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (error) {
+      authError.textContent = 'エラー: ' + error.message;
+    }
+  });
+
+  // --- ログアウト処理 ---
+  logoutBtn.addEventListener('click', () => {
+    signOut(auth);
+  });
+
+  // --- 認証状態の監視 ---
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      authScreen.style.display = 'none';
+      chatScreen.style.display = 'flex';
+      loadMessages();
+    } else {
+      currentUser = null;
+      chatScreen.style.display = 'none';
+      authScreen.style.display = 'flex';
+      messageList.innerHTML = '';
+    }
+  });
+
+  // --- メッセージ送信 ---
+  async function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text || !currentUser) return;
+
+    try {
+      await addDoc(collection(db, "messages"), {
+        text: text,
+        uid: currentUser.uid,
+        userName: currentUser.displayName || "名無し",
+        createdAt: serverTimestamp()
+      });
+      messageInput.value = '';
+    } catch (error) {
+      console.error("メッセージ送信エラー:", error);
+    }
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  // --- メッセージ受信・同期（リアルタイム） ---
+  function loadMessages() {
+    const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+    onSnapshot(q, (snapshot) => {
+      messageList.innerHTML = '';
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const isMine = currentUser && data.uid === currentUser.uid;
+        appendMessageUI(data.userName, data.text, isMine, data.createdAt);
+      });
+      messageList.scrollTop = messageList.scrollHeight;
+    });
+  }
+
+  // LINE風吹き出しのDOM構築
+  function appendMessageUI(userName, text, isMine, timestamp) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message-group ${isMine ? 'mine' : 'other'}`;
+
+    let timeStr = '';
+    if (timestamp && timestamp.toDate) {
+      const date = timestamp.toDate();
+      timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+    }
+
+    if (isMine) {
+      msgDiv.innerHTML = `
+        <div class="message-meta">
+          <span class="time">${timeStr}</span>
+        </div>
+        <div class="bubble">${escapeHTML(text)}</div>
+      `;
+    } else {
+      msgDiv.innerHTML = `
+        <div class="avatar">${userName ? userName.charAt(0) : 'ユーザー'}</div>
+        <div class="content">
+          <div class="user-name">${escapeHTML(userName)}</div>
+          <div class="bubble-row">
+            <div class="bubble">${escapeHTML(text)}</div>
+            <span class="time">${timeStr}</span>
+          </div>
+        </div>
+      `;
+    }
+    messageList.appendChild(msgDiv);
+  }
+
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, 
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+  }
+</script>
+
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-  body {
-    background: #111;
-    color: #fff;
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    overflow: hidden;
-  }
-  #game-container {
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  canvas {
-    background: #5c94fc;
-    display: block;
-  }
-  .ui-overlay {
-    position: absolute;
-    top: 10px;
-    left: 15px;
-    right: 15px;
-    display: flex;
-    justify-content: space-between;
-    font-size: 20px;
-    font-weight: bold;
-    text-shadow: 2px 2px 0 #000;
-  }
-  /* スマホ用コントローラー */
-  .touch-controls {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 800px;
-    padding: 10px 20px;
-    margin-top: 10px;
-  }
-  .btn-group { display: flex; gap: 10px; }
-  .btn {
-    width: 60px;
-    height: 60px;
-    background: rgba(255,255,255,0.2);
-    border: 2px solid #fff;
-    border-radius: 50%;
-    color: white;
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
-  }
-  .btn:active { background: rgba(255,255,255,0.5); }
+:root {
+  --line-green: #06C755;
+  --bg-chat: #8cabd9;
+  --bubble-mine: #85e249;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
+body, html { height: 100%; background: #111; display: flex; justify-content: center; align-items: center; }
+
+/* スマホ枠風コンテナ */
+.app-container {
+  width: 100%;
+  max-width: 440px;
+  height: 100%;
+  max-height: 850px;
+  background: white;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+/* ログイン / 新規登録画面 */
+.auth-screen {
+  position: absolute;
+  inset: 0;
+  background: white;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 24px;
+}
+.auth-screen h2 { color: var(--line-green); text-align: center; margin-bottom: 24px; font-size: 1.5rem; }
+.input-group { margin-bottom: 16px; }
+.input-group label { display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 6px; }
+.input-group input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; outline: none; }
+.input-group input:focus { border-color: var(--line-green); }
+.btn-primary { width: 100%; padding: 12px; background: var(--line-green); border: none; color: white; font-weight: bold; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-link { background: none; border: none; color: #64748b; text-decoration: underline; font-size: 0.85rem; margin-top: 16px; cursor: pointer; width: 100%; text-align: center; }
+.error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 8px; text-align: center; }
+
+/* メインチャット画面 */
+.chat-screen {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-chat);
+}
+
+/* ヘッダー */
+header {
+  height: 60px;
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  color: white;
+}
+header h3 { font-size: 1.1rem; }
+.logout-btn { background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; }
+
+/* メッセージエリア */
+.message-list {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* メッセージ（共通） */
+.message-group { display: flex; gap: 8px; max-width: 80%; }
+.message-group.mine { align-self: flex-end; flex-direction: row; }
+.message-group.other { align-self: flex-start; }
+
+/* アバター */
+.avatar {
+  width: 36px; height: 36px; border-radius: 14px; background: #cbd5e1;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; color: white; font-size: 0.9rem; flex-shrink: 0;
+}
+
+.content { display: flex; flex-direction: column; gap: 4px; }
+.user-name { font-size: 0.75rem; color: rgba(255, 255, 255, 0.9); }
+.bubble-row { display: flex; align-items: flex-end; gap: 6px; }
+
+/* 吹き出し */
+.bubble {
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.mine .bubble { background: var(--bubble-mine); color: #000; border-top-right-radius: 2px; }
+.other .bubble { background: white; color: #000; border-top-left-radius: 2px; }
+
+.message-meta { display: flex; align-items: flex-end; }
+.time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.8); flex-shrink: 0; }
+
+/* 入力エリア */
+.input-area {
+  background: white;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.input-area input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: #f8fafc;
+  outline: none;
+  font-size: 0.95rem;
+}
+.send-btn {
+  background: var(--line-green);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+}
 </style>
 </head>
 <body>
 
-<div id="game-container">
-  <div class="ui-overlay">
-    <div>MARIO: <span id="score">000000</span></div>
-    <div>COINS: ★<span id="coins">0</span></div>
+<div class="app-container">
+  <!-- 認証画面 -->
+  <div id="auth-screen" class="auth-screen">
+    <h2 id="auth-title">ログイン</h2>
+    
+    <div id="name-field" class="input-group" style="display: none;">
+      <label>表示名（ニックネーム）</label>
+      <input type="text" id="name-input" placeholder="例: たろう">
+    </div>
+
+    <div class="input-group">
+      <label>メールアドレス</label>
+      <input type="email" id="email-input" placeholder="example@mail.com">
+    </div>
+
+    <div class="input-group">
+      <label>パスワード</label>
+      <input type="password" id="password-input" placeholder="6文字以上">
+    </div>
+
+    <button id="auth-submit-btn" class="btn-primary">ログイン</button>
+    <button id="toggle-auth-btn" class="btn-link">新規登録はこちら</button>
+
+    <div id="auth-error" class="error-msg"></div>
   </div>
-  <canvas id="canvas" width="800" height="450"></canvas>
+
+  <!-- チャット画面 -->
+  <div id="chat-screen" class="chat-screen">
+    <header>
+      <h3>トーク</h3>
+      <button id="logout-btn" class="logout-btn">ログアウト</button>
+    </header>
+
+    <div id="message-list" class="message-list"></div>
+
+    <div class="input-area">
+      <input type="text" id="message-input" placeholder="メッセージを入力">
+      <button id="send-btn" class="send-btn">▲</button>
+    </div>
+  </div>
 </div>
 
-<!-- スマホ向け操作パネル -->
-<div class="touch-controls">
-  <div class="btn-group">
-    <div class="btn" id="btn-left">◀</div>
-    <div class="btn" id="btn-right">▶</div>
-  </div>
-  <div class="btn-group">
-    <div class="btn" id="btn-jump" style="width:80px; border-radius:30px;">JUMP</div>
-  </div>
-</div>
-
-<script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-
-// ゲーム設定
-const GRAVITY = 0.55;
-const TILE_SIZE = 32;
-
-// 入力状態
-const keys = { left: false, right: false, jump: false };
-
-// ゲーム変数
-let cameraX = 0;
-let score = 0;
-let coins = 0;
-let gameOver = false;
-let gameWon = false;
-
-// マリオ（プレイヤー）
-const mario = {
-  x: 50,
-  y: 300,
-  w: 28,
-  h: 36,
-  vx: 0,
-  vy: 0,
-  speed: 4.5,
-  jumpPower: -12,
-  grounded: false,
-  facing: 'right'
-};
-
-// マップデータ (1:地面, 2:レンガ, 3:ハテナブロック, 4:土管, 5:ゴール旗)
-const map = [
-  "                                                                                    ",
-  "                                                                                    ",
-  "                                                                                    ",
-  "                                                                                    ",
-  "                                                                                    ",
-  "                                 3                                                  ",
-  "                            23232                                                   ",
-  "                                                                                    ",
-  "                                             44                                  5  ",
-  "                       44                    44                                  5  ",
-  "                3      44            232     44                                  5  ",
-  "                       44                    44                                  5  ",
-  "111111111111111111111111111111  1111111111111111111111111111111111111111111111111111",
-  "111111111111111111111111111111  1111111111111111111111111111111111111111111111111111"
-];
-
-// ブロック & 敵 & コインオブジェクトの生成
-const blocks = [];
-const enemies = [];
-const collectibles = [];
-
-function initMap() {
-  blocks.length = 0;
-  enemies.length = 0;
-  collectibles.length = 0;
-
-  for (let r = 0; r < map.length; r++) {
-    for (let c = 0; c < map[r].length; c++) {
-      const type = map[r][c];
-      const x = c * TILE_SIZE;
-      const y = r * TILE_SIZE;
-
-      if (type === '1') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'ground' });
-      else if (type === '2') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'brick' });
-      else if (type === '3') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'question', hit: false });
-      else if (type === '4') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'pipe' });
-      else if (type === '5') blocks.push({ x, y, w: TILE_SIZE / 2, h: TILE_SIZE, type: 'flag' });
-    }
-  }
-
-  // 敵（クリボー風）の配置
-  enemies.push({ x: 450, y: 350, w: 28, h: 28, vx: -1.2, alive: true });
-  enemies.push({ x: 800, y: 350, w: 28, h: 28, vx: -1.2, alive: true });
-  enemies.push({ x: 1250, y: 350, w: 28, h: 28, vx: -1.2, alive: true });
-}
-
-// キーイベント
-window.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
-  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
-  if ((e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w') && mario.grounded) {
-    mario.vy = mario.jumpPower;
-    mario.grounded = false;
-  }
-  if ((gameOver || gameWon) && e.key === ' ') resetGame();
-});
-
-window.addEventListener('keyup', e => {
-  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
-  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
-});
-
-// スマホ操作のバインド
-function bindTouch(id, key) {
-  const el = document.getElementById(id);
-  el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; if(key==='jump'&&mario.grounded){mario.vy=mario.jumpPower;mario.grounded=false;} });
-  el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-}
-bindTouch('btn-left', 'left');
-bindTouch('btn-right', 'right');
-bindTouch('btn-jump', 'jump');
-
-// 当たり判定
-function checkAABB(a, b) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
-// ゲームリセット
-function resetGame() {
-  mario.x = 50;
-  mario.y = 300;
-  mario.vx = 0;
-  mario.vy = 0;
-  score = 0;
-  coins = 0;
-  gameOver = false;
-  gameWon = false;
-  initMap();
-}
-
-// 更新処理
-function update() {
-  if (gameOver || gameWon) return;
-
-  // 移動制御
-  if (keys.left) {
-    mario.vx = -mario.speed;
-    mario.facing = 'left';
-  } else if (keys.right) {
-    mario.vx = mario.speed;
-    mario.facing = 'right';
-  } else {
-    mario.vx = 0;
-  }
-
-  // 重力追加
-  mario.vy += GRAVITY;
-
-  // X軸の移動と衝突チェック
-  mario.x += mario.vx;
-  for (let b of blocks) {
-    if (checkAABB(mario, b)) {
-      if (b.type === 'flag') { gameWon = true; return; }
-      if (mario.vx > 0) mario.x = b.x - mario.w;
-      else if (mario.vx < 0) mario.x = b.x + b.w;
-    }
-  }
-
-  // Y軸の移動と衝突チェック
-  mario.y += mario.vy;
-  mario.grounded = false;
-
-  for (let b of blocks) {
-    if (checkAABB(mario, b)) {
-      if (b.type === 'flag') { gameWon = true; return; }
-      if (mario.vy > 0) { // 着地
-        mario.y = b.y - mario.h;
-        mario.vy = 0;
-        mario.grounded = true;
-      } else if (mario.vy < 0) { // 天井への衝突
-        mario.y = b.y + b.h;
-        mario.vy = 0;
-
-        // ハテナブロックを叩いた時
-        if (b.type === 'question' && !b.hit) {
-          b.hit = true;
-          coins++;
-          score += 200;
-        }
-      }
-    }
-  }
-
-  // 落下死チェック
-  if (mario.y > canvas.height) {
-    gameOver = true;
-  }
-
-  // 敵の移動と衝突
-  for (let e of enemies) {
-    if (!e.alive) continue;
-    e.x += e.vx;
-
-    // 敵のブロック反転
-    for (let b of blocks) {
-      if (checkAABB(e, b)) {
-        e.vx *= -1;
-        break;
-      }
-    }
-
-    // マリオと敵の衝突
-    if (checkAABB(mario, e)) {
-      if (mario.vy > 0 && mario.y + mario.h - mario.vy <= e.y + 10) {
-        // 踏みつけ成功
-        e.alive = false;
-        mario.vy = -8;
-        score += 100;
-      } else {
-        // マリオがダメージを受ける
-        gameOver = true;
-      }
-    }
-  }
-
-  // カメラ追従
-  cameraX = mario.x - 200;
-  if (cameraX < 0) cameraX = 0;
-
-  // UI更新
-  document.getElementById('score').textContent = String(score).padStart(6, '0');
-  document.getElementById('coins').textContent = coins;
-}
-
-// 描画処理
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctx.save();
-  ctx.translate(-cameraX, 0);
-
-  // ブロック描画
-  for (let b of blocks) {
-    if (b.type === 'ground') {
-      ctx.fillStyle = '#c84c0c';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect(b.x, b.y, b.w, b.h);
-    } else if (b.type === 'brick') {
-      ctx.fillStyle = '#b84418';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect(b.x, b.y, b.w, b.h);
-    } else if (b.type === 'question') {
-      ctx.fillStyle = b.hit ? '#808080' : '#fcb42c';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.fillStyle = '#000';
-      if (!b.hit) {
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText('?', b.x + 10, b.y + 24);
-      }
-    } else if (b.type === 'pipe') {
-      ctx.fillStyle = '#00a800';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect(b.x, b.y, b.w, b.h);
-    } else if (b.type === 'flag') {
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(b.x, b.y, 4, canvas.height);
-      ctx.fillStyle = '#fc2c00';
-      ctx.fillRect(b.x + 4, b.y, 24, 16);
-    }
-  }
-
-  // 敵描画（クリボー風）
-  for (let e of enemies) {
-    if (!e.alive) continue;
-    ctx.fillStyle = '#a81000';
-    ctx.beginPath();
-    ctx.arc(e.x + e.w/2, e.y + e.h/2, e.w/2, 0, Math.PI * 2);
-    ctx.fill();
-    // 目
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(e.x + 6, e.y + 8, 4, 8);
-    ctx.fillRect(e.x + 18, e.y + 8, 4, 8);
-  }
-
-  // マリオ描画
-  ctx.fillStyle = '#fc2c00'; // 赤シャツ/帽子
-  ctx.fillRect(mario.x, mario.y, mario.w, mario.h);
-  ctx.fillStyle = '#002cfc'; // 青オーバーオール
-  ctx.fillRect(mario.x, mario.y + 18, mario.w, 18);
-  ctx.fillStyle = '#fcbc3c'; // 顔
-  ctx.fillRect(mario.facing === 'right' ? mario.x + 12 : mario.x, mario.y + 4, 16, 12);
-
-  ctx.restore();
-
-  // ゲームオーバー / クリア 画面
-  if (gameOver) {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 40px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-    ctx.font = '20px sans-serif';
-    ctx.fillText('Press SPACE to Restart', canvas.width / 2, canvas.height / 2 + 50);
-  } else if (gameWon) {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#fce400';
-    ctx.font = 'bold 40px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('STAGE CLEAR!', canvas.width / 2, canvas.height / 2);
-    ctx.font = '20px sans-serif';
-    ctx.fillText('Press SPACE to Play Again', canvas.width / 2, canvas.height / 2 + 50);
-  }
-}
-
-// メインゲームループ
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-// ゲーム開始
-initMap();
-loop();
-</script>
 </body>
 </html>
