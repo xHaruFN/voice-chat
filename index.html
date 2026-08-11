@@ -1,3 +1,4 @@
+```html
 <!-- =========================
      アカウント
 ========================= -->
@@ -42,8 +43,127 @@
 ログアウト
 </button>
 
+<!-- 離席 -->
+<div
+  id="awayArea"
+  style="display:none;margin-top:15px"
+>
+
+<button
+  id="awayButton"
+  class="gray"
+  onclick="toggleAway()"
+>
+💤 離席する
+</button>
+
+<span
+  id="awayStatus"
+  style="margin-left:8px"
+>
+🟢 オンライン
+</span>
+
+</div>
+
 <p id="accountStatus">
 ログインしていません
 </p>
 
 </div>
+
+
+<!-- =========================
+     フレンドDM
+========================= -->
+
+<div
+  class="card"
+  id="dmCard"
+  style="display:none"
+>
+
+<h2>💬 フレンドDM</h2>
+
+<select
+  id="dmFriend"
+  style="
+    width:100%;
+    padding:12px;
+    border:0;
+    border-radius:10px;
+    margin-bottom:10px;
+    font-size:16px;
+"
+>
+<option value="">
+フレンドを選択
+</option>
+</select>
+
+<div
+  id="dmMessages"
+  style="
+    height:250px;
+    overflow-y:auto;
+    background:#0b1220;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:10px;
+"
+>
+<div class="empty">
+フレンドを選択してください。
+</div>
+</div>
+
+<div
+  style="
+    display:flex;
+    gap:8px;
+"
+>
+
+<input
+  id="dmInput"
+  maxlength="500"
+  placeholder="メッセージを入力"
+  onkeydown="if(event.key==='Enter')sendDM()"
+  style="margin:0"
+>
+
+<button
+  onclick="sendDM()"
+>
+送信
+</button>
+
+</div>
+
+</div>
+```
+
+さらに、フレンド一覧の各ユーザーに**「💬 DM」「🗑️ 削除」**を付ける形にできます。
+
+```html
+<button
+  onclick="openDM('${friend.id}')"
+>
+💬 DM
+</button>
+
+<button
+  class="red"
+  onclick="removeFriend('${friend.id}')"
+>
+🗑️ 削除
+</button>
+```
+
+離席中は表示を
+
+```text
+💤 離席中
+```
+
+にして、フレンド検索にも離席状態を表示できます。
