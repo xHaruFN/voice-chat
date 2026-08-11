@@ -1,13 +1,261 @@
 ```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Chat</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111827;
+  color: white;
+}
+
+header {
+  height: 64px;
+  background: #1f2937;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+main {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 20px;
+}
+
+.card {
+  background: #1f2937;
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+h3 {
+  margin-top: 25px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  margin: 6px 4px 6px 0;
+  font-size: 16px;
+  cursor: pointer;
+  background: #4f46e5;
+  color: white;
+}
+
+button:hover {
+  opacity: .9;
+}
+
+.logout,
+.red {
+  background: #dc2626;
+}
+
+.green {
+  background: #22c55e;
+}
+
+.gray {
+  background: #4b5563;
+}
+
+.blue {
+  background: #2563eb;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #374151;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  background: #4f46e5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+#status,
+#accountStatus,
+#settingsStatus {
+  color: #9ca3af;
+}
+
+#settingsCard,
+#friendCard,
+#partyCard,
+#roomCard {
+  display: none;
+}
+
+.friend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #374151;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+}
+
+.friendAvatar {
+  width: 45px;
+  height: 45px;
+  background: #4f46e5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.friendInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.online {
+  color: #22c55e;
+  font-size: 13px;
+}
+
+.offline {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.request,
+.partyBox {
+  background: #374151;
+  padding: 15px;
+  margin-top: 10px;
+  border-radius: 12px;
+}
+
+.empty {
+  color: #9ca3af;
+  padding: 15px 0;
+}
+
+/* =========================
+   ROOM
+========================= */
+
+.roomInfo {
+  background: #374151;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.roomCode {
+  font-size: 25px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.mediaControls {
+  margin-top: 15px;
+}
+
+.videoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.videoBox {
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 180px;
+  position: relative;
+}
+
+.videoBox video {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  object-fit: contain;
+  background: #000;
+}
+
+.videoName {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0,0,0,.7);
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.roomStatus {
+  color: #9ca3af;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  🎙️ Voice Chat
+</header>
+
+<main>
+
+<!-- =========================
+     ACCOUNT
+========================= -->
+
 <div class="card">
 
 <h2>👤 アカウント</h2>
 
 <input
-  id="usernameInput"
-  type="text"
-  maxlength="30"
-  placeholder="ユーザー名"
+  id="email"
+  type="email"
+  placeholder="メールアドレス"
 >
 
 <input
@@ -42,4 +290,967 @@
 </p>
 
 </div>
+
+
+<!-- =========================
+     SETTINGS
+========================= -->
+
+<div class="card" id="settingsCard">
+
+<h2>⚙️ アカウント設定</h2>
+
+<h3>📧 メールアドレス変更</h3>
+
+<input
+  id="newEmail"
+  type="email"
+  placeholder="新しいメールアドレス"
+>
+
+<button onclick="changeEmail()">
+メールアドレス変更
+</button>
+
+<h3>🔑 パスワード変更</h3>
+
+<input
+  id="newPassword"
+  type="password"
+  placeholder="新しいパスワード"
+>
+
+<button onclick="changePassword()">
+パスワード変更
+</button>
+
+<p id="settingsStatus"></p>
+
+</div>
+
+
+<!-- =========================
+     SELF
+========================= -->
+
+<div class="card">
+
+<h2>自分</h2>
+
+<div class="user">
+
+<div class="avatar">
+👤
+</div>
+
+<div>
+
+<strong id="username">
+未ログイン
+</strong>
+
+<div id="onlineStatus">
+⚪ オフライン
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     ROOM
+========================= -->
+
+<div class="card" id="roomCard">
+
+<h2>🎙️ ボイスルーム</h2>
+
+<p>
+部屋名を入力して、同じ部屋にいる人と通話できます。
+</p>
+
+<input
+  id="roomName"
+  type="text"
+  placeholder="部屋名を入力"
+  maxlength="50"
+>
+
+<button
+  class="green"
+  onclick="joinRoom()"
+>
+🚪 部屋に入る
+</button>
+
+<button
+  class="red"
+  onclick="leaveRoom()"
+>
+部屋から退出
+</button>
+
+<div id="roomInfo" class="roomInfo">
+
+<div>
+現在の部屋：
+<strong id="currentRoom">
+なし
+</strong>
+</div>
+
+<div class="roomStatus" id="roomStatus">
+部屋に参加していません。
+</div>
+
+</div>
+
+<div class="mediaControls">
+
+<button
+  id="micButton"
+  onclick="toggleMic()"
+>
+🎤 マイクON
+</button>
+
+<button
+  id="cameraButton"
+  onclick="toggleCamera()"
+>
+📷 カメラON
+</button>
+
+<button
+  id="screenButton"
+  onclick="toggleScreenShare()"
+>
+🖥️ 画面共有
+</button>
+
+</div>
+
+<div class="videoGrid">
+
+<div class="videoBox">
+
+<video
+  id="localVideo"
+  autoplay
+  muted
+  playsinline
+></video>
+
+<div class="videoName">
+自分
+</div>
+
+</div>
+
+<div id="remoteVideos"></div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     FRIENDS
+========================= -->
+
+<div class="card" id="friendCard">
+
+<h2>👥 フレンド</h2>
+
+<input
+  id="friendSearch"
+  type="text"
+  placeholder="🔍 プレイヤーを検索"
+>
+
+<button onclick="searchFriend()">
+🔍 検索
+</button>
+
+<div id="searchResult"></div>
+
+<h3>フレンドリスト</h3>
+
+<div id="friendList">
+<div class="empty">
+フレンドはいません。
+</div>
+</div>
+
+<h3>📨 フレンド申請</h3>
+
+<div id="requestList">
+<div class="empty">
+フレンド申請はありません。
+</div>
+</div>
+
+</div>
+
+
+<!-- =========================
+     PARTY
+========================= -->
+
+<div class="card" id="partyCard">
+
+<h2>🎉 パーティー</h2>
+
+<button
+  class="green"
+  onclick="createParty()"
+>
+＋ パーティー作成
+</button>
+
+<div id="partyArea">
+<div class="empty">
+パーティーに参加していません。
+</div>
+</div>
+
+</div>
+
+</main>
+
+
+<script>
+
+/* =====================================================
+   SUPABASE
+===================================================== */
+
+const SUPABASE_URL =
+"https://znzwsbumfqderjoehrwd.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_HbZtKu-et14XUIGwIegw0g_ltLcrBhl";
+
+const supabaseClient =
+window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let currentUser = null;
+let guestMode = false;
+
+let microphone = null;
+let micEnabled = false;
+
+let cameraStream = null;
+let cameraEnabled = false;
+
+let screenStream = null;
+let screenEnabled = false;
+
+let currentRoomName = null;
+let roomChannel = null;
+
+const peers = {};
+
+
+/* =====================================================
+   LOGIN UI
+===================================================== */
+
+function setLoggedInUI(name) {
+
+  document.getElementById("username")
+    .textContent = name;
+
+  document.getElementById("onlineStatus")
+    .textContent = "🟢 オンライン";
+
+  document.getElementById("accountStatus")
+    .textContent = "✅ ログイン中";
+
+  document.getElementById("logoutButton")
+    .style.display = "inline-block";
+
+  document.getElementById("settingsCard")
+    .style.display = "block";
+
+  document.getElementById("friendCard")
+    .style.display = "block";
+
+  document.getElementById("partyCard")
+    .style.display = "block";
+
+  document.getElementById("roomCard")
+    .style.display = "block";
+}
+
+
+function setLoggedOutUI() {
+
+  document.getElementById("username")
+    .textContent = "未ログイン";
+
+  document.getElementById("onlineStatus")
+    .textContent = "⚪ オフライン";
+
+  document.getElementById("accountStatus")
+    .textContent = "ログインしていません";
+
+  document.getElementById("logoutButton")
+    .style.display = "none";
+
+  document.getElementById("settingsCard")
+    .style.display = "none";
+
+  document.getElementById("friendCard")
+    .style.display = "none";
+
+  document.getElementById("partyCard")
+    .style.display = "none";
+
+  document.getElementById("roomCard")
+    .style.display = "none";
+
+  leaveRoom();
+}
+
+
+/* =====================================================
+   SIGN UP
+===================================================== */
+
+async function signUp() {
+
+  const email =
+    document.getElementById("email")
+      .value.trim();
+
+  const password =
+    document.getElementById("password")
+      .value;
+
+  if (!email || !password) {
+    alert(
+      "メールアドレスとパスワードを入力してください。"
+    );
+    return;
+  }
+
+  if (password.length < 6) {
+    alert(
+      "パスワードは6文字以上にしてください。"
+    );
+    return;
+  }
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+
+    if (error) {
+
+      alert(
+        "アカウント作成エラー:\n" +
+        error.message
+      );
+
+      return;
+    }
+
+    /*
+      Supabaseでメール確認がOFFなら
+      そのままログイン状態になる。
+    */
+
+    if (data.session && data.user) {
+
+      currentUser = data.user;
+      guestMode = false;
+
+      await createProfile(
+        data.user
+      );
+
+      setLoggedInUI(
+        data.user.email
+      );
+
+      await loadFriends();
+      await loadFriendRequests();
+
+      alert(
+        "アカウントを作成してログインしました！"
+      );
+
+    } else {
+
+      alert(
+        "アカウントを作成しました！\n\n" +
+        "メール確認が有効になっている場合は、メールを確認してからログインしてください。"
+      );
+    }
+
+  } catch (error) {
+
+    alert(
+      "通信エラー:\n" +
+      error.message
+    );
+  }
+}
+
+
+/* =====================================================
+   PROFILE
+===================================================== */
+
+async function createProfile(user) {
+
+  const username =
+    user.email
+      ? user.email.split("@")[0]
+      : "User";
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        username,
+        online: true,
+        status: "online"
+      });
+
+  if (error) {
+    console.warn(
+      "プロフィール作成:",
+      error
+    );
+  }
+}
+
+
+/* =====================================================
+   SIGN IN
+===================================================== */
+
+async function signIn() {
+
+  const email =
+    document.getElementById("email")
+      .value.trim();
+
+  const password =
+    document.getElementById("password")
+      .value;
+
+  if (!email || !password) {
+
+    alert(
+      "メールアドレスとパスワードを入力してください。"
+    );
+
+    return;
+  }
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth
+        .signInWithPassword({
+          email,
+          password
+        });
+
+    if (error) {
+
+      alert(
+        "ログインエラー:\n" +
+        error.message
+      );
+
+      return;
+    }
+
+    currentUser = data.user;
+    guestMode = false;
+
+    await createProfile(
+      currentUser
+    );
+
+    setLoggedInUI(
+      currentUser.email
+    );
+
+    await loadFriends();
+    await loadFriendRequests();
+
+  } catch (error) {
+
+    alert(
+      "ログイン通信エラー:\n" +
+      error.message
+    );
+  }
+}
+
+
+/* =====================================================
+   SIGN OUT
+===================================================== */
+
+async function signOut() {
+
+  if (guestMode) {
+
+    await leaveRoom();
+
+    currentUser = null;
+    guestMode = false;
+
+    setLoggedOutUI();
+
+    alert(
+      "仮アカウントからログアウトしました。"
+    );
+
+    return;
+  }
+
+  await leaveRoom();
+
+  const {
+    error
+  } =
+    await supabaseClient.auth.signOut();
+
+  if (error) {
+
+    alert(
+      "ログアウトに失敗しました:\n" +
+      error.message
+    );
+
+    return;
+  }
+
+  currentUser = null;
+  guestMode = false;
+
+  setLoggedOutUI();
+}
+
+
+/* =====================================================
+   GUEST
+===================================================== */
+
+function createGuest() {
+
+  if (currentUser) {
+
+    alert(
+      "すでにログインしています。"
+    );
+
+    return;
+  }
+
+  const guestName =
+    "Guest_" +
+    Math.floor(
+      100000 +
+      Math.random() * 900000
+    );
+
+  currentUser = {
+    id: "guest_" + Date.now(),
+    email: guestName
+  };
+
+  guestMode = true;
+
+  setLoggedInUI(
+    guestName
+  );
+
+  document.getElementById(
+    "accountStatus"
+  ).textContent =
+    "👻 仮アカウント: " +
+    guestName;
+
+  document.getElementById(
+    "friendList"
+  ).innerHTML =
+    '<div class="empty">仮アカウントではフレンド機能を利用できません。</div>';
+
+  document.getElementById(
+    "requestList"
+  ).innerHTML =
+    '<div class="empty">仮アカウントではフレンド申請を利用できません。</div>';
+}
+
+
+/* =====================================================
+   EMAIL / PASSWORD
+===================================================== */
+
+async function changeEmail() {
+
+  if (guestMode) {
+    alert("仮アカウントでは変更できません。");
+    return;
+  }
+
+  const newEmail =
+    document.getElementById("newEmail")
+      .value.trim();
+
+  if (!newEmail) {
+    alert("新しいメールアドレスを入力してください。");
+    return;
+  }
+
+  const {
+    error
+  } =
+    await supabaseClient.auth
+      .updateUser({
+        email: newEmail
+      });
+
+  if (error) {
+
+    alert(
+      "メールアドレス変更エラー:\n" +
+      error.message
+    );
+
+    return;
+  }
+
+  document.getElementById(
+    "settingsStatus"
+  ).textContent =
+    "✅ メールアドレス変更を受け付けました。";
+
+  document.getElementById(
+    "newEmail"
+  ).value = "";
+}
+
+
+async function changePassword() {
+
+  if (guestMode) {
+    alert("仮アカウントでは変更できません。");
+    return;
+  }
+
+  const newPassword =
+    document.getElementById("newPassword")
+      .value;
+
+  if (newPassword.length < 6) {
+    alert("パスワードは6文字以上にしてください。");
+    return;
+  }
+
+  const {
+    error
+  } =
+    await supabaseClient.auth
+      .updateUser({
+        password: newPassword
+      });
+
+  if (error) {
+
+    alert(
+      "パスワード変更エラー:\n" +
+      error.message
+    );
+
+    return;
+  }
+
+  document.getElementById(
+    "settingsStatus"
+  ).textContent =
+    "✅ パスワードを変更しました。";
+
+  document.getElementById(
+    "newPassword"
+  ).value = "";
+}
+
+
+/* =====================================================
+   ROOM
+===================================================== */
+
+function getRoomChannelName(room) {
+
+  return "voice-room-" +
+    room
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+}
+
+
+async function joinRoom() {
+
+  if (!currentUser) {
+
+    alert(
+      "先にログインしてください。"
+    );
+
+    return;
+  }
+
+  const room =
+    document.getElementById("roomName")
+      .value.trim();
+
+  if (!room) {
+
+    alert(
+      "部屋名を入力してください。"
+    );
+
+    return;
+  }
+
+  if (room.length > 50) {
+
+    alert(
+      "部屋名は50文字以内にしてください。"
+    );
+
+    return;
+  }
+
+  await leaveRoom();
+
+  currentRoomName = room;
+
+  document.getElementById(
+    "currentRoom"
+  ).textContent = room;
+
+  document.getElementById(
+    "roomStatus"
+  ).textContent =
+    "接続しています…";
+
+  roomChannel =
+    supabaseClient.channel(
+      getRoomChannelName(room),
+      {
+        config: {
+          broadcast: {
+            self: false
+          },
+          presence: {
+            key: currentUser.id
+          }
+        }
+      }
+    );
+
+
+  /*
+    新しいユーザーが入ったとき
+  */
+
+  roomChannel.on(
+    "broadcast",
+    {
+      event: "ready"
+    },
+    async ({ payload }) => {
+
+      if (
+        payload.userId ===
+        currentUser.id
+      ) {
+        return;
+      }
+
+      await createPeer(
+        payload.userId,
+        true
+      );
+    }
+  );
+
+
+  /*
+    WebRTC offer
+  */
+
+  roomChannel.on(
+    "broadcast",
+    {
+      event: "offer"
+    },
+    async ({ payload }) => {
+
+      if (
+        payload.to !==
+        currentUser.id
+      ) {
+        return;
+      }
+
+      await receiveOffer(
+        payload
+      );
+    }
+  );
+
+
+  /*
+    WebRTC answer
+  */
+
+  roomChannel.on(
+    "broadcast",
+    {
+      event: "answer"
+    },
+    async ({ payload }) => {
+
+      if (
+        payload.to !==
+        currentUser.id
+      ) {
+        return;
+      }
+
+      const peer =
+        peers[payload.from];
+
+      if (!peer) {
+        return;
+      }
+
+      await peer.setRemoteDescription(
+        new RTCSessionDescription(
+          payload.answer
+        )
+      );
+  });
+
+
+  /*
+    ICE candidate
+  */
+
+  roomChannel.on(
+    "broadcast",
+    {
+      event: "candidate"
+    },
+    async ({ payload }) => {
+
+      if (
+        payload.to !==
+        currentUser.id
+      ) {
+        return;
+      }
+
+      const peer =
+        peers[payload.from];
+
+      if (!peer) {
+        return;
+      }
+
+      try {
+
+        await peer.addIceCandidate(
+          new RTCIceCandidate(
+            payload.candidate
+          )
+        );
+
+      } catch (error) {
+
+        console.warn(
+          "ICE candidate:",
+          error
+        );
+      }
+    }
+  );
+
+
+  /*
+    切断通知
+  */
+
+  roomChannel.on(
+    "broadcast",
+    {
+      event: "leave"
+    },
+    ({ payload }) => {
+
+      if (payload.userId) {
+
+        removePeer(
+          payload.userId
+        );
+      }
+    }
+  );
+
+
+  await roomChannel.subscribe(
+    async status => {
+
+      if (status === "SUBSCRIBED") {
+
+        document.getElementById(
+          "roomStatus"
+        ).textContent =
+          "🟢 部屋に参加中";
+
+        await roomChannel.track({
+          userId: currentUser.id,
+          name:
+            currentUser.email ||
+            "Guest"
+        });
+
+        /*
+          自分が入ったことを
 ```
