@@ -626,6 +626,9 @@ onclick="createOrJoinParty()"
 
 </div>
 
+<!-- 通話用の音声要素や映像要素を動的に配置するエリア -->
+<div id="remoteAudios" style="display:none;"></div>
+
 </div>
 
 </main>
@@ -643,7 +646,7 @@ const SESSION_KEY = "voice_chat_session_v1";
 let db =
 JSON.parse(
 localStorage.getItem(DB_KEY) ||
-'{"users":[],"friendRequests":[],"friendships":[],"messages":[],"parties":[]}'
+'{"users":[],"friendRequests":[],"friendships":[],"messages":[],"parties":[],"signals":[]}'
 );
 
 let currentUser = null;
@@ -660,6 +663,15 @@ let screenStream = null;
 let screenEnabled = false;
 
 let away = false;
+
+// WebRTC 関連
+let peerConnections = {}; // { targetUserId: RTCPeerConnection }
+let activePartyId = null;
+let signalInterval = null;
+
+const rtcConfig = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
 
 
 /* ==========================================
@@ -752,6 +764,8 @@ setStatus("online");
 
 
 function setLoggedOutUI() {
+
+leaveParty(activePartyId);
 
 document.getElementById(
 "username"
@@ -1071,6 +1085,8 @@ if (!confirm(
 )) {
 return;
 }
+
+leaveParty(activePartyId);
 
 if (guestMode) {
 
@@ -1420,6 +1436,7 @@ document.getElementById(
 "🔇 マイクOFF";
 
 updateMediaStatus();
+updatePeerAudioTracks();
 
 } catch (error) {
 
@@ -1434,6 +1451,7 @@ alert(
 stopMicrophone();
 
 updateMediaStatus();
+updatePeerAudioTracks();
 
 }
 
@@ -2379,63 +2397,49 @@ document.getElementById(
 
 
 /* ==========================================
-   パーティー作成・参加（部屋名ベース）
+   パーティー作成・参加＆音声通話
 ========================================== */
 
 function createOrJoinParty() {
 
 if (!currentUser) {
-
-alert(
-"ログインしてください。"
-);
-
-return;
+  alert("ログインしてください。");
+  return;
 }
 
-const partyName =
-document.getElementById(
-"partyNameInput"
-).value.trim();
+const partyName = document.getElementById("partyNameInput").value.trim();
 
 if (!partyName) {
-
-alert(
-"部屋名を入力してください。"
-);
-
-return;
+  alert("部屋名を入力してください。");
+  return;
 }
 
-// データベースのpartiesが未初期化の場合は初期化
+// 既存のパーティーから退出処理
+if (activePartyId) {
+  leaveParty(activePartyId);
+}
+
 if (!Array.isArray(db.parties)) {
   db.parties = [];
 }
 
-// 自分がすでに含まれているパーティーから自分のIDを削除する
+// ほかの部屋にいれば削除
 db.parties.forEach(p => {
   if (Array.isArray(p.members)) {
     p.members = p.members.filter(id => id !== currentUser.id);
-  } else {
-    p.members = [];
   }
 });
-
-// メンバーが0人になったパーティーは削除
 db.parties = db.parties.filter(p => p.members.length > 0);
 
-// 指定した部屋名（大文字小文字を区別しない）のパーティーを探す
 let party = db.parties.find(
   p => p.partyName && p.partyName.toLowerCase() === partyName.toLowerCase()
 );
 
 if (party) {
-  // すでに存在する場合はメンバーに追加
   if (!party.members.includes(currentUser.id)) {
     party.members.push(currentUser.id);
   }
 } else {
-  // 存在しない場合は新しく作成して参加
   party = {
     id: randomID("party"),
     ownerId: currentUser.id,
@@ -2445,17 +2449,23 @@ if (party) {
   db.parties.push(party);
 }
 
+activePartyId = party.id;
 saveDB();
 renderParty();
 
-document.getElementById(
-"partyNameInput"
-).value = "";
+document.getElementById("partyNameInput").value = "";
 
-alert(
-"部屋「" + partyName + "」に参加しました！"
-);
+// 音声通話のためのシグナリング開始
+startSignaling();
 
+// もしマイクがオフなら自動でONを促すか、自動ONにする
+if (!micEnabled) {
+  toggleMic();
+} else {
+  updatePeerAudioTracks();
+}
+
+alert("部屋「" + partyName + "」に参加しました！");
 }
 
 
@@ -2541,7 +2551,7 @@ ${members.map(
 member =>
 `
 <div>
-👤 ${escapeHTML(member.username)}
+👤 ${escapeHTML(member.username)} ${member.id === currentUser.id ? '(自分)' : ''}
 </div>
 `
 ).join("")}
@@ -2582,36 +2592,24 @@ onclick="deleteParty('${party.id}')"
 ========================================== */
 
 function leaveParty(partyId) {
+  if (!partyId) return;
 
-const party =
-db.parties.find(
-p => p.id === partyId
-);
+  const party = db.parties.find(p => p.id === partyId);
+  if (party) {
+    party.members = party.members.filter(id => id !== currentUser.id);
+    if (party.members.length === 0) {
+      db.parties = db.parties.filter(p => p.id !== partyId);
+    }
+    saveDB();
+  }
 
-if (!party)
-return;
+  if (activePartyId === partyId) {
+    activePartyId = null;
+    stopSignaling();
+    closeAllConnections();
+  }
 
-party.members =
-party.members.filter(
-id =>
-id !== currentUser.id
-);
-
-if (
-party.members.length === 0
-) {
-
-db.parties =
-db.parties.filter(
-p => p.id !== partyId
-);
-
-}
-
-saveDB();
-
-renderParty();
-
+  renderParty();
 }
 
 
@@ -2620,41 +2618,203 @@ renderParty();
 ========================================== */
 
 function deleteParty(partyId) {
+  const party = db.parties.find(p => p.id === partyId);
+  if (!party) return;
 
-const party =
-db.parties.find(
-p => p.id === partyId
-);
+  if (party.ownerId !== currentUser.id) return;
 
-if (!party)
-return;
+  if (!confirm("パーティーを解散しますか？")) return;
 
-if (
-party.ownerId !==
-currentUser.id
-) {
+  db.parties = db.parties.filter(p => p.id !== partyId);
+  saveDB();
 
-return;
+  if (activePartyId === partyId) {
+    activePartyId = null;
+    stopSignaling();
+    closeAllConnections();
+  }
 
+  renderParty();
 }
 
-if (!confirm(
-"パーティーを解散しますか？"
-)) {
 
-return;
+/* ==========================================
+   WebRTC 通話・シグナリング処理
+========================================== */
 
+function startSignaling() {
+  if (signalInterval) clearInterval(signalInterval);
+
+  // 定期的にDBからシグナル（オファー・アンサー・ICE候補）を取得して処理する簡易ポーリング
+  signalInterval = setInterval(() => {
+    if (!currentUser || !activePartyId) return;
+    pollSignals();
+    checkPartyMembers();
+  }, 2000);
 }
 
-db.parties =
-db.parties.filter(
-p => p.id !== partyId
-);
+function stopSignaling() {
+  if (signalInterval) {
+    clearInterval(signalInterval);
+    signalInterval = null;
+  }
+}
 
-saveDB();
+function checkPartyMembers() {
+  const party = db.parties.find(p => p.id === activePartyId);
+  if (!party) {
+    leaveParty(activePartyId);
+    return;
+  }
 
-renderParty();
+  // 部屋にいる他のメンバーと接続を確立する
+  party.members.forEach(memberId => {
+    if (memberId !== currentUser.id && !peerConnections[memberId]) {
+      // IDが自分より若い（あるいは文字列比較で先）方をcallerとする
+      if (currentUser.id < memberId) {
+        createPeerConnection(memberId, true);
+      }
+    }
+  });
 
+  // 部屋から抜けたメンバーのコネクションを閉じる
+  Object.keys(peerConnections).forEach(memberId => {
+    if (!party.members.includes(memberId)) {
+      closePeerConnection(memberId);
+    }
+  });
+}
+
+function createPeerConnection(targetId, isCaller) {
+  if (peerConnections[targetId]) return peerConnections[targetId];
+
+  const pc = new RTCPeerConnection(rtcConfig);
+  peerConnections[targetId] = pc;
+
+  // 自分のマイク音声があれば追加
+  if (microphone) {
+    microphone.getTracks().forEach(track => {
+      pc.addTrack(track, microphone);
+    });
+  }
+
+  // 相手からの音声トラックを受信したとき
+  pc.ontrack = (event) => {
+    let audioElem = document.getElementById("remote_audio_" + targetId);
+    if (!audioElem) {
+      audioElem = document.createElement("audio");
+      audioElem.id = "remote_audio_" + targetId;
+      audioElem.autoplay = true;
+      document.getElementById("remoteAudios").appendChild(audioElem);
+    }
+    audioElem.srcObject = event.streams[0];
+  };
+
+  // ICE候補が見つかったらシグナル経由で相手に送る
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      sendSignal(targetId, { type: "ice", candidate: event.candidate });
+    }
+  };
+
+  if (isCaller) {
+    pc.createOffer().then(offer => {
+      return pc.setLocalDescription(offer);
+    }).then(() => {
+      sendSignal(targetId, { type: "offer", offer: pc.localDescription });
+    }).catch(err => console.error(err));
+  }
+
+  return pc;
+}
+
+function updatePeerAudioTracks() {
+  Object.keys(peerConnections).forEach(targetId => {
+    const pc = peerConnections[targetId];
+    const senders = pc.getSenders();
+    const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+
+    if (microphone && micEnabled) {
+      const audioTrack = microphone.getAudioTracks()[0];
+      if (audioSender) {
+        audioSender.replaceTrack(audioTrack);
+      } else {
+        pc.addTrack(audioTrack, microphone);
+      }
+    } else {
+      if (audioSender) {
+        audioSender.replaceTrack(null);
+      }
+    }
+  });
+}
+
+function sendSignal(targetId, data) {
+  if (!Array.isArray(db.signals)) db.signals = [];
+  db.signals.push({
+    id: randomID("sig"),
+    partyId: activePartyId,
+    senderId: currentUser.id,
+    receiverId: targetId,
+    data: data,
+    createdAt: Date.now()
+  });
+  saveDB();
+}
+
+function pollSignals() {
+  if (!Array.isArray(db.signals)) return;
+
+  // 自分宛てのシグナルを抽出
+  const mySignals = db.signals.filter(s => s.receiverId === currentUser.id && s.partyId === activePartyId);
+  
+  // 処理済みのシグナルをDBから削除（自分宛てのもの）
+  db.signals = db.signals.filter(s => !(s.receiverId === currentUser.id && s.partyId === activePartyId));
+  saveDB();
+
+  mySignals.forEach(async (sig) => {
+    let pc = peerConnections[sig.senderId];
+    if (!pc) {
+      pc = createPeerConnection(sig.senderId, false);
+    }
+
+    const data = sig.data;
+    try {
+      if (data.type === "offer") {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignal(sig.senderId, { type: "answer", answer: pc.localDescription });
+      } else if (data.type === "answer") {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      } else if (data.type === "ice") {
+        if (data.candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+}
+
+function closePeerConnection(targetId) {
+  if (peerConnections[targetId]) {
+    peerConnections[targetId].close();
+    delete peerConnections[targetId];
+  }
+  const audioElem = document.getElementById("remote_audio_" + targetId);
+  if (audioElem) {
+    audioElem.remove();
+  }
+}
+
+function closeAllConnections() {
+  Object.keys(peerConnections).forEach(targetId => {
+    closePeerConnection(targetId);
+  });
+  peerConnections = {};
+  document.getElementById("remoteAudiosinnerHTML") = "";
 }
 
 
@@ -2738,6 +2898,8 @@ renderParty();
 window.addEventListener(
 "beforeunload",
 () => {
+
+leaveParty(activePartyId);
 
 if (
 currentUser &&
