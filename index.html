@@ -1,268 +1,231 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
->
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voice Chat</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+*{box-sizing:border-box}
 
-* {
-  box-sizing: border-box;
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#111827;
+  color:white
 }
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #111827;
-  color: white;
+header{
+  height:64px;
+  background:#1f2937;
+  display:flex;
+  align-items:center;
+  padding:0 24px;
+  font-size:22px;
+  font-weight:bold
 }
 
-header {
-  height: 64px;
-  background: #1f2937;
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  font-size: 22px;
-  font-weight: bold;
+main{
+  max-width:1000px;
+  margin:30px auto;
+  padding:20px
 }
 
-main {
-  max-width: 1000px;
-  margin: 30px auto;
-  padding: 20px;
+.card{
+  background:#1f2937;
+  border-radius:16px;
+  padding:22px;
+  margin-bottom:20px
 }
 
-.card {
-  background: #1f2937;
-  border-radius: 16px;
-  padding: 22px;
-  margin-bottom: 20px;
+input{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border:0;
+  border-radius:10px;
+  font-size:16px
 }
 
-input {
-  width: 100%;
-  padding: 12px;
-  margin: 6px 0;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
+button{
+  border:0;
+  border-radius:10px;
+  padding:11px 17px;
+  margin:5px 4px 5px 0;
+  font-size:15px;
+  cursor:pointer;
+  background:#4f46e5;
+  color:white
 }
 
-button {
-  border: none;
-  border-radius: 10px;
-  padding: 11px 17px;
-  margin: 5px 4px 5px 0;
-  font-size: 15px;
-  cursor: pointer;
-  background: #4f46e5;
-  color: white;
+button:hover{opacity:.88}
+.green{background:#22c55e}
+.red{background:#dc2626}
+.gray{background:#4b5563}
+
+.user{
+  display:flex;
+  align-items:center;
+  gap:15px;
+  background:#374151;
+  padding:15px;
+  border-radius:12px
 }
 
-button:hover {
-  opacity: .88;
+.avatar{
+  width:50px;
+  height:50px;
+  background:#4f46e5;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px
 }
 
-.green {
-  background: #22c55e;
-}
-
-.red {
-  background: #dc2626;
-}
-
-.gray {
-  background: #4b5563;
-}
-
-.logout {
-  background: #dc2626;
-}
-
-.user {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  background: #374151;
-  padding: 15px;
-  border-radius: 12px;
-}
-
-.avatar {
-  width: 50px;
-  height: 50px;
-  background: #4f46e5;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-}
-
-.status {
-  color: #9ca3af;
-  margin-top: 10px;
+.status{
+  color:#9ca3af;
+  margin-top:10px
 }
 
 #settingsCard,
 #friendCard,
 #partyCard,
-#roomCard {
-  display: none;
+#roomCard{
+  display:none
 }
 
-.friend {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #374151;
-  padding: 12px;
-  margin: 8px 0;
-  border-radius: 10px;
+.friend{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:#374151;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px
 }
 
-.friendAvatar {
-  width: 45px;
-  height: 45px;
-  background: #4f46e5;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.friendAvatar{
+  width:45px;
+  height:45px;
+  background:#4f46e5;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center
 }
 
-.friendInfo {
-  flex: 1;
+.friendInfo{flex:1}
+.online{color:#22c55e;font-size:13px}
+.offline{color:#9ca3af;font-size:13px}
+
+.request,.partyBox{
+  background:#374151;
+  padding:14px;
+  margin:8px 0;
+  border-radius:10px
 }
 
-.online {
-  color: #22c55e;
-  font-size: 13px;
+.empty{
+  color:#9ca3af;
+  padding:12px 0
 }
 
-.offline {
-  color: #9ca3af;
-  font-size: 13px;
+.roomHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap
 }
 
-.request,
-.partyBox {
-  background: #374151;
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 10px;
+.roomName{
+  font-size:24px;
+  font-weight:bold
 }
 
-.empty {
-  color: #9ca3af;
-  padding: 12px 0;
+.participants{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin-top:15px
 }
 
-.roomHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+.videoBox{
+  background:#0b1220;
+  border-radius:12px;
+  padding:8px;
+  min-height:170px
 }
 
-.roomName {
-  font-size: 24px;
-  font-weight: bold;
+.videoBox video{
+  width:100%;
+  height:160px;
+  object-fit:cover;
+  background:#000;
+  border-radius:8px
 }
 
-.participants {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-top: 15px;
+.videoName{
+  padding:6px;
+  font-weight:bold
 }
 
-.videoBox {
-  background: #0b1220;
-  border-radius: 12px;
-  padding: 8px;
-  min-height: 170px;
+.controls{margin-top:10px}
+
+.chat{
+  background:#111827;
+  border-radius:12px;
+  padding:12px;
+  margin-top:15px
 }
 
-.videoBox video {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  background: #000;
-  border-radius: 8px;
+.chatMessages{
+  height:220px;
+  overflow-y:auto;
+  background:#0b1220;
+  padding:10px;
+  border-radius:8px
 }
 
-.videoName {
-  padding: 6px;
-  font-weight: bold;
+.chatMessage{
+  margin:7px 0;
+  padding:8px 10px;
+  background:#374151;
+  border-radius:8px
 }
 
-.controls {
-  margin-top: 10px;
+.chatInput{
+  display:flex;
+  gap:8px;
+  margin-top:8px
 }
 
-.chat {
-  background: #111827;
-  border-radius: 12px;
-  padding: 12px;
-  margin-top: 15px;
+.chatInput input{
+  margin:0
 }
 
-.chatMessages {
-  height: 220px;
-  overflow-y: auto;
-  background: #0b1220;
-  padding: 10px;
-  border-radius: 8px;
+.roomUsers{
+  margin-top:15px;
+  background:#374151;
+  padding:12px;
+  border-radius:10px
 }
 
-.chatMessage {
-  margin: 7px 0;
-  padding: 8px 10px;
-  background: #374151;
-  border-radius: 8px;
-}
+.error{color:#f87171}
+.success{color:#4ade80}
 
-.chatInput {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
+.badge{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:8px;
+  background:#4f46e5;
+  font-size:12px;
+  margin-left:5px
 }
-
-.chatInput input {
-  margin: 0;
-}
-
-.roomUsers {
-  margin-top: 15px;
-  background: #374151;
-  padding: 12px;
-  border-radius: 10px;
-}
-
-.error {
-  color: #f87171;
-}
-
-.success {
-  color: #4ade80;
-}
-
 </style>
-
 </head>
 
 <body>
@@ -273,9 +236,9 @@ button:hover {
 
 <main>
 
-<!-- =========================================
+<!-- =========================
      アカウント
-========================================= -->
+========================= -->
 
 <div class="card">
 
@@ -301,15 +264,18 @@ button:hover {
 ログイン
 </button>
 
-<button onclick="createGuest()">
-👻 仮アカウント
+<button
+  class="gray"
+  onclick="createGuest()"
+>
+👻 仮アカウント作成
 </button>
 
 <button
   id="logoutButton"
-  class="logout"
+  class="red"
   onclick="signOut()"
-  style="display:none;"
+  style="display:none"
 >
 ログアウト
 </button>
@@ -321,14 +287,11 @@ button:hover {
 </div>
 
 
-<!-- =========================================
+<!-- =========================
      設定
-========================================= -->
+========================= -->
 
-<div
-  class="card"
-  id="settingsCard"
->
+<div class="card" id="settingsCard">
 
 <h2>⚙️ アカウント設定</h2>
 
@@ -336,7 +299,6 @@ button:hover {
 
 <input
   id="newUsername"
-  type="text"
   maxlength="30"
   placeholder="新しい名前"
 >
@@ -369,17 +331,14 @@ button:hover {
 パスワード変更
 </button>
 
-<p
-  id="settingsStatus"
-  class="status"
-></p>
+<p id="settingsStatus" class="status"></p>
 
 </div>
 
 
-<!-- =========================================
+<!-- =========================
      自分
-========================================= -->
+========================= -->
 
 <div class="card">
 
@@ -387,9 +346,7 @@ button:hover {
 
 <div class="user">
 
-<div class="avatar">
-👤
-</div>
+<div class="avatar">👤</div>
 
 <div>
 
@@ -430,30 +387,23 @@ button:hover {
 
 </div>
 
-<div
-  id="status"
-  class="status"
->
+<div id="status" class="status">
 部屋に参加すると音声・カメラ・画面共有を利用できます。
 </div>
 
 </div>
 
 
-<!-- =========================================
+<!-- =========================
      部屋
-========================================= -->
+========================= -->
 
-<div
-  class="card"
-  id="roomCard"
->
+<div class="card" id="roomCard">
 
 <h2>🏠 部屋</h2>
 
 <input
   id="roomNameInput"
-  type="text"
   maxlength="50"
   placeholder="部屋名を入力"
 >
@@ -469,13 +419,13 @@ button:hover {
   class="red"
   onclick="leaveRoom()"
 >
-部屋から退出
+退出
 </button>
 
 <div
   id="currentRoom"
   class="roomHeader"
-  style="margin-top:15px;"
+  style="margin-top:15px"
 >
 <span class="roomName">
 未参加
@@ -485,16 +435,16 @@ button:hover {
 <div
   id="participants"
   class="participants"
->
-</div>
+></div>
 
-<div
-  class="roomUsers"
->
+<div class="roomUsers">
+
 <strong>👥 部屋の参加者</strong>
+
 <div id="roomUserList">
 部屋に参加していません。
 </div>
+
 </div>
 
 <div class="chat">
@@ -510,10 +460,9 @@ button:hover {
 
 <input
   id="chatInput"
-  type="text"
   maxlength="500"
   placeholder="メッセージを入力"
-  onkeydown="if(event.key==='Enter') sendChat()"
+  onkeydown="if(event.key==='Enter')sendChat()"
 >
 
 <button onclick="sendChat()">
@@ -527,20 +476,16 @@ button:hover {
 </div>
 
 
-<!-- =========================================
+<!-- =========================
      フレンド
-========================================= -->
+========================= -->
 
-<div
-  class="card"
-  id="friendCard"
->
+<div class="card" id="friendCard">
 
 <h2>👥 フレンド</h2>
 
 <input
   id="friendSearch"
-  type="text"
   placeholder="🔍 プレイヤーを検索"
 >
 
@@ -569,14 +514,11 @@ button:hover {
 </div>
 
 
-<!-- =========================================
+<!-- =========================
      パーティー
-========================================= -->
+========================= -->
 
-<div
-  class="card"
-  id="partyCard"
->
+<div class="card" id="partyCard">
 
 <h2>🎉 パーティー</h2>
 
@@ -600,9 +542,9 @@ button:hover {
 
 <script>
 
-/* =========================================
+/* =====================================
    Supabase
-========================================= */
+===================================== */
 
 const SUPABASE_URL =
 "https://znzwsbumfqderjoehrwd.supabase.co";
@@ -617,64 +559,63 @@ window.supabase.createClient(
 );
 
 
-/* =========================================
+/* =====================================
    状態
-========================================= */
+===================================== */
 
 let currentUser = null;
-
 let guestMode = false;
 
 let microphone = null;
-
 let cameraStream = null;
-
 let screenStream = null;
 
 let micEnabled = false;
-
 let cameraEnabled = false;
-
 let screenEnabled = false;
 
 let roomChannel = null;
-
 let currentRoomName = null;
 
 let peerConnections = {};
-
 let remoteStreams = {};
-
 let roomMembers = {};
 
 
-/* =========================================
+/* =====================================
    ID
-========================================= */
+===================================== */
 
-function getClientId() {
+function getClientId(){
 
-  if (
-    currentUser &&
-    currentUser.id
-  ) {
-
+  if(currentUser?.id){
     return currentUser.id;
-
   }
 
-  return "client_" + Math.random()
-    .toString(36)
-    .substring(2);
+  return "client_" +
+    crypto.randomUUID();
 
 }
 
 
-/* =========================================
-   UI
-========================================= */
+/* =====================================
+   現在の名前
+===================================== */
 
-function setLoggedInUI(name) {
+function getCurrentName(){
+
+  return document.getElementById(
+    "username"
+  ).textContent;
+
+}
+
+
+/* =====================================
+   UI
+===================================== */
+
+function setLoggedInUI(name){
 
   document.getElementById(
     "username"
@@ -688,7 +629,9 @@ function setLoggedInUI(name) {
   document.getElementById(
     "accountStatus"
   ).textContent =
-    "✅ ログイン中";
+    guestMode
+      ? "👻 仮アカウント: " + name
+      : "✅ ログイン中";
 
   document.getElementById(
     "logoutButton"
@@ -714,10 +657,11 @@ function setLoggedInUI(name) {
     "roomCard"
   ).style.display =
     "block";
+
 }
 
 
-function setLoggedOutUI() {
+function setLoggedOutUI(){
 
   document.getElementById(
     "username"
@@ -758,14 +702,15 @@ function setLoggedOutUI() {
     "roomCard"
   ).style.display =
     "none";
+
 }
 
 
-/* =========================================
+/* =====================================
    アカウント作成
-========================================= */
+===================================== */
 
-async function signUp() {
+async function signUp(){
 
   const email =
     document.getElementById(
@@ -777,7 +722,7 @@ async function signUp() {
       "password"
     ).value;
 
-  if (!email || !password) {
+  if(!email || !password){
 
     alert(
       "メールアドレスとパスワードを入力してください。"
@@ -786,7 +731,7 @@ async function signUp() {
     return;
   }
 
-  if (password.length < 6) {
+  if(password.length < 6){
 
     alert(
       "パスワードは6文字以上にしてください。"
@@ -795,7 +740,7 @@ async function signUp() {
     return;
   }
 
-  try {
+  try{
 
     const {
       data,
@@ -806,7 +751,7 @@ async function signUp() {
         password
       });
 
-    if (error) {
+    if(error){
 
       alert(
         "アカウント作成エラー:\n" +
@@ -816,24 +761,12 @@ async function signUp() {
       return;
     }
 
-    /*
-      メール確認がOFFなら
-      data.session が存在するため
-      そのままログインできる。
-    */
+    if(data.session && data.user){
 
-    if (
-      data.session &&
-      data.user
-    ) {
-
-      currentUser =
-        data.user;
-
+      currentUser = data.user;
       guestMode = false;
 
       await createProfile();
-
       await showUser();
 
       alert(
@@ -843,21 +776,16 @@ async function signUp() {
       return;
     }
 
-    /*
-      メール確認ONの場合
-    */
-
-    if (data.user) {
+    if(data.user){
 
       alert(
-        "アカウントは作成されました。\n\n" +
-        "Supabaseのメール確認がONになっているため、" +
-        "確認メールを確認してからログインしてください。"
+        "アカウントを作成しました。\n" +
+        "確認メールが必要な設定の場合は、メールを確認してください。"
       );
 
     }
 
-  } catch (error) {
+  }catch(error){
 
     alert(
       "通信エラー:\n" +
@@ -869,54 +797,71 @@ async function signUp() {
 }
 
 
-/* =========================================
-   プロフィール作成
-========================================= */
+/* =====================================
+   プロフィール
+===================================== */
 
-async function createProfile() {
+async function createProfile(){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
     return;
   }
 
-  const email =
-    currentUser.email || "User";
+  let defaultName;
 
-  const defaultName =
-    email.split("@")[0];
+  if(guestMode){
+
+    defaultName =
+      sessionStorage.getItem(
+        "voicechat_guest_name"
+      ) ||
+      "Guest_" +
+      Math.floor(
+        100000 +
+        Math.random() * 900000
+      );
+
+  }else{
+
+    defaultName =
+      currentUser.email?.split("@")[0] ||
+      "User";
+
+  }
 
   const {
-    error
+    data
   } =
     await supabaseClient
       .from("profiles")
+      .select("username")
+      .eq(
+        "id",
+        currentUser.id
+      )
+      .maybeSingle();
+
+  if(!data){
+
+    await supabaseClient
+      .from("profiles")
       .upsert({
-        id: currentUser.id,
-        username: defaultName,
-        online: true,
-        status: "online"
+        id:currentUser.id,
+        username:defaultName,
+        online:true,
+        status:"online"
       });
-
-  if (error) {
-
-    console.warn(
-      "profiles作成:",
-      error
-    );
 
   }
 
 }
 
 
-/* =========================================
+/* =====================================
    ログイン
-========================================= */
+===================================== */
 
-async function signIn() {
+async function signIn(){
 
   const email =
     document.getElementById(
@@ -928,7 +873,7 @@ async function signIn() {
       "password"
     ).value;
 
-  if (!email || !password) {
+  if(!email || !password){
 
     alert(
       "メールアドレスとパスワードを入力してください。"
@@ -937,7 +882,7 @@ async function signIn() {
     return;
   }
 
-  try {
+  try{
 
     const {
       data,
@@ -949,7 +894,7 @@ async function signIn() {
           password
         });
 
-    if (error) {
+    if(error){
 
       alert(
         "ログインエラー:\n" +
@@ -959,16 +904,13 @@ async function signIn() {
       return;
     }
 
-    currentUser =
-      data.user;
-
+    currentUser = data.user;
     guestMode = false;
 
     await createProfile();
-
     await showUser();
 
-  } catch (error) {
+  }catch(error){
 
     alert(
       "ログイン通信エラー:\n" +
@@ -980,62 +922,48 @@ async function signIn() {
 }
 
 
-/* =========================================
+/* =====================================
    ユーザー表示
-========================================= */
+===================================== */
 
-async function showUser() {
+async function showUser(){
 
-  if (!currentUser) {
+  if(!currentUser){
     return;
   }
 
+  const {
+    data
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("username")
+      .eq(
+        "id",
+        currentUser.id
+      )
+      .maybeSingle();
+
   let name =
+    data?.username ||
     currentUser.email ||
     "User";
-
-  if (!guestMode) {
-
-    const {
-      data
-    } =
-      await supabaseClient
-        .from("profiles")
-        .select("username")
-        .eq(
-          "id",
-          currentUser.id
-        )
-        .maybeSingle();
-
-    if (
-      data &&
-      data.username
-    ) {
-
-      name =
-        data.username;
-
-    }
-
-  }
 
   setLoggedInUI(name);
 
   await loadFriends();
-
   await loadFriendRequests();
 
 }
 
 
-/* =========================================
+/* =====================================
    仮アカウント
-========================================= */
+===================================== */
 
-function createGuest() {
+async function createGuest(){
 
-  if (currentUser) {
+  if(currentUser){
 
     alert(
       "すでにログインしています。"
@@ -1044,67 +972,111 @@ function createGuest() {
     return;
   }
 
-  const saved =
-    localStorage.getItem(
-      "voicechat_guest_name"
+  const inputName =
+    prompt(
+      "仮アカウントのユーザー名を入力してください。"
     );
 
-  const guestName =
-    saved ||
-    "Guest_" +
-    Math.floor(
-      100000 +
-      Math.random() * 900000
+  if(inputName === null){
+    return;
+  }
+
+  const name =
+    inputName.trim();
+
+  if(!name){
+
+    alert(
+      "ユーザー名を入力してください。"
     );
 
-  localStorage.setItem(
-    "voicechat_guest_name",
-    guestName
-  );
+    return;
+  }
 
-  currentUser = {
+  if(name.length > 30){
 
-    id:
-      "guest_" +
-      crypto.randomUUID(),
+    alert(
+      "ユーザー名は30文字以内です。"
+    );
 
-    email:
-      guestName
+    return;
+  }
 
-  };
+  try{
 
-  guestMode = true;
+    /*
+      Supabase匿名認証
+    */
 
-  setLoggedInUI(
-    guestName
-  );
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth
+        .signInAnonymously();
 
-  document.getElementById(
-    "accountStatus"
-  ).textContent =
-    "👻 仮アカウント: " +
-    guestName;
+    if(error){
 
-  document.getElementById(
-    "friendList"
-  ).innerHTML =
-    '<div class="empty">仮アカウントではフレンド機能を利用できません。</div>';
+      alert(
+        "仮アカウント作成エラー:\n" +
+        error.message
+      );
 
-  document.getElementById(
-    "requestList"
-  ).innerHTML =
-    '<div class="empty">仮アカウントではフレンド申請を利用できません。</div>';
+      return;
+    }
+
+    currentUser = data.user;
+    guestMode = true;
+
+    /*
+      sessionStorageなので
+      タブを閉じると名前が消える
+    */
+
+    sessionStorage.setItem(
+      "voicechat_guest_name",
+      name
+    );
+
+    await supabaseClient
+      .from("profiles")
+      .upsert({
+        id:currentUser.id,
+        username:name,
+        online:true,
+        status:"online"
+      });
+
+    setLoggedInUI(name);
+
+    document.getElementById(
+      "accountStatus"
+    ).textContent =
+      "👻 仮アカウント: " + name;
+
+    alert(
+      "仮アカウントを作成しました！"
+    );
+
+  }catch(error){
+
+    alert(
+      "仮アカウント作成エラー:\n" +
+      error.message
+    );
+
+  }
 
 }
 
 
-/* =========================================
+/* =====================================
    名前変更
-========================================= */
+===================================== */
 
-async function changeUsername() {
+async function changeUsername(){
 
-  if (!currentUser) {
+  if(!currentUser){
 
     alert(
       "ログインしてください。"
@@ -1121,7 +1093,7 @@ async function changeUsername() {
   const name =
     input.value.trim();
 
-  if (!name) {
+  if(!name){
 
     alert(
       "新しい名前を入力してください。"
@@ -1130,55 +1102,14 @@ async function changeUsername() {
     return;
   }
 
-  if (name.length > 30) {
+  if(name.length > 30){
 
     alert(
-      "名前は30文字以内にしてください。"
+      "名前は30文字以内です。"
     );
 
     return;
   }
-
-  /*
-    仮アカウント
-  */
-
-  if (guestMode) {
-
-    localStorage.setItem(
-      "voicechat_guest_name",
-      name
-    );
-
-    currentUser.email =
-      name;
-
-    setLoggedInUI(name);
-
-    document.getElementById(
-      "accountStatus"
-    ).textContent =
-      "👻 仮アカウント: " +
-      name;
-
-    input.value = "";
-
-    alert(
-      "仮アカウント名を変更しました！"
-    );
-
-    if (currentRoomName) {
-
-      sendRoomHello();
-
-    }
-
-    return;
-  }
-
-  /*
-    通常アカウント
-  */
 
   const {
     error
@@ -1186,13 +1117,13 @@ async function changeUsername() {
     await supabaseClient
       .from("profiles")
       .upsert({
-        id: currentUser.id,
-        username: name,
-        online: true,
-        status: "online"
+        id:currentUser.id,
+        username:name,
+        online:true,
+        status:"online"
       });
 
-  if (error) {
+  if(error){
 
     alert(
       "名前変更エラー:\n" +
@@ -1202,10 +1133,25 @@ async function changeUsername() {
     return;
   }
 
+  if(guestMode){
+
+    sessionStorage.setItem(
+      "voicechat_guest_name",
+      name
+    );
+
+  }
+
   document.getElementById(
     "username"
+  ).textContent = name;
+
+  document.getElementById(
+    "accountStatus"
   ).textContent =
-    name;
+    guestMode
+      ? "👻 仮アカウント: " + name
+      : "✅ ログイン中";
 
   document.getElementById(
     "settingsStatus"
@@ -1214,7 +1160,12 @@ async function changeUsername() {
 
   input.value = "";
 
-  if (currentRoomName) {
+  if(currentRoomName){
+
+    await roomChannel.track({
+      id:getClientId(),
+      name:getCurrentName()
+    });
 
     sendRoomHello();
 
@@ -1223,32 +1174,27 @@ async function changeUsername() {
 }
 
 
-/* =========================================
+/* =====================================
    メール変更
-========================================= */
+===================================== */
 
-async function changeEmail() {
+async function changeEmail(){
 
-  if (guestMode) {
+  if(guestMode){
 
     alert(
-      "仮アカウントでは変更できません。"
+      "仮アカウントではメールアドレスを変更できません。"
     );
 
     return;
   }
 
-  const newEmail =
+  const email =
     document.getElementById(
       "newEmail"
     ).value.trim();
 
-  if (!newEmail) {
-
-    alert(
-      "新しいメールアドレスを入力してください。"
-    );
-
+  if(!email){
     return;
   }
 
@@ -1257,10 +1203,10 @@ async function changeEmail() {
   } =
     await supabaseClient.auth
       .updateUser({
-        email: newEmail
+        email
       });
 
-  if (error) {
+  if(error){
 
     alert(
       "メールアドレス変更エラー:\n" +
@@ -1282,16 +1228,16 @@ async function changeEmail() {
 }
 
 
-/* =========================================
+/* =====================================
    パスワード変更
-========================================= */
+===================================== */
 
-async function changePassword() {
+async function changePassword(){
 
-  if (guestMode) {
+  if(guestMode){
 
     alert(
-      "仮アカウントでは変更できません。"
+      "仮アカウントではパスワード変更できません。"
     );
 
     return;
@@ -1302,7 +1248,7 @@ async function changePassword() {
       "newPassword"
     ).value;
 
-  if (password.length < 6) {
+  if(password.length < 6){
 
     alert(
       "パスワードは6文字以上にしてください。"
@@ -1319,7 +1265,7 @@ async function changePassword() {
         password
       });
 
-  if (error) {
+  if(error){
 
     alert(
       "パスワード変更エラー:\n" +
@@ -1341,54 +1287,46 @@ async function changePassword() {
 }
 
 
-/* =========================================
+/* =====================================
    ログアウト
-========================================= */
+===================================== */
 
-async function signOut() {
+async function signOut(){
 
   await leaveRoom();
 
   stopAllMedia();
 
-  if (guestMode) {
-
-    currentUser = null;
-
-    guestMode = false;
-
-    setLoggedOutUI();
-
-    return;
-  }
-
   await supabaseClient.auth.signOut();
 
   currentUser = null;
-
   guestMode = false;
+
+  sessionStorage.removeItem(
+    "voicechat_guest_name"
+  );
 
   setLoggedOutUI();
 
 }
 
 
-/* =========================================
+/* =====================================
    マイク
-========================================= */
+===================================== */
 
-async function toggleMic() {
+async function toggleMic(){
 
-  if (!micEnabled) {
+  if(!micEnabled){
 
-    try {
+    try{
 
-      if (!microphone) {
+      if(!microphone){
 
         microphone =
           await navigator.mediaDevices
             .getUserMedia({
-              audio: true
+              audio:true
             });
 
       }
@@ -1404,7 +1342,7 @@ async function toggleMic() {
 
       updatePeerTracks();
 
-    } catch (error) {
+    }catch(error){
 
       alert(
         "マイクへのアクセスが許可されませんでした。"
@@ -1412,7 +1350,7 @@ async function toggleMic() {
 
     }
 
-  } else {
+  }else{
 
     micEnabled = false;
 
@@ -1430,9 +1368,9 @@ async function toggleMic() {
 }
 
 
-function setAudioTracksEnabled(enabled) {
+function setAudioTracksEnabled(enabled){
 
-  if (!microphone) {
+  if(!microphone){
     return;
   }
 
@@ -1447,20 +1385,20 @@ function setAudioTracksEnabled(enabled) {
 }
 
 
-/* =========================================
+/* =====================================
    カメラ
-========================================= */
+===================================== */
 
-async function toggleCamera() {
+async function toggleCamera(){
 
-  if (!cameraEnabled) {
+  if(!cameraEnabled){
 
-    try {
+    try{
 
       cameraStream =
         await navigator.mediaDevices
           .getUserMedia({
-            video: true
+            video:true
           });
 
       cameraEnabled = true;
@@ -1471,12 +1409,13 @@ async function toggleCamera() {
         "📷 カメラOFF";
 
       addLocalVideo(
-        cameraStream
+        cameraStream,
+        "📷 自分"
       );
 
       updatePeerTracks();
 
-    } catch (error) {
+    }catch(error){
 
       alert(
         "カメラへのアクセスが許可されませんでした。"
@@ -1484,9 +1423,9 @@ async function toggleCamera() {
 
     }
 
-  } else {
+  }else{
 
-    if (cameraStream) {
+    if(cameraStream){
 
       cameraStream
         .getTracks()
@@ -1505,7 +1444,18 @@ async function toggleCamera() {
     ).textContent =
       "📷 カメラON";
 
-    removeLocalVideo();
+    if(screenStream){
+
+      addLocalVideo(
+        screenStream,
+        "🖥️ 画面共有"
+      );
+
+    }else{
+
+      removeLocalVideo();
+
+    }
 
     updatePeerTracks();
 
@@ -1514,21 +1464,21 @@ async function toggleCamera() {
 }
 
 
-/* =========================================
+/* =====================================
    画面共有
-========================================= */
+===================================== */
 
-async function toggleScreen() {
+async function toggleScreen(){
 
-  if (!screenEnabled) {
+  if(!screenEnabled){
 
-    try {
+    try{
 
       screenStream =
         await navigator.mediaDevices
           .getDisplayMedia({
-            video: true,
-            audio: true
+            video:true,
+            audio:true
           });
 
       screenEnabled = true;
@@ -1543,18 +1493,22 @@ async function toggleScreen() {
         "🖥️ 画面共有"
       );
 
-      screenStream
-        .getVideoTracks()[0]
-        .addEventListener(
+      const track =
+        screenStream
+          .getVideoTracks()[0];
+
+      if(track){
+
+        track.addEventListener(
           "ended",
-          () => {
-            stopScreenShare();
-          }
+          stopScreenShare
         );
+
+      }
 
       updatePeerTracks();
 
-    } catch (error) {
+    }catch(error){
 
       console.log(
         "画面共有キャンセル",
@@ -1563,7 +1517,7 @@ async function toggleScreen() {
 
     }
 
-  } else {
+  }else{
 
     stopScreenShare();
 
@@ -1572,9 +1526,9 @@ async function toggleScreen() {
 }
 
 
-function stopScreenShare() {
+function stopScreenShare(){
 
-  if (screenStream) {
+  if(screenStream){
 
     screenStream
       .getTracks()
@@ -1593,13 +1547,14 @@ function stopScreenShare() {
   ).textContent =
     "🖥️ 画面共有";
 
-  if (cameraStream) {
+  if(cameraStream){
 
     addLocalVideo(
-      cameraStream
+      cameraStream,
+      "📷 自分"
     );
 
-  } else {
+  }else{
 
     removeLocalVideo();
 
@@ -1610,14 +1565,14 @@ function stopScreenShare() {
 }
 
 
-/* =========================================
+/* =====================================
    ローカル映像
-========================================= */
+===================================== */
 
 function addLocalVideo(
   stream,
-  title = "📷 自分"
-) {
+  title
+){
 
   const container =
     document.getElementById(
@@ -1629,12 +1584,10 @@ function addLocalVideo(
       "localVideoBox"
     );
 
-  if (!box) {
+  if(!box){
 
     box =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
     box.id =
       "localVideoBox";
@@ -1642,82 +1595,59 @@ function addLocalVideo(
     box.className =
       "videoBox";
 
-    container.prepend(
-      box
-    );
+    container.prepend(box);
 
   }
 
   box.innerHTML = "";
 
   const video =
-    document.createElement(
-      "video"
-    );
+    document.createElement("video");
 
   video.autoplay = true;
-
   video.muted = true;
-
   video.playsInline = true;
-
-  video.srcObject =
-    stream;
+  video.srcObject = stream;
 
   const name =
-    document.createElement(
-      "div"
-    );
+    document.createElement("div");
 
   name.className =
     "videoName";
 
   name.textContent =
-    title + " " +
-    getCurrentName();
+    title + " " + getCurrentName();
 
   box.appendChild(video);
-
   box.appendChild(name);
 
 }
 
 
-function removeLocalVideo() {
+function removeLocalVideo(){
 
   const box =
     document.getElementById(
       "localVideoBox"
     );
 
-  if (box) {
+  if(box){
     box.remove();
   }
 
 }
 
 
-function getCurrentName() {
-
-  return document.getElementById(
-    "username"
-  ).textContent;
-
-}
-
-
-/* =========================================
+/* =====================================
    WebRTC
-========================================= */
+===================================== */
 
-function createPeerConnection(
-  peerId
-) {
+function createPeerConnection(peerId){
 
   const pc =
     new RTCPeerConnection({
 
-      iceServers: [
+      iceServers:[
         {
           urls:
             "stun:stun.l.google.com:19302"
@@ -1730,14 +1660,14 @@ function createPeerConnection(
 
     });
 
-  peerConnections[peerId] =
-    pc;
+  peerConnections[peerId] = pc;
+
 
   /*
-    マイク
+    音声
   */
 
-  if (microphone) {
+  if(microphone){
 
     microphone
       .getTracks()
@@ -1754,11 +1684,12 @@ function createPeerConnection(
 
   }
 
+
   /*
     カメラ
   */
 
-  if (cameraStream) {
+  if(cameraStream){
 
     cameraStream
       .getTracks()
@@ -1775,11 +1706,12 @@ function createPeerConnection(
 
   }
 
+
   /*
     画面共有
   */
 
-  if (screenStream) {
+  if(screenStream){
 
     screenStream
       .getTracks()
@@ -1796,6 +1728,7 @@ function createPeerConnection(
 
   }
 
+
   /*
     ICE
   */
@@ -1803,30 +1736,21 @@ function createPeerConnection(
   pc.onicecandidate =
     event => {
 
-      if (
+      if(
         event.candidate &&
         roomChannel
-      ) {
+      ){
 
         roomChannel.send({
 
-          type:
-            "broadcast",
+          type:"broadcast",
 
-          event:
-            "ice",
+          event:"ice",
 
-          payload: {
-
-            from:
-              getClientId(),
-
-            to:
-              peerId,
-
-            candidate:
-              event.candidate
-
+          payload:{
+            from:getClientId(),
+            to:peerId,
+            candidate:event.candidate
           }
 
         });
@@ -1837,7 +1761,7 @@ function createPeerConnection(
 
 
   /*
-    リモート映像
+    相手の音声・映像
   */
 
   pc.ontrack =
@@ -1846,7 +1770,7 @@ function createPeerConnection(
       const stream =
         event.streams[0];
 
-      if (!stream) {
+      if(!stream){
         return;
       }
 
@@ -1864,18 +1788,13 @@ function createPeerConnection(
   pc.onconnectionstatechange =
     () => {
 
-      if (
-        pc.connectionState ===
-          "failed" ||
-        pc.connectionState ===
-          "closed" ||
-        pc.connectionState ===
-          "disconnected"
-      ) {
+      if(
+        pc.connectionState === "failed" ||
+        pc.connectionState === "closed" ||
+        pc.connectionState === "disconnected"
+      ){
 
-        removePeer(
-          peerId
-        );
+        removePeer(peerId);
 
       }
 
@@ -1887,23 +1806,19 @@ function createPeerConnection(
 }
 
 
-/* =========================================
+/* =====================================
    Offer
-========================================= */
+===================================== */
 
-async function createOffer(
-  peerId
-) {
+async function createOffer(peerId){
 
   let pc =
     peerConnections[peerId];
 
-  if (!pc) {
+  if(!pc){
 
     pc =
-      createPeerConnection(
-        peerId
-      );
+      createPeerConnection(peerId);
 
   }
 
@@ -1914,47 +1829,32 @@ async function createOffer(
     offer
   );
 
-  if (roomChannel) {
+  await roomChannel.send({
 
-    await roomChannel.send({
+    type:"broadcast",
 
-      type:
-        "broadcast",
+    event:"offer",
 
-      event:
-        "offer",
+    payload:{
+      from:getClientId(),
+      to:peerId,
+      offer
+    }
 
-      payload: {
-
-        from:
-          getClientId(),
-
-        to:
-          peerId,
-
-        offer
-
-      }
-
-    });
-
-  }
+  });
 
 }
 
 
-/* =========================================
-   Answer
-========================================= */
+/* =====================================
+   Offer受信
+===================================== */
 
-async function handleOffer(
-  payload
-) {
+async function handleOffer(payload){
 
-  if (
-    payload.to !==
-    getClientId()
-  ) {
+  if(
+    payload.to !== getClientId()
+  ){
     return;
   }
 
@@ -1964,12 +1864,10 @@ async function handleOffer(
   let pc =
     peerConnections[peerId];
 
-  if (!pc) {
+  if(!pc){
 
     pc =
-      createPeerConnection(
-        peerId
-      );
+      createPeerConnection(peerId);
 
   }
 
@@ -1986,22 +1884,14 @@ async function handleOffer(
 
   await roomChannel.send({
 
-    type:
-      "broadcast",
+    type:"broadcast",
 
-    event:
-      "answer",
+    event:"answer",
 
-    payload: {
-
-      from:
-        getClientId(),
-
-      to:
-        peerId,
-
+    payload:{
+      from:getClientId(),
+      to:peerId,
       answer
-
     }
 
   });
@@ -2009,18 +1899,15 @@ async function handleOffer(
 }
 
 
-/* =========================================
-   Answer受信
-========================================= */
+/* =====================================
+   Answer
+===================================== */
 
-async function handleAnswer(
-  payload
-) {
+async function handleAnswer(payload){
 
-  if (
-    payload.to !==
-    getClientId()
-  ) {
+  if(
+    payload.to !== getClientId()
+  ){
     return;
   }
 
@@ -2029,7 +1916,7 @@ async function handleAnswer(
       payload.from
     ];
 
-  if (!pc) {
+  if(!pc){
     return;
   }
 
@@ -2040,18 +1927,15 @@ async function handleAnswer(
 }
 
 
-/* =========================================
+/* =====================================
    ICE
-========================================= */
+===================================== */
 
-async function handleIce(
-  payload
-) {
+async function handleIce(payload){
 
-  if (
-    payload.to !==
-    getClientId()
-  ) {
+  if(
+    payload.to !== getClientId()
+  ){
     return;
   }
 
@@ -2060,17 +1944,17 @@ async function handleIce(
       payload.from
     ];
 
-  if (!pc) {
+  if(!pc){
     return;
   }
 
-  try {
+  try{
 
     await pc.addIceCandidate(
       payload.candidate
     );
 
-  } catch (error) {
+  }catch(error){
 
     console.warn(
       "ICE error",
@@ -2082,18 +1966,27 @@ async function handleIce(
 }
 
 
-/* =========================================
+/* =====================================
    部屋参加
-========================================= */
+===================================== */
 
-async function joinRoom() {
+async function joinRoom(){
+
+  if(!currentUser){
+
+    alert(
+      "先にログインしてください。"
+    );
+
+    return;
+  }
 
   const name =
     document.getElementById(
       "roomNameInput"
     ).value.trim();
 
-  if (!name) {
+  if(!name){
 
     alert(
       "部屋名を入力してください。"
@@ -2104,8 +1997,7 @@ async function joinRoom() {
 
   await leaveRoom();
 
-  currentRoomName =
-    name;
+  currentRoomName = name;
 
   const channelName =
     "voice-room-" +
@@ -2115,12 +2007,12 @@ async function joinRoom() {
     supabaseClient.channel(
       channelName,
       {
-        config: {
-          broadcast: {
-            self: false
+        config:{
+          broadcast:{
+            self:false
           },
-          presence: {
-            key: getClientId()
+          presence:{
+            key:getClientId()
           }
         }
       }
@@ -2128,42 +2020,39 @@ async function joinRoom() {
 
 
   /*
-    シグナリング
+    HELLO
   */
 
   roomChannel.on(
     "broadcast",
-    {
-      event: "hello"
-    },
-    async ({ payload }) => {
+    {event:"hello"},
+    async ({payload}) => {
 
-      if (
+      if(
         payload.from ===
         getClientId()
-      ) {
+      ){
         return;
       }
 
       roomMembers[
         payload.from
       ] = {
-        name:
-          payload.name
+        id:payload.from,
+        name:payload.name
       };
 
       updateRoomUserList();
 
 
       /*
-        IDの小さい側を
-        Offer側にする
+        ID順でOffer側を決定
       */
 
-      if (
+      if(
         String(getClientId()) <
         String(payload.from)
-      ) {
+      ){
 
         await createOffer(
           payload.from
@@ -2175,57 +2064,59 @@ async function joinRoom() {
   );
 
 
+  /*
+    Offer
+  */
+
   roomChannel.on(
     "broadcast",
-    {
-      event: "offer"
-    },
-    async ({ payload }) => {
+    {event:"offer"},
+    ({payload}) => {
 
-      await handleOffer(
-        payload
-      );
+      handleOffer(payload);
 
     }
   );
 
 
+  /*
+    Answer
+  */
+
   roomChannel.on(
     "broadcast",
-    {
-      event: "answer"
-    },
-    async ({ payload }) => {
+    {event:"answer"},
+    ({payload}) => {
 
-      await handleAnswer(
-        payload
-      );
+      handleAnswer(payload);
 
     }
   );
 
 
+  /*
+    ICE
+  */
+
   roomChannel.on(
     "broadcast",
-    {
-      event: "ice"
-    },
-    async ({ payload }) => {
+    {event:"ice"},
+    ({payload}) => {
 
-      await handleIce(
-        payload
-      );
+      handleIce(payload);
 
     }
   );
 
 
+  /*
+    チャット
+  */
+
   roomChannel.on(
     "broadcast",
-    {
-      event: "chat"
-    },
-    ({ payload }) => {
+    {event:"chat"},
+    ({payload}) => {
 
       addChatMessage(
         payload.name,
@@ -2236,12 +2127,14 @@ async function joinRoom() {
   );
 
 
+  /*
+    退出
+  */
+
   roomChannel.on(
     "broadcast",
-    {
-      event: "user-left"
-    },
-    ({ payload }) => {
+    {event:"user-left"},
+    ({payload}) => {
 
       removePeer(
         payload.id
@@ -2257,11 +2150,13 @@ async function joinRoom() {
   );
 
 
+  /*
+    Presence同期
+  */
+
   roomChannel.on(
     "presence",
-    {
-      event: "sync"
-    },
+    {event:"sync"},
     () => {
 
       const state =
@@ -2275,10 +2170,10 @@ async function joinRoom() {
           const entries =
             state[key];
 
-          if (
+          if(
             entries &&
             entries.length
-          ) {
+          ){
 
             roomMembers[key] =
               entries[0];
@@ -2293,20 +2188,21 @@ async function joinRoom() {
   );
 
 
+  /*
+    Presence参加
+  */
+
   roomChannel.on(
     "presence",
-    {
-      event: "join"
-    },
-    ({ key, newPresences }) => {
+    {event:"join"},
+    ({key,newPresences}) => {
 
       newPresences.forEach(
         presence => {
 
-          if (
-            key !==
-            getClientId()
-          ) {
+          if(
+            key !== getClientId()
+          ){
 
             roomMembers[key] =
               presence;
@@ -2322,12 +2218,14 @@ async function joinRoom() {
   );
 
 
+  /*
+    Presence退出
+  */
+
   roomChannel.on(
     "presence",
-    {
-      event: "leave"
-    },
-    ({ key }) => {
+    {event:"leave"},
+    ({key}) => {
 
       removePeer(key);
 
@@ -2339,23 +2237,24 @@ async function joinRoom() {
   );
 
 
+  /*
+    接続
+  */
+
   await roomChannel.subscribe(
     async status => {
 
-      if (
-        status !==
-        "SUBSCRIBED"
-      ) {
+      if(
+        status !== "SUBSCRIBED"
+      ){
         return;
       }
 
       await roomChannel.track({
 
-        id:
-          getClientId(),
+        id:getClientId(),
 
-        name:
-          getCurrentName()
+        name:getCurrentName()
 
       });
 
@@ -2364,11 +2263,11 @@ async function joinRoom() {
       document.getElementById(
         "currentRoom"
       ).innerHTML =
-        `
+      `
         <span class="roomName">
           🟢 ${escapeHTML(name)}
         </span>
-        `;
+      `;
 
       document.getElementById(
         "status"
@@ -2390,28 +2289,21 @@ async function joinRoom() {
 }
 
 
-function sendRoomHello() {
+function sendRoomHello(){
 
-  if (!roomChannel) {
+  if(!roomChannel){
     return;
   }
 
   roomChannel.send({
 
-    type:
-      "broadcast",
+    type:"broadcast",
 
-    event:
-      "hello",
+    event:"hello",
 
-    payload: {
-
-      from:
-        getClientId(),
-
-      name:
-        getCurrentName()
-
+    payload:{
+      from:getClientId(),
+      name:getCurrentName()
     }
 
   });
@@ -2419,88 +2311,71 @@ function sendRoomHello() {
 }
 
 
-/* =========================================
+/* =====================================
    部屋退出
-========================================= */
+===================================== */
 
-async function leaveRoom() {
+async function leaveRoom(){
 
-  if (!roomChannel) {
+  if(!roomChannel){
 
-    currentRoomName =
-      null;
-
+    currentRoomName = null;
     return;
 
   }
 
-  try {
+  try{
 
     await roomChannel.send({
 
-      type:
-        "broadcast",
+      type:"broadcast",
 
-      event:
-        "user-left",
+      event:"user-left",
 
-      payload: {
-
-        id:
-          getClientId()
-
+      payload:{
+        id:getClientId()
       }
 
     });
 
-  } catch {}
+  }catch{}
 
-  Object.keys(
-    peerConnections
-  )
-    .forEach(
-      peerId => {
 
-        try {
+  Object.keys(peerConnections)
+    .forEach(peerId => {
 
-          peerConnections[
-            peerId
-          ].close();
+      try{
+        peerConnections[
+          peerId
+        ].close();
+      }catch{}
 
-        } catch {}
-
-      }
-    );
+    });
 
   peerConnections = {};
-
   remoteStreams = {};
-
   roomMembers = {};
 
-  try {
 
+  try{
     await roomChannel.untrack();
+  }catch{}
 
-  } catch {}
 
-  try {
+  try{
+    await supabaseClient
+      .removeChannel(
+        roomChannel
+      );
+  }catch{}
 
-    await supabaseClient.removeChannel(
-      roomChannel
-    );
-
-  } catch {}
 
   roomChannel = null;
-
-  currentRoomName =
-    null;
+  currentRoomName = null;
 
   document.getElementById(
     "participants"
-  ).innerHTML =
-    "";
+  ).innerHTML = "";
 
   document.getElementById(
     "roomUserList"
@@ -2510,154 +2385,130 @@ async function leaveRoom() {
   document.getElementById(
     "currentRoom"
   ).innerHTML =
-    `
+  `
     <span class="roomName">
       未参加
     </span>
-    `;
+  `;
 
 }
 
 
-/* =========================================
+/* =====================================
    Peer削除
-========================================= */
+===================================== */
 
-function removePeer(
-  peerId
-) {
+function removePeer(peerId){
 
   const pc =
-    peerConnections[
-      peerId
-    ];
+    peerConnections[peerId];
 
-  if (pc) {
+  if(pc){
 
-    try {
+    try{
       pc.close();
-    } catch {}
+    }catch{}
 
   }
 
-  delete peerConnections[
-    peerId
-  ];
-
-  delete remoteStreams[
-    peerId
-  ];
+  delete peerConnections[peerId];
+  delete remoteStreams[peerId];
 
   const box =
     document.getElementById(
       "remote-" + peerId
     );
 
-  if (box) {
+  if(box){
     box.remove();
   }
 
 }
 
 
-/* =========================================
-   Peerのトラック更新
-========================================= */
+/* =====================================
+   トラック更新
+===================================== */
 
-function updatePeerTracks() {
+function updatePeerTracks(){
 
-  Object.keys(
-    peerConnections
-  )
-    .forEach(
-      async peerId => {
+  Object.keys(peerConnections)
+    .forEach(async peerId => {
 
-        const pc =
-          peerConnections[
-            peerId
-          ];
+      const pc =
+        peerConnections[peerId];
 
-        if (!pc) {
-          return;
-        }
+      if(!pc){
+        return;
+      }
 
-        /*
-          現在の映像トラックを取得
-        */
 
-        const videoTrack =
-          screenStream
-            ?.getVideoTracks()[0] ||
-          cameraStream
-            ?.getVideoTracks()[0];
+      /*
+        映像
+      */
 
-        const videoSender =
-          pc.getSenders()
-            .find(
-              sender =>
-                sender.track &&
-                sender.track.kind ===
-                "video"
-            );
+      const videoTrack =
+        screenStream
+          ?.getVideoTracks()[0] ||
+        cameraStream
+          ?.getVideoTracks()[0];
 
-        if (
-          videoTrack &&
-          videoSender
-        ) {
-
-          await videoSender.replaceTrack(
-            videoTrack
+      const videoSender =
+        pc.getSenders()
+          .find(
+            sender =>
+              sender.track &&
+              sender.track.kind ===
+              "video"
           );
 
-        }
+      if(videoSender){
 
-
-        /*
-          音声
-        */
-
-        if (microphone) {
-
-          const audioTrack =
-            microphone
-              .getAudioTracks()[0];
-
-          const audioSender =
-            pc.getSenders()
-              .find(
-                sender =>
-                  sender.track &&
-                  sender.track.kind ===
-                  "audio"
-              );
-
-          if (
-            audioTrack &&
-            audioSender
-          ) {
-
-            await audioSender.replaceTrack(
-              audioTrack
-            );
-
-          }
-
-        }
+        await videoSender.replaceTrack(
+          videoTrack || null
+        );
 
       }
-    );
+
+
+      /*
+        音声
+      */
+
+      const audioTrack =
+        microphone
+          ?.getAudioTracks()[0];
+
+      const audioSender =
+        pc.getSenders()
+          .find(
+            sender =>
+              sender.track &&
+              sender.track.kind ===
+              "audio"
+          );
+
+      if(audioSender){
+
+        await audioSender.replaceTrack(
+          audioTrack || null
+        );
+
+      }
+
+    });
 
 }
 
 
-/* =========================================
+/* =====================================
    リモート映像
-========================================= */
+===================================== */
 
 function addRemoteVideo(
   peerId,
   stream
-) {
+){
 
   const container =
     document.getElementById(
@@ -2669,7 +2520,7 @@ function addRemoteVideo(
       "remote-" + peerId
     );
 
-  if (!box) {
+  if(!box){
 
     box =
       document.createElement(
@@ -2682,9 +2533,7 @@ function addRemoteVideo(
     box.className =
       "videoBox";
 
-    container.appendChild(
-      box
-    );
+    container.appendChild(box);
 
   }
 
@@ -2696,11 +2545,9 @@ function addRemoteVideo(
     );
 
   video.autoplay = true;
-
   video.playsInline = true;
-
-  video.srcObject =
-    stream;
+  video.controls = false;
+  video.srcObject = stream;
 
   const name =
     document.createElement(
@@ -2715,38 +2562,21 @@ function addRemoteVideo(
     "参加者";
 
   box.appendChild(video);
-
   box.appendChild(name);
 
 }
 
 
-/* =========================================
-   参加者一覧
-========================================= */
+/* =====================================
+   部屋参加者
+===================================== */
 
-function updateRoomUserList() {
+function updateRoomUserList(){
 
   const list =
     document.getElementById(
       "roomUserList"
     );
-
-  const users =
-    Object.values(
-      roomMembers
-    );
-
-  if (
-    users.length === 0
-  ) {
-
-    list.textContent =
-      "自分だけです。";
-
-    return;
-
-  }
 
   list.innerHTML = "";
 
@@ -2762,15 +2592,16 @@ function updateRoomUserList() {
 
   list.appendChild(me);
 
-  users.forEach(
-    user => {
 
-      if (
-        user.id ===
-        getClientId()
-      ) {
+  Object.keys(roomMembers)
+    .forEach(id => {
+
+      if(id === getClientId()){
         return;
       }
+
+      const user =
+        roomMembers[id];
 
       const div =
         document.createElement(
@@ -2786,19 +2617,18 @@ function updateRoomUserList() {
 
       list.appendChild(div);
 
-    }
-  );
+    });
 
 }
 
 
-/* =========================================
+/* =====================================
    チャット
-========================================= */
+===================================== */
 
-function sendChat() {
+function sendChat(){
 
-  if (!roomChannel) {
+  if(!roomChannel){
 
     alert(
       "先に部屋へ参加してください。"
@@ -2815,25 +2645,19 @@ function sendChat() {
   const message =
     input.value.trim();
 
-  if (!message) {
+  if(!message){
     return;
   }
 
   roomChannel.send({
 
-    type:
-      "broadcast",
+    type:"broadcast",
 
-    event:
-      "chat",
+    event:"chat",
 
-    payload: {
-
-      name:
-        getCurrentName(),
-
+    payload:{
+      name:getCurrentName(),
       message
-
     }
 
   });
@@ -2851,7 +2675,7 @@ function sendChat() {
 function addChatMessage(
   name,
   message
-) {
+){
 
   const box =
     document.getElementById(
@@ -2883,19 +2707,16 @@ function addChatMessage(
 }
 
 
-/* =========================================
+/* =====================================
    フレンド検索
-========================================= */
+===================================== */
 
-async function searchFriend() {
+async function searchFriend(){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
 
     alert(
-      "通常アカウントでログインしてください。"
+      "ログインしてください。"
     );
 
     return;
@@ -2906,7 +2727,7 @@ async function searchFriend() {
       "friendSearch"
     ).value.trim();
 
-  if (!name) {
+  if(!name){
     return;
   }
 
@@ -2923,7 +2744,7 @@ async function searchFriend() {
         "username",
         "%" + name + "%"
       )
-      .limit(10);
+      .limit(20);
 
   const result =
     document.getElementById(
@@ -2932,13 +2753,12 @@ async function searchFriend() {
 
   result.innerHTML = "";
 
-  if (error) {
+  if(error){
 
     result.innerHTML =
       '<div class="empty">検索に失敗しました。</div>';
 
     return;
-
   }
 
   const users =
@@ -2949,82 +2769,76 @@ async function searchFriend() {
           currentUser.id
       );
 
-  if (!users.length) {
+  if(!users.length){
 
     result.innerHTML =
       '<div class="empty">プレイヤーが見つかりません。</div>';
 
     return;
-
   }
 
-  users.forEach(
-    user => {
+  users.forEach(user => {
 
-      const div =
-        document.createElement(
-          "div"
-        );
-
-      div.className =
-        "friend";
-
-      div.innerHTML =
-        `
-        <div class="friendAvatar">
-          👤
-        </div>
-
-        <div class="friendInfo">
-
-          <strong>
-            ${escapeHTML(user.username)}
-          </strong>
-
-          <span class="${
-            user.online
-              ? "online"
-              : "offline"
-          }">
-            ● ${
-              user.online
-                ? "オンライン"
-                : "オフライン"
-            }
-          </span>
-
-        </div>
-
-        <button
-          class="green"
-          onclick="sendFriendRequest('${user.id}')"
-        >
-          ＋ 追加
-        </button>
-        `;
-
-      result.appendChild(
-        div
+    const div =
+      document.createElement(
+        "div"
       );
 
-    }
-  );
+    div.className =
+      "friend";
+
+    div.innerHTML =
+    `
+      <div class="friendAvatar">
+        👤
+      </div>
+
+      <div class="friendInfo">
+
+        <strong>
+          ${escapeHTML(user.username)}
+        </strong>
+
+        <div class="${
+          user.online
+            ? "online"
+            : "offline"
+        }">
+
+          ● ${
+            user.online
+              ? "オンライン"
+              : "オフライン"
+          }
+
+        </div>
+
+      </div>
+
+      <button
+        class="green"
+        onclick="sendFriendRequest('${user.id}')"
+      >
+        ＋ 追加
+      </button>
+    `;
+
+    result.appendChild(div);
+
+  });
 
 }
 
 
-/* =========================================
+/* =====================================
    フレンド申請
-========================================= */
+===================================== */
 
 async function sendFriendRequest(
   userId
-) {
+){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
     return;
   }
 
@@ -3034,17 +2848,12 @@ async function sendFriendRequest(
     await supabaseClient
       .from("friend_requests")
       .insert({
-        sender_id:
-          currentUser.id,
-
-        receiver_id:
-          userId,
-
-        status:
-          "pending"
+        sender_id:currentUser.id,
+        receiver_id:userId,
+        status:"pending"
       });
 
-  if (error) {
+  if(error){
 
     alert(
       "フレンド申請エラー:\n" +
@@ -3052,7 +2861,6 @@ async function sendFriendRequest(
     );
 
     return;
-
   }
 
   alert(
@@ -3062,16 +2870,13 @@ async function sendFriendRequest(
 }
 
 
-/* =========================================
+/* =====================================
    フレンド一覧
-========================================= */
+===================================== */
 
-async function loadFriends() {
+async function loadFriends(){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
     return;
   }
 
@@ -3101,91 +2906,85 @@ async function loadFriends() {
 
   list.innerHTML = "";
 
-  if (
+  if(
     error ||
     !data ||
     !data.length
-  ) {
+  ){
 
     list.innerHTML =
       '<div class="empty">フレンドはいません。</div>';
 
     return;
-
   }
 
-  data.forEach(
-    row => {
+  data.forEach(row => {
 
-      const friend =
-        row.profiles;
+    const friend =
+      row.profiles;
 
-      if (!friend) {
-        return;
-      }
+    if(!friend){
+      return;
+    }
 
-      const div =
-        document.createElement(
-          "div"
-        );
-
-      div.className =
-        "friend";
-
-      div.innerHTML =
-        `
-        <div class="friendAvatar">
-          👤
-        </div>
-
-        <div class="friendInfo">
-
-          <strong>
-            ${escapeHTML(friend.username)}
-          </strong>
-
-          <span class="${
-            friend.online
-              ? "online"
-              : "offline"
-          }">
-            ● ${
-              friend.online
-                ? "オンライン"
-                : "オフライン"
-            }
-          </span>
-
-        </div>
-
-        <button
-          class="red"
-          onclick="removeFriend('${friend.id}')"
-        >
-          削除
-        </button>
-        `;
-
-      list.appendChild(
-        div
+    const div =
+      document.createElement(
+        "div"
       );
 
-    }
-  );
+    div.className =
+      "friend";
+
+    div.innerHTML =
+    `
+      <div class="friendAvatar">
+        👤
+      </div>
+
+      <div class="friendInfo">
+
+        <strong>
+          ${escapeHTML(friend.username)}
+        </strong>
+
+        <div class="${
+          friend.online
+            ? "online"
+            : "offline"
+        }">
+
+          ● ${
+            friend.online
+              ? "オンライン"
+              : "オフライン"
+          }
+
+        </div>
+
+      </div>
+
+      <button
+        class="red"
+        onclick="removeFriend('${friend.id}')"
+      >
+        削除
+      </button>
+    `;
+
+    list.appendChild(div);
+
+  });
 
 }
 
 
-/* =========================================
-   フレンド申請一覧
-========================================= */
+/* =====================================
+   申請一覧
+===================================== */
 
-async function loadFriendRequests() {
+async function loadFriendRequests(){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
     return;
   }
 
@@ -3218,113 +3017,102 @@ async function loadFriendRequests() {
 
   list.innerHTML = "";
 
-  if (
+  if(
     error ||
     !data ||
     !data.length
-  ) {
+  ){
 
     list.innerHTML =
       '<div class="empty">フレンド申請はありません。</div>';
 
     return;
-
   }
 
-  data.forEach(
-    request => {
+  data.forEach(request => {
 
-      const name =
-        request.profiles?.username ||
-        "Unknown";
+    const name =
+      request.profiles?.username ||
+      "Unknown";
 
-      const div =
-        document.createElement(
-          "div"
-        );
-
-      div.className =
-        "request";
-
-      div.innerHTML =
-        `
-        <strong>
-          ${escapeHTML(name)}
-        </strong>
-
-        <p>
-          フレンド申請が届いています。
-        </p>
-
-        <button
-          class="green"
-          onclick="acceptFriend(
-            '${request.id}',
-            '${request.sender_id}'
-          )"
-        >
-          ✓ 承認
-        </button>
-
-        <button
-          class="red"
-          onclick="rejectFriend(
-            '${request.id}'
-          )"
-        >
-          ✕ 拒否
-        </button>
-        `;
-
-      list.appendChild(
-        div
+    const div =
+      document.createElement(
+        "div"
       );
 
-    }
-  );
+    div.className =
+      "request";
+
+    div.innerHTML =
+    `
+      <strong>
+        ${escapeHTML(name)}
+      </strong>
+
+      <p>
+        フレンド申請が届いています。
+      </p>
+
+      <button
+        class="green"
+        onclick="acceptFriend(
+          '${request.id}',
+          '${request.sender_id}'
+        )"
+      >
+        ✓ 承認
+      </button>
+
+      <button
+        class="red"
+        onclick="rejectFriend(
+          '${request.id}'
+        )"
+      >
+        ✕ 拒否
+      </button>
+    `;
+
+    list.appendChild(div);
+
+  });
 
 }
 
 
-/* =========================================
+/* =====================================
    承認
-========================================= */
+===================================== */
 
 async function acceptFriend(
   requestId,
   senderId
-) {
+){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
     return;
   }
 
   const {
-    error:
-      requestError
+    error:requestError
   } =
     await supabaseClient
       .from("friend_requests")
       .update({
-        status:
-          "accepted"
+        status:"accepted"
       })
       .eq(
         "id",
         requestId
       );
 
-  if (requestError) {
+  if(requestError){
 
     alert(
       "申請処理に失敗しました。"
     );
 
     return;
-
   }
 
   const {
@@ -3334,34 +3122,26 @@ async function acceptFriend(
       .from("friendships")
       .insert([
         {
-          user_id:
-            currentUser.id,
-
-          friend_id:
-            senderId
+          user_id:currentUser.id,
+          friend_id:senderId
         },
         {
-          user_id:
-            senderId,
-
-          friend_id:
-            currentUser.id
+          user_id:senderId,
+          friend_id:currentUser.id
         }
       ]);
 
-  if (error) {
+  if(error){
 
     alert(
-      "フレンド登録に失敗しました:\n" +
+      "フレンド登録エラー:\n" +
       error.message
     );
 
     return;
-
   }
 
   await loadFriends();
-
   await loadFriendRequests();
 
   alert(
@@ -3371,13 +3151,13 @@ async function acceptFriend(
 }
 
 
-/* =========================================
+/* =====================================
    拒否
-========================================= */
+===================================== */
 
 async function rejectFriend(
   requestId
-) {
+){
 
   const {
     error
@@ -3385,22 +3165,20 @@ async function rejectFriend(
     await supabaseClient
       .from("friend_requests")
       .update({
-        status:
-          "rejected"
+        status:"rejected"
       })
       .eq(
         "id",
         requestId
       );
 
-  if (error) {
+  if(error){
 
     alert(
       "申請の拒否に失敗しました。"
     );
 
     return;
-
   }
 
   await loadFriendRequests();
@@ -3408,26 +3186,23 @@ async function rejectFriend(
 }
 
 
-/* =========================================
+/* =====================================
    フレンド削除
-========================================= */
+===================================== */
 
 async function removeFriend(
   friendId
-) {
+){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
     return;
   }
 
-  if (
+  if(
     !confirm(
       "このフレンドを削除しますか？"
     )
-  ) {
+  ){
     return;
   }
 
@@ -3441,7 +3216,7 @@ async function removeFriend(
         `and(user_id.eq.${currentUser.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${currentUser.id})`
       );
 
-  if (error) {
+  if(error){
 
     alert(
       "フレンド削除エラー:\n" +
@@ -3449,7 +3224,6 @@ async function removeFriend(
     );
 
     return;
-
   }
 
   await loadFriends();
@@ -3457,30 +3231,25 @@ async function removeFriend(
 }
 
 
-/* =========================================
+/* =====================================
    パーティー
-========================================= */
+===================================== */
 
-async function createParty() {
+async function createParty(){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
 
     alert(
-      "仮アカウントではパーティー保存機能を利用できません。\n" +
-      "部屋機能は仮アカウントでも利用できます。"
+      "ログインしてください。"
     );
 
     return;
-
   }
 
   const code =
     Math.random()
       .toString(36)
-      .substring(2, 8)
+      .substring(2,8)
       .toUpperCase();
 
   const {
@@ -3490,16 +3259,13 @@ async function createParty() {
     await supabaseClient
       .from("parties")
       .insert({
-        owner_id:
-          currentUser.id,
-
-        party_code:
-          code
+        owner_id:currentUser.id,
+        party_code:code
       })
       .select()
       .single();
 
-  if (error) {
+  if(error){
 
     alert(
       "パーティー作成エラー:\n" +
@@ -3507,13 +3273,12 @@ async function createParty() {
     );
 
     return;
-
   }
 
   document.getElementById(
     "partyArea"
   ).innerHTML =
-    `
+  `
     <div class="partyBox">
 
       <h3>
@@ -3524,9 +3289,7 @@ async function createParty() {
         パーティーコード
       </p>
 
-      <strong
-        style="font-size:24px;"
-      >
+      <strong style="font-size:24px">
         ${escapeHTML(data.party_code)}
       </strong>
 
@@ -3540,23 +3303,20 @@ async function createParty() {
       </button>
 
     </div>
-    `;
+  `;
 
 }
 
 
-/* =========================================
+/* =====================================
    パーティー解散
-========================================= */
+===================================== */
 
 async function leaveParty(
   partyId
-) {
+){
 
-  if (
-    !currentUser ||
-    guestMode
-  ) {
+  if(!currentUser){
     return;
   }
 
@@ -3575,14 +3335,13 @@ async function leaveParty(
         currentUser.id
       );
 
-  if (error) {
+  if(error){
 
     alert(
       "パーティーを解散できませんでした。"
     );
 
     return;
-
   }
 
   document.getElementById(
@@ -3593,13 +3352,13 @@ async function leaveParty(
 }
 
 
-/* =========================================
+/* =====================================
    メディア停止
-========================================= */
+===================================== */
 
-function stopAllMedia() {
+function stopAllMedia(){
 
-  if (microphone) {
+  if(microphone){
 
     microphone
       .getTracks()
@@ -3611,7 +3370,7 @@ function stopAllMedia() {
 
   }
 
-  if (cameraStream) {
+  if(cameraStream){
 
     cameraStream
       .getTracks()
@@ -3623,7 +3382,7 @@ function stopAllMedia() {
 
   }
 
-  if (screenStream) {
+  if(screenStream){
 
     screenStream
       .getTracks()
@@ -3636,21 +3395,32 @@ function stopAllMedia() {
   }
 
   micEnabled = false;
-
   cameraEnabled = false;
-
   screenEnabled = false;
+
+  document.getElementById(
+    "micButton"
+  ).textContent =
+    "🎤 マイクON";
+
+  document.getElementById(
+    "cameraButton"
+  ).textContent =
+    "📷 カメラON";
+
+  document.getElementById(
+    "screenButton"
+  ).textContent =
+    "🖥️ 画面共有";
 
 }
 
 
-/* =========================================
+/* =====================================
    HTMLエスケープ
-========================================= */
+===================================== */
 
-function escapeHTML(
-  value
-) {
+function escapeHTML(value){
 
   return String(value)
 
@@ -3682,23 +3452,45 @@ function escapeHTML(
 }
 
 
-/* =========================================
+/* =====================================
    ログイン状態確認
-========================================= */
+===================================== */
 
-async function checkUser() {
+async function checkUser(){
 
-  try {
+  try{
 
     const {
-      data: {
-        user
+      data:{
+        session
       }
     } =
       await supabaseClient.auth
-        .getUser();
+        .getSession();
 
-    if (!user) {
+    /*
+      仮アカウントは
+      タブを閉じるとsessionStorageが消える。
+      その場合、残っている匿名セッションを破棄。
+    */
+
+    if(
+      session?.user?.is_anonymous &&
+      !sessionStorage.getItem(
+        "voicechat_guest_name"
+      )
+    ){
+
+      await supabaseClient.auth.signOut();
+
+      setLoggedOutUI();
+
+      return;
+
+    }
+
+
+    if(!session?.user){
 
       setLoggedOutUI();
 
@@ -3707,19 +3499,17 @@ async function checkUser() {
     }
 
     currentUser =
-      user;
+      session.user;
 
-    guestMode = false;
+    guestMode =
+      !!currentUser.is_anonymous;
 
     await createProfile();
-
     await showUser();
 
-  } catch (error) {
+  }catch(error){
 
-    console.error(
-      error
-    );
+    console.error(error);
 
     setLoggedOutUI();
 
@@ -3728,51 +3518,84 @@ async function checkUser() {
 }
 
 
-/* =========================================
+/* =====================================
    Auth監視
-========================================= */
+===================================== */
 
 supabaseClient.auth
-  .onAuthStateChange(
-    async (
-      event,
-      session
-    ) => {
+.onAuthStateChange(
+  async(
+    event,
+    session
+  ) => {
 
-      if (
-        session &&
-        session.user
-      ) {
+    if(
+      session?.user
+    ){
 
-        currentUser =
-          session.user;
+      currentUser =
+        session.user;
 
-        guestMode = false;
+      guestMode =
+        !!currentUser.is_anonymous;
 
-        await createProfile();
+      /*
+        匿名ユーザーなのに
+        仮アカウント情報が無ければ終了
+      */
 
-        await showUser();
+      if(
+        guestMode &&
+        !sessionStorage.getItem(
+          "voicechat_guest_name"
+        )
+      ){
+
+        await supabaseClient.auth.signOut();
+
+        return;
 
       }
 
-      else if (
-        !guestMode
-      ) {
+      await createProfile();
+      await showUser();
 
-        currentUser =
-          null;
+    }else{
 
-        setLoggedOutUI();
+      currentUser = null;
+      guestMode = false;
 
-      }
+      setLoggedOutUI();
 
     }
-  );
+
+  }
+);
 
 
-/* =========================================
+/* =====================================
+   タブを閉じたら仮アカウント名をリセット
+===================================== */
+
+window.addEventListener(
+  "pagehide",
+  () => {
+
+    if(guestMode){
+
+      sessionStorage.removeItem(
+        "voicechat_guest_name"
+      );
+
+    }
+
+  }
+);
+
+
+/* =====================================
    初期化
-========================================= */
+===================================== */
 
 checkUser();
 
@@ -3780,4 +3603,3 @@ checkUser();
 
 </body>
 </html>
-```
