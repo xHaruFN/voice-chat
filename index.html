@@ -4,9 +4,176 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Voice Chat</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111827;
+      color: white;
+    }
+
+    header {
+      height: 64px;
+      background: #1f2937;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1f2937;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .user {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: #374151;
+      padding: 15px;
+      border-radius: 12px;
+    }
+
+    .avatar {
+      width: 50px;
+      height: 50px;
+      background: #4f46e5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #4f46e5;
+      color: white;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    #status {
+      margin-top: 15px;
+      color: #9ca3af;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>🎙️ Voice Chat</h1>
-  <p>サイト作成テスト成功！</p>
+
+<header>
+  🎙️ Voice Chat
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>自分</h2>
+
+    <div class="user">
+      <div class="avatar">👤</div>
+
+      <div>
+        <strong>xHaruFN</strong>
+        <div>🟢 オンライン</div>
+      </div>
+    </div>
+
+    <br>
+
+    <button id="micButton" onclick="toggleMic()">
+      🎤 マイクON
+    </button>
+
+    <div id="status">
+      マイクをONにするとここに状態が表示されます。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>フレンド</h2>
+
+    <p>まだフレンドはいません。</p>
+
+    <button onclick="alert('フレンド機能は次のアップデートで追加します！')">
+      ＋ フレンド追加
+    </button>
+  </div>
+
+</main>
+
+<script>
+  let microphone = null;
+  let micEnabled = false;
+
+  async function toggleMic() {
+
+    if (!micEnabled) {
+
+      try {
+
+        microphone =
+          await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+
+        micEnabled = true;
+
+        document.getElementById("micButton").textContent =
+          "🔇 マイクOFF";
+
+        document.getElementById("status").textContent =
+          "🎤 マイクON";
+
+      } catch (error) {
+
+        alert("マイクへのアクセスが許可されませんでした。");
+
+      }
+
+    } else {
+
+      microphone.getTracks().forEach(track => {
+        track.stop();
+      });
+
+      microphone = null;
+      micEnabled = false;
+
+      document.getElementById("micButton").textContent =
+        "🎤 マイクON";
+
+      document.getElementById("status").textContent =
+        "🔇 マイクOFF";
+    }
+  }
+</script>
+
 </body>
 </html>
