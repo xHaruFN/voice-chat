@@ -85,7 +85,7 @@ header {
   height: calc(100vh - 60px - 72px);
 }
 
-/* ステージエリア（画面共有 ＋ グリッド） */
+/* ステージエリア */
 .stage-container {
   padding: 16px;
   overflow-y: auto;
@@ -105,7 +105,7 @@ header {
   position: relative;
   border: 2px solid var(--primary);
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  display: none; /* デフォルト非表示 */
+  display: none;
 }
 
 .spotlight-area.active {
@@ -317,6 +317,11 @@ input[type="text"]:focus {
 .control-btn.active { background: var(--primary); }
 .control-btn.off { background: var(--danger); }
 
+/* リモート音声用（非表示コンテナ） */
+#remoteAudioContainer {
+  display: none;
+}
+
 @media (max-width: 800px) {
   .app-container {
     grid-template-columns: 1fr;
@@ -341,7 +346,7 @@ input[type="text"]:focus {
     <!-- 画面共有用スポットライト -->
     <div id="spotlightArea" class="spotlight-area">
       <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
-      <video id="spotlightVideo" autoplay playsinline></video>
+      <video id="spotlightVideo" autoplay playsinline muted></video>
     </div>
 
     <!-- 参加者ビデオグリッド -->
@@ -374,15 +379,14 @@ input[type="text"]:focus {
 
 <!-- コントロールバー -->
 <div class="controls-bar">
-  <!-- マイク（デフォルト ON） -->
   <button id="micBtn" class="control-btn active" onclick="toggleMic()" title="マイク ON/OFF">🎤</button>
-  <!-- カメラ（デフォルト OFF） -->
   <button id="camBtn" class="control-btn off" onclick="toggleCamera()" title="カメラ ON/OFF">📷</button>
-  <!-- 画面共有（デフォルト OFF） -->
   <button id="screenBtn" class="control-btn off" onclick="toggleScreenShare()" title="画面共有 ON/OFF">🖥️</button>
-  <!-- 退出 -->
   <button class="control-btn off" style="background:#dc2626;" onclick="leaveRoom()" title="退出">🚪</button>
 </div>
+
+<!-- 相手の声を再生するための非表示エリア -->
+<div id="remoteAudioContainer"></div>
 
 <script>
 /* ==========================================
@@ -407,17 +411,17 @@ const videoGrid = document.getElementById('videoGrid');
 const spotlightArea = document.getElementById('spotlightArea');
 const spotlightVideo = document.getElementById('spotlightVideo');
 const spotlightTitle = document.getElementById('spotlightTitle');
+const remoteAudioContainer = document.getElementById('remoteAudioContainer');
 
 const micBtn = document.getElementById('micBtn');
 const camBtn = document.getElementById('camBtn');
 const screenBtn = document.getElementById('screenBtn');
 
 /* ==========================================
-   初期化（マイクのみ有効化）
+   初期化（自分のマイク取得）
 ========================================== */
 async function initLocalStream() {
   try {
-    // デフォルト: マイクON, カメラOFF
     localStream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: false
@@ -450,13 +454,13 @@ function initPeer(customId = null) {
     renderUserTile(myPeerId, myName, getActiveVideoStream(), true);
   });
 
-  // 通話着信
+  // 通話着信時の処理
   myPeer.on('call', (call) => {
     call.answer(getActiveVideoStream());
     setupCallEvents(call);
   });
 
-  // チャット/状態通知用 データチャネル着信
+  // チャット/状態通知用
   myPeer.on('connection', (conn) => {
     setupDataConnection(conn);
   });
@@ -536,11 +540,30 @@ function setupCallEvents(call) {
 
   call.on('stream', (remoteStream) => {
     peers[remotePeerId].stream = remoteStream;
+
+    // 1. 相手の声（音声トラック）を確実に再生するための専用<audio>タグを生成
+    let audioEl = document.getElementById(`audio-${remotePeerId}`);
+    if (!audioEl) {
+      audioEl = document.createElement('audio');
+      audioEl.id = `audio-${remotePeerId}`;
+      audioEl.autoplay = true;
+      audioEl.playsInline = true;
+      remoteAudioContainer.appendChild(audioEl);
+    }
+    audioEl.srcObject = remoteStream;
+    audioEl.play().catch(e => console.log("Autoplay waiting for user click", e));
+
+    // 2. 画面側のタイル（映像/アバター）を更新
     renderUserTile(remotePeerId, remoteName, remoteStream, false);
   });
 
   call.on('close', () => {
     removeUserTile(remotePeerId);
+
+    // 音声エレメントも削除
+    const audioEl = document.getElementById(`audio-${remotePeerId}`);
+    if (audioEl) audioEl.remove();
+
     delete peers[remotePeerId];
     removeSpotlight();
   });
@@ -557,7 +580,6 @@ function getActiveVideoStream() {
   return localStream;
 }
 
-// マイク ON/OFF
 function toggleMic() {
   if (!localStream) return;
   const audioTrack = localStream.getAudioTracks()[0];
@@ -569,7 +591,6 @@ function toggleMic() {
   }
 }
 
-// カメラ ON/OFF
 async function toggleCamera() {
   if (isScreenSharing) return alert("画面共有を終了してからカメラをオンにしてください。");
 
@@ -601,15 +622,12 @@ async function toggleCamera() {
   renderUserTile(myPeerId, myName, getActiveVideoStream(), true);
 }
 
-// 画面共有 ON/OFF
 async function toggleScreenShare() {
   if (!isScreenSharing) {
     try {
-      // システム音声（タブ音・PC音）も含めて取得
       screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
       const screenVideoTrack = screenStream.getVideoTracks()[0];
 
-      // 共有終了検知（ブラウザ側の停止ボタン等）
       screenVideoTrack.onended = () => {
         stopScreenShare();
       };
@@ -617,12 +635,11 @@ async function toggleScreenShare() {
       isScreenSharing = true;
       replaceTracksInConnections(screenVideoTrack);
       
-      // 自画面のスポットライト表示
       setSpotlight(myPeerId, `${myName} (あなた) の共有画面`, screenStream);
       broadcastData({ type: 'SCREEN_STATE', isSharing: true, name: myName });
 
     } catch (err) {
-      console.warn("画面共有がキャンセルされました", err);
+      console.warn("画面共有キャンセル", err);
       return;
     }
   } else {
@@ -647,7 +664,6 @@ function stopScreenShare() {
   updateControlsUI();
 }
 
-// 通話相手への映像トラック一括差替え
 function replaceTracksInConnections(newVideoTrack) {
   Object.values(peers).forEach(p => {
     if (p.call && p.call.peerConnection) {
@@ -663,7 +679,6 @@ function replaceTracksInConnections(newVideoTrack) {
   });
 }
 
-// スポットライト表示
 function setSpotlight(peerId, title, stream) {
   spotlightTitle.textContent = `🖥️ ${title}`;
   if (stream) {
@@ -677,7 +692,6 @@ function removeSpotlight() {
   spotlightArea.classList.remove('active');
 }
 
-// データ一括送信
 function broadcastData(data) {
   Object.values(peers).forEach(p => {
     if (p.dataConn && p.dataConn.open) {
@@ -712,9 +726,10 @@ function renderUserTile(peerId, name, stream, isSelf = false) {
 
   const hasVideo = stream && stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].enabled;
 
+  // タイル内画面には、重なり再生(ハウリング)を防ぐため muted を付与
   tile.innerHTML = `
     ${hasVideo 
-      ? `<video id="video-${peerId}" autoplay playsinline ${isSelf ? 'muted' : ''}></video>`
+      ? `<video id="video-${peerId}" autoplay playsinline muted></video>`
       : `<div class="avatar-placeholder">${name.charAt(0)}</div>`
     }
     <div class="tile-overlay">
@@ -739,7 +754,6 @@ function removeUserTile(peerId) {
   if (tile) tile.remove();
 }
 
-/* チャット機能 */
 function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
@@ -787,7 +801,6 @@ function escapeHTML(str) {
   return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 }
 
-// 起動開始
 initLocalStream();
 </script>
 </body>
