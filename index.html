@@ -2,544 +2,402 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Room Voice & Screen Share (Multi-party)</title>
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>スーパーマリオ風 2Dアクション</title>
 <style>
-:root {
-  --bg-dark: #0b0f19;
-  --bg-card: #151d30;
-  --bg-input: #1e293b;
-  --border: #334155;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --danger: #ef4444;
-  --speaking: #10b981;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
-
-/* 入室画面 */
-.join-screen { position: fixed; inset: 0; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.join-box { background: var(--bg-card); border: 1px solid var(--border); padding: 32px; border-radius: 16px; width: 90%; max-width: 380px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); text-align: center; }
-.join-box h1 { font-size: 1.4rem; margin-bottom: 20px; color: var(--primary); }
-.input-field { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: white; outline: none; font-size: 0.95rem; }
-.input-field:focus { border-color: var(--primary); }
-.join-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
-.join-btn:hover { background: var(--primary-hover); }
-
-/* ヘッダー */
-header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
-.logo { font-weight: 800; font-size: 1.1rem; }
-.room-tag { background: var(--bg-dark); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: #818cf8; }
-
-.app-container { flex: 1; display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px - 72px); }
-.stage-container { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; align-items: center; }
-
-/* 画面共有領域 */
-.spotlight-area { width: 100%; max-width: 1000px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 1px solid var(--primary); display: none; }
-.spotlight-area.active { display: block; }
-.spotlight-area video { width: 100%; max-height: 480px; object-fit: contain; display: block; }
-.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; color: #818cf8; z-index: 10; }
-
-/* メンバー表示グリッド */
-.video-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-.user-tile { background: var(--bg-card); border-radius: 16px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
-.user-tile video { width: 100%; height: 100%; object-fit: cover; }
-
-/* アバターと話者エフェクト */
-.avatar { width: 75px; height: 75px; border-radius: 50%; background: #334155; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; border: 4px solid transparent; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
-.avatar.speaking { border-color: var(--speaking); box-shadow: 0 0 25px rgba(16, 185, 129, 0.7); transform: scale(1.05); }
-
-.tile-overlay { position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(6px); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.05); }
-
-/* サイドバー（チャット） */
-.sidebar { background: var(--bg-card); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 16px; }
-.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; padding-right: 4px; }
-.msg { background: var(--bg-input); padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; max-width: 85%; word-break: break-word; }
-.msg.mine { align-self: flex-end; background: var(--primary); }
-.msg .author { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
-.sys-msg { font-size: 0.75rem; color: var(--text-muted); text-align: center; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 12px; }
-
-/* 操作バー */
-.controls-bar { height: 72px; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 16px; }
-.control-btn { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg-input); color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-.control-btn.active { background: var(--primary); border-color: transparent; }
-.control-btn.off { background: var(--danger); border-color: transparent; }
-.control-btn:hover { transform: scale(1.05); }
-
-.remote-audio-container { display: none; }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    background: #111;
+    color: #fff;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  #game-container {
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  canvas {
+    background: #5c94fc;
+    display: block;
+  }
+  .ui-overlay {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #000;
+  }
+  /* スマホ用コントローラー */
+  .touch-controls {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    padding: 10px 20px;
+    margin-top: 10px;
+  }
+  .btn-group { display: flex; gap: 10px; }
+  .btn {
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+  .btn:active { background: rgba(255,255,255,0.5); }
 </style>
 </head>
 <body>
 
-<div id="joinScreen" class="join-screen">
-  <div class="join-box">
-    <h1>🎙️ グループルーム (最大5人)</h1>
-    <input type="text" id="usernameInput" class="input-field" placeholder="あなたの表示名" value="ユーザー1">
-    <input type="text" id="roomInput" class="input-field" placeholder="部屋名（例: team-room）">
-    <button class="join-btn" onclick="joinRoom()">部屋に入る</button>
+<div id="game-container">
+  <div class="ui-overlay">
+    <div>MARIO: <span id="score">000000</span></div>
+    <div>COINS: ★<span id="coins">0</span></div>
   </div>
+  <canvas id="canvas" width="800" height="450"></canvas>
 </div>
 
-<header>
-  <div class="logo">⚡ Group Voice & Share</div>
-  <div class="room-tag">部屋名: <strong id="displayRoomName">-</strong></div>
-</header>
-
-<div class="app-container">
-  <div class="stage-container">
-    <div id="spotlightArea" class="spotlight-area">
-      <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
-      <video id="spotlightVideo" autoplay playsinline></video>
-    </div>
-
-    <div id="videoGrid" class="video-grid">
-      <div class="user-tile" id="tile-self">
-        <div id="avatarSelf" class="avatar">自</div>
-        <video id="videoSelf" autoplay playsinline muted style="display:none;"></video>
-        <div class="tile-overlay"><span id="labelSelf">自分</span></div>
-      </div>
-    </div>
+<!-- スマホ向け操作パネル -->
+<div class="touch-controls">
+  <div class="btn-group">
+    <div class="btn" id="btn-left">◀</div>
+    <div class="btn" id="btn-right">▶</div>
   </div>
-
-  <div class="sidebar">
-    <h3 style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase;">グループチャット</h3>
-    <div id="chatMessages" class="chat-messages"></div>
-    <div style="display: flex; gap: 8px;">
-      <input type="text" id="chatInput" class="input-field" style="margin-bottom:0;" placeholder="メッセージ..." onkeydown="if(event.key==='Enter')sendChatMessage()">
-      <button class="join-btn" style="width:auto; padding:0 16px;" onclick="sendChatMessage()">送信</button>
-    </div>
+  <div class="btn-group">
+    <div class="btn" id="btn-jump" style="width:80px; border-radius:30px;">JUMP</div>
   </div>
 </div>
-
-<div class="controls-bar">
-  <button id="micBtn" class="control-btn active" onclick="toggleMic()" title="マイク">🎤</button>
-  <button id="camBtn" class="control-btn off" onclick="toggleCamera()" title="カメラ">📷</button>
-  <button id="screenBtn" class="control-btn off" onclick="toggleScreenShare()" title="画面共有">🖥️</button>
-  <button class="control-btn off" style="background:#dc2626;" onclick="location.reload()" title="退出">🚪</button>
-</div>
-
-<div id="remoteAudioContainer" class="remote-audio-container"></div>
 
 <script>
-let peer = null;
-let myPeerId = '';
-let roomName = '';
-let myName = 'ユーザー';
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-const peers = {};
+// ゲーム設定
+const GRAVITY = 0.55;
+const TILE_SIZE = 32;
 
-let localStream = null;
-let screenStream = null;
+// 入力状態
+const keys = { left: false, right: false, jump: false };
 
-let isMicOn = true;
-let isCamOn = false;
-let isScreenSharing = false;
-let isSelfSpeaking = false;
-let activeSpotlightPeerId = null;
+// ゲーム変数
+let cameraX = 0;
+let score = 0;
+let coins = 0;
+let gameOver = false;
+let gameWon = false;
 
-async function joinRoom() {
-  myName = document.getElementById('usernameInput').value.trim() || 'ユーザー';
-  roomName = document.getElementById('roomInput').value.trim();
+// マリオ（プレイヤー）
+const mario = {
+  x: 50,
+  y: 300,
+  w: 28,
+  h: 36,
+  vx: 0,
+  vy: 0,
+  speed: 4.5,
+  jumpPower: -12,
+  grounded: false,
+  facing: 'right'
+};
 
-  if (!roomName) return alert('部屋名を入力してください');
+// マップデータ (1:地面, 2:レンガ, 3:ハテナブロック, 4:土管, 5:ゴール旗)
+const map = [
+  "                                                                                    ",
+  "                                                                                    ",
+  "                                                                                    ",
+  "                                                                                    ",
+  "                                                                                    ",
+  "                                 3                                                  ",
+  "                            23232                                                   ",
+  "                                                                                    ",
+  "                                             44                                  5  ",
+  "                       44                    44                                  5  ",
+  "                3      44            232     44                                  5  ",
+  "                       44                    44                                  5  ",
+  "111111111111111111111111111111  1111111111111111111111111111111111111111111111111111",
+  "111111111111111111111111111111  1111111111111111111111111111111111111111111111111111"
+];
 
-  document.getElementById('labelSelf').textContent = `${myName} (自分)`;
-  document.getElementById('avatarSelf').textContent = myName.charAt(0);
-  document.getElementById('displayRoomName').textContent = roomName;
+// ブロック & 敵 & コインオブジェクトの生成
+const blocks = [];
+const enemies = [];
+const collectibles = [];
 
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true },
-      video: false
-    });
-    setupAudioAnalysis(localStream);
-  } catch (e) {
-    addSystemMessage("⚠️ マイク無効で開始します");
-    localStream = new MediaStream();
-    isMicOn = false;
-    updateControlsUI();
+function initMap() {
+  blocks.length = 0;
+  enemies.length = 0;
+  collectibles.length = 0;
+
+  for (let r = 0; r < map.length; r++) {
+    for (let c = 0; c < map[r].length; c++) {
+      const type = map[r][c];
+      const x = c * TILE_SIZE;
+      const y = r * TILE_SIZE;
+
+      if (type === '1') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'ground' });
+      else if (type === '2') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'brick' });
+      else if (type === '3') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'question', hit: false });
+      else if (type === '4') blocks.push({ x, y, w: TILE_SIZE, h: TILE_SIZE, type: 'pipe' });
+      else if (type === '5') blocks.push({ x, y, w: TILE_SIZE / 2, h: TILE_SIZE, type: 'flag' });
+    }
   }
 
-  myPeerId = `room-${roomName}-${Math.floor(Math.random() * 1000000)}`;
-  peer = new Peer(myPeerId);
-
-  peer.on('open', (id) => {
-    addSystemMessage(`🏠 部屋「${roomName}」に入室しました`);
-    document.getElementById('joinScreen').style.display = 'none';
-    
-    setupIncomingHandlers();
-    discoverAndConnectPeers();
-  });
-
-  peer.on('error', (err) => {
-    console.error("PeerJS Error:", err);
-  });
+  // 敵（クリボー風）の配置
+  enemies.push({ x: 450, y: 350, w: 28, h: 28, vx: -1.2, alive: true });
+  enemies.push({ x: 800, y: 350, w: 28, h: 28, vx: -1.2, alive: true });
+  enemies.push({ x: 1250, y: 350, w: 28, h: 28, vx: -1.2, alive: true });
 }
 
-function setupIncomingHandlers() {
-  peer.on('connection', (conn) => {
-    setupDataConnection(conn);
-  });
-
-  peer.on('call', (call) => {
-    call.answer(getActiveStream());
-    setupMediaCall(call);
-  });
-}
-
-function discoverAndConnectPeers() {
-  const hostId = `room-${roomName}-host`;
-  
-  if (myPeerId !== hostId) {
-    const tempHostPeer = new Peer(hostId);
-    tempHostPeer.on('open', () => {
-      tempHostPeer.destroy();
-      reconnectAsHost(hostId);
-    });
-    tempHostPeer.on('error', () => {
-      connectToPeer(hostId);
-    });
+// キーイベント
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+  if ((e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w') && mario.grounded) {
+    mario.vy = mario.jumpPower;
+    mario.grounded = false;
   }
+  if ((gameOver || gameWon) && e.key === ' ') resetGame();
+});
+
+window.addEventListener('keyup', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+});
+
+// スマホ操作のバインド
+function bindTouch(id, key) {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; if(key==='jump'&&mario.grounded){mario.vy=mario.jumpPower;mario.grounded=false;} });
+  el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+}
+bindTouch('btn-left', 'left');
+bindTouch('btn-right', 'right');
+bindTouch('btn-jump', 'jump');
+
+// 当たり判定
+function checkAABB(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-function reconnectAsHost(hostId) {
-  peer.destroy();
-  myPeerId = hostId;
-  peer = new Peer(hostId);
-  peer.on('open', () => {
-    setupIncomingHandlers();
-  });
+// ゲームリセット
+function resetGame() {
+  mario.x = 50;
+  mario.y = 300;
+  mario.vx = 0;
+  mario.vy = 0;
+  score = 0;
+  coins = 0;
+  gameOver = false;
+  gameWon = false;
+  initMap();
 }
 
-function connectToPeer(targetPeerId) {
-  if (peers[targetPeerId] || targetPeerId === myPeerId) return;
+// 更新処理
+function update() {
+  if (gameOver || gameWon) return;
 
-  const dataConn = peer.connect(targetPeerId);
-  setupDataConnection(dataConn);
+  // 移動制御
+  if (keys.left) {
+    mario.vx = -mario.speed;
+    mario.facing = 'left';
+  } else if (keys.right) {
+    mario.vx = mario.speed;
+    mario.facing = 'right';
+  } else {
+    mario.vx = 0;
+  }
 
-  const mediaCall = peer.call(targetPeerId, getActiveStream());
-  setupMediaCall(mediaCall);
-}
+  // 重力追加
+  mario.vy += GRAVITY;
 
-function setupDataConnection(conn) {
-  const peerId = conn.peer;
-  if (!peers[peerId]) peers[peerId] = {};
-  peers[peerId].dataConn = conn;
+  // X軸の移動と衝突チェック
+  mario.x += mario.vx;
+  for (let b of blocks) {
+    if (checkAABB(mario, b)) {
+      if (b.type === 'flag') { gameWon = true; return; }
+      if (mario.vx > 0) mario.x = b.x - mario.w;
+      else if (mario.vx < 0) mario.x = b.x + b.w;
+    }
+  }
 
-  conn.on('open', () => {
-    conn.send({
-      type: 'HANDSHAKE',
-      name: myName,
-      isCamOn,
-      isSharing: isScreenSharing,
-      knownPeers: Object.keys(peers)
-    });
-  });
+  // Y軸の移動と衝突チェック
+  mario.y += mario.vy;
+  mario.grounded = false;
 
-  conn.on('data', (data) => {
-    handleSignalData(peerId, data);
-  });
+  for (let b of blocks) {
+    if (checkAABB(mario, b)) {
+      if (b.type === 'flag') { gameWon = true; return; }
+      if (mario.vy > 0) { // 着地
+        mario.y = b.y - mario.h;
+        mario.vy = 0;
+        mario.grounded = true;
+      } else if (mario.vy < 0) { // 天井への衝突
+        mario.y = b.y + b.h;
+        mario.vy = 0;
 
-  conn.on('close', () => {
-    removePeer(peerId);
-  });
-}
-
-function setupMediaCall(call) {
-  const peerId = call.peer;
-  if (!peers[peerId]) peers[peerId] = {};
-  peers[peerId].mediaCall = call;
-
-  call.on('stream', (remoteStream) => {
-    peers[peerId].stream = remoteStream;
-    updatePeerTile(peerId);
-    attachRemoteAudio(peerId, remoteStream);
-  });
-}
-
-function handleSignalData(peerId, data) {
-  if (!peers[peerId]) peers[peerId] = {};
-
-  if (data.type === 'HANDSHAKE') {
-    peers[peerId].name = data.name;
-    peers[peerId].isCamOn = data.isCamOn;
-    peers[peerId].isSharing = data.isSharing;
-    
-    createPeerTile(peerId, data.name);
-    updatePeerTile(peerId);
-
-    if (data.knownPeers && Array.isArray(data.knownPeers)) {
-      data.knownPeers.forEach(id => {
-        if (id !== myPeerId && !peers[id]) {
-          connectToPeer(id);
+        // ハテナブロックを叩いた時
+        if (b.type === 'question' && !b.hit) {
+          b.hit = true;
+          coins++;
+          score += 200;
         }
-      });
-    }
-  } else if (data.type === 'CHAT') {
-    appendChatMessage(peers[peerId].name || '他メンバー', data.text, false);
-  } else if (data.type === 'SCREEN') {
-    peers[peerId].isSharing = data.isSharing;
-    updatePeerTile(peerId);
-  } else if (data.type === 'CAM_STATE') {
-    peers[peerId].isCamOn = data.isCamOn;
-    updatePeerTile(peerId);
-  } else if (data.type === 'SPEAKING') {
-    const avatar = document.getElementById(`avatar-${peerId}`);
-    if (avatar) {
-      if (data.isSpeaking) avatar.classList.add('speaking');
-      else avatar.classList.remove('speaking');
-    }
-  }
-}
-
-function getActiveStream() {
-  return isScreenSharing && screenStream ? screenStream : localStream;
-}
-
-function createPeerTile(peerId, name) {
-  if (document.getElementById(`tile-${peerId}`)) return;
-
-  const grid = document.getElementById('videoGrid');
-  const tile = document.createElement('div');
-  tile.className = 'user-tile';
-  tile.id = `tile-${peerId}`;
-
-  tile.innerHTML = `
-    <div id="avatar-${peerId}" class="avatar">${name.charAt(0)}</div>
-    <video id="video-${peerId}" autoplay playsinline style="display:none;"></video>
-    <div class="tile-overlay"><span id="label-${peerId}">${name}</span></div>
-  `;
-
-  grid.appendChild(tile);
-  addSystemMessage(`👋 ${name} さんが参加しました`);
-}
-
-function updatePeerTile(peerId) {
-  const p = peers[peerId];
-  if (!p) return;
-
-  const videoEl = document.getElementById(`video-${peerId}`);
-  const avatarEl = document.getElementById(`avatar-${peerId}`);
-
-  if (!videoEl || !avatarEl) return;
-
-  if (p.isSharing && p.stream) {
-    setSpotlight(`${p.name} の画面`, p.stream, false, peerId);
-    videoEl.style.display = 'none';
-    avatarEl.style.display = 'flex';
-  } 
-  else if (p.isCamOn && p.stream) {
-    if (activeSpotlightPeerId === peerId) removeSpotlight();
-    videoEl.srcObject = p.stream;
-    videoEl.style.display = 'block';
-    avatarEl.style.display = 'none';
-  } 
-  else {
-    if (activeSpotlightPeerId === peerId) removeSpotlight();
-    videoEl.style.display = 'none';
-    avatarEl.style.display = 'flex';
-  }
-}
-
-function removePeer(peerId) {
-  const p = peers[peerId];
-  if (p) {
-    addSystemMessage(`🚪 ${p.name || 'メンバー'} が退出しました`);
-    if (activeSpotlightPeerId === peerId) removeSpotlight();
-    delete peers[peerId];
-  }
-
-  const tile = document.getElementById(`tile-${peerId}`);
-  if (tile) tile.remove();
-
-  const audio = document.getElementById(`audio-${peerId}`);
-  if (audio) audio.remove();
-}
-
-function attachRemoteAudio(peerId, stream) {
-  let audio = document.getElementById(`audio-${peerId}`);
-  if (!audio) {
-    audio = document.createElement('audio');
-    audio.id = `audio-${peerId}`;
-    audio.autoplay = true;
-    document.getElementById('remoteAudioContainer').appendChild(audio);
-  }
-  audio.srcObject = stream;
-}
-
-function setupAudioAnalysis(stream) {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const analyser = ctx.createAnalyser();
-  const mic = ctx.createMediaStreamSource(stream);
-  mic.connect(analyser);
-
-  analyser.fftSize = 256;
-  const data = new Uint8Array(analyser.frequencyBinCount);
-
-  function check() {
-    if (isMicOn) {
-      analyser.getByteFrequencyData(data);
-      const avg = data.reduce((a, b) => a + b, 0) / data.length;
-      const speakingNow = avg > 20;
-
-      if (speakingNow !== isSelfSpeaking) {
-        isSelfSpeaking = speakingNow;
-        const avatarSelf = document.getElementById('avatarSelf');
-        if (isSelfSpeaking) avatarSelf.classList.add('speaking');
-        else avatarSelf.classList.remove('speaking');
-
-        broadcastSignal({ type: 'SPEAKING', isSpeaking: isSelfSpeaking });
       }
-    } else if (isSelfSpeaking) {
-      isSelfSpeaking = false;
-      document.getElementById('avatarSelf').classList.remove('speaking');
-      broadcastSignal({ type: 'SPEAKING', isSpeaking: false });
     }
-    requestAnimationFrame(check);
   }
-  check();
-}
 
-function toggleMic() {
-  if (!localStream) return;
-  const t = localStream.getAudioTracks()[0];
-  if (t) {
-    isMicOn = !isMicOn;
-    t.enabled = isMicOn;
-    updateControlsUI();
+  // 落下死チェック
+  if (mario.y > canvas.height) {
+    gameOver = true;
   }
-}
 
-async function toggleCamera() {
-  if (!isCamOn) {
-    try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: true });
-      const vt = s.getVideoTracks()[0];
-      localStream.addTrack(vt);
-      isCamOn = true;
-      if (!isScreenSharing) replaceTracksAll(vt);
-    } catch { return alert("カメラを起動できません"); }
-  } else {
-    const vt = localStream.getVideoTracks()[0];
-    if (vt) { vt.stop(); localStream.removeTrack(vt); }
-    isCamOn = false;
-    if (!isScreenSharing) replaceTracksAll(null);
-  }
-  updateControlsUI();
-  updateSelfUI();
-  broadcastSignal({ type: 'CAM_STATE', isCamOn });
-}
+  // 敵の移動と衝突
+  for (let e of enemies) {
+    if (!e.alive) continue;
+    e.x += e.vx;
 
-async function toggleScreenShare() {
-  if (!isScreenSharing) {
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      const st = screenStream.getVideoTracks()[0];
-      st.onended = () => stopScreenShare();
-
-      isScreenSharing = true;
-      replaceTracksAll(st);
-      setSpotlight(`${myName} の画面（自分）`, screenStream, true, 'self');
-      broadcastSignal({ type: 'SCREEN', isSharing: true });
-    } catch { return; }
-  } else stopScreenShare();
-  updateControlsUI();
-}
-
-function stopScreenShare() {
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-  isScreenSharing = false;
-  replaceTracksAll(isCamOn ? localStream.getVideoTracks()[0] : null);
-  removeSpotlight();
-  broadcastSignal({ type: 'SCREEN', isSharing: false });
-  updateControlsUI();
-}
-
-function replaceTracksAll(track) {
-  Object.values(peers).forEach(p => {
-    if (p.mediaCall && p.mediaCall.peerConnection) {
-      const senders = p.mediaCall.peerConnection.getSenders();
-      const s = senders.find(sender => sender.track && sender.track.kind === 'video');
-      if (s) s.replaceTrack(track);
-      else if (track) p.mediaCall.peerConnection.addTrack(track, getActiveStream());
+    // 敵のブロック反転
+    for (let b of blocks) {
+      if (checkAABB(e, b)) {
+        e.vx *= -1;
+        break;
+      }
     }
-  });
+
+    // マリオと敵の衝突
+    if (checkAABB(mario, e)) {
+      if (mario.vy > 0 && mario.y + mario.h - mario.vy <= e.y + 10) {
+        // 踏みつけ成功
+        e.alive = false;
+        mario.vy = -8;
+        score += 100;
+      } else {
+        // マリオがダメージを受ける
+        gameOver = true;
+      }
+    }
+  }
+
+  // カメラ追従
+  cameraX = mario.x - 200;
+  if (cameraX < 0) cameraX = 0;
+
+  // UI更新
+  document.getElementById('score').textContent = String(score).padStart(6, '0');
+  document.getElementById('coins').textContent = coins;
 }
 
-function updateSelfUI() {
-  const v = document.getElementById('videoSelf');
-  const a = document.getElementById('avatarSelf');
-  if (isCamOn) {
-    v.srcObject = localStream;
-    v.style.display = 'block';
-    a.style.display = 'none';
-  } else {
-    v.style.display = 'none';
-    a.style.display = 'flex';
+// 描画処理
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(-cameraX, 0);
+
+  // ブロック描画
+  for (let b of blocks) {
+    if (b.type === 'ground') {
+      ctx.fillStyle = '#c84c0c';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+    } else if (b.type === 'brick') {
+      ctx.fillStyle = '#b84418';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+    } else if (b.type === 'question') {
+      ctx.fillStyle = b.hit ? '#808080' : '#fcb42c';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.fillStyle = '#000';
+      if (!b.hit) {
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('?', b.x + 10, b.y + 24);
+      }
+    } else if (b.type === 'pipe') {
+      ctx.fillStyle = '#00a800';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+    } else if (b.type === 'flag') {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(b.x, b.y, 4, canvas.height);
+      ctx.fillStyle = '#fc2c00';
+      ctx.fillRect(b.x + 4, b.y, 24, 16);
+    }
+  }
+
+  // 敵描画（クリボー風）
+  for (let e of enemies) {
+    if (!e.alive) continue;
+    ctx.fillStyle = '#a81000';
+    ctx.beginPath();
+    ctx.arc(e.x + e.w/2, e.y + e.h/2, e.w/2, 0, Math.PI * 2);
+    ctx.fill();
+    // 目
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(e.x + 6, e.y + 8, 4, 8);
+    ctx.fillRect(e.x + 18, e.y + 8, 4, 8);
+  }
+
+  // マリオ描画
+  ctx.fillStyle = '#fc2c00'; // 赤シャツ/帽子
+  ctx.fillRect(mario.x, mario.y, mario.w, mario.h);
+  ctx.fillStyle = '#002cfc'; // 青オーバーオール
+  ctx.fillRect(mario.x, mario.y + 18, mario.w, 18);
+  ctx.fillStyle = '#fcbc3c'; // 顔
+  ctx.fillRect(mario.facing === 'right' ? mario.x + 12 : mario.x, mario.y + 4, 16, 12);
+
+  ctx.restore();
+
+  // ゲームオーバー / クリア 画面
+  if (gameOver) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Press SPACE to Restart', canvas.width / 2, canvas.height / 2 + 50);
+  } else if (gameWon) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fce400';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('STAGE CLEAR!', canvas.width / 2, canvas.height / 2);
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Press SPACE to Play Again', canvas.width / 2, canvas.height / 2 + 50);
   }
 }
 
-function setSpotlight(title, stream, isMuted, sourcePeerId) {
-  activeSpotlightPeerId = sourcePeerId;
-  const area = document.getElementById('spotlightArea');
-  const video = document.getElementById('spotlightVideo');
-  document.getElementById('spotlightTitle').textContent = `🖥️ ${title}`;
-  video.muted = isMuted;
-  if (video.srcObject !== stream) video.srcObject = stream;
-  area.classList.add('active');
+// メインゲームループ
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
 }
 
-function removeSpotlight() {
-  activeSpotlightPeerId = null;
-  const area = document.getElementById('spotlightArea');
-  const video = document.getElementById('spotlightVideo');
-  area.classList.remove('active');
-  video.srcObject = null;
-}
-
-function broadcastSignal(data) {
-  Object.values(peers).forEach(p => {
-    if (p.dataConn && p.dataConn.open) p.dataConn.send(data);
-  });
-}
-
-function updateControlsUI() {
-  document.getElementById('micBtn').className = `control-btn ${isMicOn ? 'active' : 'off'}`;
-  document.getElementById('camBtn').className = `control-btn ${isCamOn ? 'active' : 'off'}`;
-  document.getElementById('screenBtn').className = `control-btn ${isScreenSharing ? 'active' : 'off'}`;
-}
-
-function sendChatMessage() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text) return;
-  broadcastSignal({ type: 'CHAT', text });
-  appendChatMessage(myName, text, true);
-  input.value = '';
-}
-
-function appendChatMessage(name, text, isMine) {
-  const box = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = `msg ${isMine ? 'mine' : ''}`;
-  div.innerHTML = `<div class="author">${name}</div><div>${text}</div>`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
-
-function addSystemMessage(text) {
-  const box = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'sys-msg';
-  div.textContent = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
+// ゲーム開始
+initMap();
+loop();
 </script>
 </body>
 </html>
