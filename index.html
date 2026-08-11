@@ -3,18 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1on1 Voice & Video Browser</title>
+<title>High-Performance 1on1 Suite</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 :root {
-  --bg-dark: #0b0f19;
-  --bg-card: #151d30;
-  --bg-input: #1e293b;
-  --border: #334155;
+  --bg-dark: #090d16;
+  --bg-card: #131b2e;
+  --bg-input: #1c273e;
+  --border: #2e3d5c;
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --danger: #ef4444;
-  --success: #10b981;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
 }
@@ -30,27 +29,27 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 .copy-btn:hover { background: var(--primary-hover); }
 
 /* メインレイアウト */
-.app-container { flex: 1; display: grid; grid-template-columns: 1fr 350px; height: calc(100vh - 60px - 72px); }
+.app-container { flex: 1; display: grid; grid-template-columns: 1fr 340px; height: calc(100vh - 60px - 72px); }
 .stage-container { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; align-items: center; justify-content: center; }
 
-/* 画面共有スポットライト */
-.spotlight-area { width: 100%; max-width: 1000px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 2px solid var(--primary); display: none; box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
+/* 高精細画面共有エリア */
+.spotlight-area { width: 100%; max-width: 1200px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 1px solid var(--primary); display: none; box-shadow: 0 12px 32px rgba(0,0,0,0.7); will-change: transform; }
 .spotlight-area.active { display: block; }
-.spotlight-area video { width: 100%; max-height: 480px; object-fit: contain; display: block; }
-.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #60a5fa; border: 1px solid rgba(255,255,255,0.1); z-index: 10; }
+.spotlight-area video { width: 100%; max-height: 540px; object-fit: contain; display: block; transform: translateZ(0); }
+.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(9, 13, 22, 0.85); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #818cf8; border: 1px solid rgba(255,255,255,0.1); z-index: 10; }
 
-/* ビデオエリア (2分割) */
-.video-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.user-tile { background: var(--bg-card); border-radius: 16px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-.user-tile video { width: 100%; height: 100%; object-fit: cover; }
+/* ビデオエリア */
+.video-grid { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.user-tile { background: var(--bg-card); border-radius: 16px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.4); will-change: transform; }
+.user-tile video { width: 100%; height: 100%; object-fit: cover; transform: translateZ(0); }
 .avatar-placeholder { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #a855f7, var(--primary)); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: bold; text-transform: uppercase; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-.tile-overlay { position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; border: 1px solid rgba(255,255,255,0.05); }
+.tile-overlay { position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; background: rgba(9, 13, 22, 0.85); backdrop-filter: blur(6px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; border: 1px solid rgba(255,255,255,0.05); }
 
 /* サイドバー */
 .sidebar { background: var(--bg-card); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
 .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
 .join-box { display: flex; flex-direction: column; gap: 10px; }
-input[type="text"] { background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 10px 12px; border-radius: 8px; outline: none; font-size: 0.9rem; }
+input[type="text"] { background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 10px 12px; border-radius: 8px; outline: none; font-size: 0.9rem; transition: border-color 0.2s; }
 input[type="text"]:focus { border-color: var(--primary); }
 .btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
 .btn:hover { background: var(--primary-hover); }
@@ -65,7 +64,7 @@ input[type="text"]:focus { border-color: var(--primary); }
 
 /* コントロールバー */
 .controls-bar { height: 72px; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 16px; }
-.control-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--bg-input); color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
+.control-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--bg-input); color: white; font-size: 1.2rem; cursor: pointer; transition: transform 0.2s, background 0.2s; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
 .control-btn.active { background: var(--primary); border-color: transparent; }
 .control-btn.off { background: var(--danger); border-color: transparent; }
 .control-btn:hover { transform: scale(1.08); }
@@ -76,16 +75,15 @@ input[type="text"]:focus { border-color: var(--primary); }
 <body>
 
 <header>
-  <div class="logo">📞 1on1 Voice & Chat</div>
+  <div class="logo">⚡ High-Perf 1on1</div>
   <div class="id-badge">
-    <span>あなたのID: <strong id="myIdDisplay">取得中...</strong></span>
+    <span>あなたのID: <strong id="myIdDisplay">生成中...</strong></span>
     <button class="copy-btn" onclick="copyMyId()">コピー</button>
   </div>
 </header>
 
 <div class="app-container">
   <div class="stage-container">
-    <!-- 画面共有表示エリア -->
     <div id="spotlightArea" class="spotlight-area">
       <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
       <video id="spotlightVideo" autoplay playsinline muted></video>
@@ -114,16 +112,16 @@ input[type="text"]:focus { border-color: var(--primary); }
 
   <div class="sidebar">
     <div class="sidebar-section">
-      <h3 style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">接続</h3>
+      <h3 style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">接続設定</h3>
       <div class="join-box">
-        <input type="text" id="usernameInput" placeholder="あなたの名前" value="ユーザー1">
+        <input type="text" id="usernameInput" placeholder="表示名" value="ユーザー1">
         <input type="text" id="targetIdInput" placeholder="相手のIDを入力">
         <button id="connectBtn" class="btn" onclick="connectToPeer()">📞 通話開始</button>
       </div>
     </div>
 
     <div class="chat-container">
-      <h3 style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">チャット & ログ</h3>
+      <h3 style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">リアルタイムログ</h3>
       <div id="chatMessages" class="chat-messages"></div>
       <div style="display: flex; gap: 8px;">
         <input type="text" id="chatInput" placeholder="メッセージ..." style="flex:1;" onkeydown="if(event.key==='Enter')sendChatMessage()">
@@ -137,7 +135,7 @@ input[type="text"]:focus { border-color: var(--primary); }
   <button id="micBtn" class="control-btn active" onclick="toggleMic()" title="マイクON/OFF">🎤</button>
   <button id="camBtn" class="control-btn off" onclick="toggleCamera()" title="カメラON/OFF">📷</button>
   <button id="screenBtn" class="control-btn off" onclick="toggleScreenShare()" title="画面共有ON/OFF">🖥️</button>
-  <button class="control-btn off" style="background:#dc2626;" onclick="location.reload()" title="切断">🚪</button>
+  <button class="control-btn off" style="background:#dc2626;" onclick="hangup()" title="切断">🚪</button>
 </div>
 
 <audio id="remoteAudio" autoplay></audio>
@@ -162,24 +160,40 @@ let isScreenSharing = false;
 let isPeerScreenSharing = false;
 let isPeerCamOn = false;
 
+// 1. 高画質・高音質ストリームの初期化
 async function initLocalStream() {
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      },
+      video: false
+    });
   } catch (e) {
-    addSystemMessage("⚠️ マイクを取得できませんでした（無音モードで開始）");
+    addSystemMessage("⚠️ マイクへのアクセスが拒否されたため無音で初期化しました");
     localStream = new MediaStream();
     isMicOn = false;
     updateControlsUI();
   }
 }
 
+// 2. WebRTC (PeerJS) インスタンス構築
 function initPeer() {
-  peer = new Peer();
+  peer = new Peer({
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    }
+  });
 
   peer.on('open', (id) => {
     myId = id;
     document.getElementById('myIdDisplay').textContent = id;
-    addSystemMessage("✅ 接続準備完了（自分のIDを相手に教えてください）");
+    addSystemMessage("✅ 接続準備完了（自分のIDを相手に渡してください）");
   });
 
   peer.on('connection', (conn) => {
@@ -194,10 +208,11 @@ function initPeer() {
   });
 
   peer.on('error', (err) => {
-    addSystemMessage(`❌ エラー: ${err.type}`);
+    addSystemMessage(`❌ 通信エラー: ${err.type}`);
   });
 }
 
+// 3. 通話開始処理
 function connectToPeer() {
   myName = document.getElementById('usernameInput').value.trim() || 'ユーザー1';
   document.getElementById('labelSelf').textContent = myName;
@@ -206,35 +221,41 @@ function connectToPeer() {
   targetId = document.getElementById('targetIdInput').value.trim();
   if (!targetId) return alert("相手のIDを入力してください");
 
-  addSystemMessage("📞 通話を呼び出しています...");
+  addSystemMessage("📞 相手へ接続要求を送信中...");
 
-  activeDataConn = peer.connect(targetId);
+  activeDataConn = peer.connect(targetId, { reliable: true });
   setupDataConnection();
 
   activeMediaCall = peer.call(targetId, getActiveStream());
   setupMediaCall();
 }
 
+// 4. データチャネルハンドリング
 function setupDataConnection() {
   activeDataConn.on('open', () => {
-    addSystemMessage("🎉 相手と接続しました！");
-    activeDataConn.send({ type: 'HANDSHAKE', name: myName, isCamOn: isCamOn, isSharing: isScreenSharing });
+    addSystemMessage("🎉 接続が成立しました");
+    activeDataConn.send({ type: 'HANDSHAKE', name: myName, isCamOn, isSharing: isScreenSharing });
   });
 
   activeDataConn.on('data', (data) => {
-    if (data.type === 'HANDSHAKE') {
-      peerName = data.name;
-      isPeerCamOn = data.isCamOn;
-      isPeerScreenSharing = data.isSharing;
-      updatePeerUI();
-    } else if (data.type === 'CHAT') {
-      appendChatMessage(peerName, data.text, false);
-    } else if (data.type === 'SCREEN') {
-      isPeerScreenSharing = data.isSharing;
-      updatePeerUI();
-    } else if (data.type === 'CAM_STATE') {
-      isPeerCamOn = data.isCamOn;
-      updatePeerUI();
+    switch(data.type) {
+      case 'HANDSHAKE':
+        peerName = data.name;
+        isPeerCamOn = data.isCamOn;
+        isPeerScreenSharing = data.isSharing;
+        updatePeerUI();
+        break;
+      case 'CHAT':
+        appendChatMessage(peerName, data.text, false);
+        break;
+      case 'SCREEN':
+        isPeerScreenSharing = data.isSharing;
+        updatePeerUI();
+        break;
+      case 'CAM_STATE':
+        isPeerCamOn = data.isCamOn;
+        updatePeerUI();
+        break;
     }
   });
 
@@ -244,10 +265,14 @@ function setupDataConnection() {
   });
 }
 
+// 5. 音声・映像ストリームハンドリング
 function setupMediaCall() {
   activeMediaCall.on('stream', (stream) => {
     remoteStream = stream;
-    document.getElementById('remoteAudio').srcObject = stream;
+    const audioEl = document.getElementById('remoteAudio');
+    if (audioEl.srcObject !== stream) {
+      audioEl.srcObject = stream;
+    }
     updatePeerUI();
   });
 
@@ -260,6 +285,7 @@ function getActiveStream() {
   return isScreenSharing && screenStream ? screenStream : localStream;
 }
 
+// マイクON/OFF
 function toggleMic() {
   if (!localStream) return;
   const t = localStream.getAudioTracks()[0];
@@ -270,15 +296,18 @@ function toggleMic() {
   }
 }
 
+// 高精細カメラ制御
 async function toggleCamera() {
   if (!isCamOn) {
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: true });
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }
+      });
       const vt = s.getVideoTracks()[0];
       localStream.addTrack(vt);
       isCamOn = true;
       if (!isScreenSharing) replaceTracks(vt);
-    } catch { alert("カメラを起動できません"); return; }
+    } catch { alert("カメラの起動に失敗しました"); return; }
   } else {
     const vt = localStream.getVideoTracks()[0];
     if (vt) { vt.stop(); localStream.removeTrack(vt); }
@@ -287,13 +316,17 @@ async function toggleCamera() {
   }
   updateControlsUI();
   updateSelfUI();
-  sendSignal({ type: 'CAM_STATE', isCamOn: isCamOn });
+  sendSignal({ type: 'CAM_STATE', isCamOn });
 }
 
+// 高フレッシュレート画面共有（60fps推奨対応）
 async function toggleScreenShare() {
   if (!isScreenSharing) {
     try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: 60, max: 60 }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
       const st = screenStream.getVideoTracks()[0];
       st.onended = () => stopScreenShare();
       isScreenSharing = true;
@@ -306,7 +339,10 @@ async function toggleScreenShare() {
 }
 
 function stopScreenShare() {
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  if (screenStream) {
+    screenStream.getTracks().forEach(t => t.stop());
+    screenStream = null;
+  }
   isScreenSharing = false;
   replaceTracks(isCamOn ? localStream.getVideoTracks()[0] : null);
   removeSpotlight();
@@ -314,12 +350,13 @@ function stopScreenShare() {
   updateControlsUI();
 }
 
+// トラック置換（再接続なしの動的ストリーム交換）
 function replaceTracks(track) {
   if (activeMediaCall && activeMediaCall.peerConnection) {
     const senders = activeMediaCall.peerConnection.getSenders();
-    const s = senders.find(sender => sender.track && sender.track.kind === 'video');
-    if (s) {
-      s.replaceTrack(track);
+    const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+    if (videoSender) {
+      videoSender.replaceTrack(track);
     } else if (track) {
       activeMediaCall.peerConnection.addTrack(track, getActiveStream());
     }
@@ -330,7 +367,7 @@ function updateSelfUI() {
   const v = document.getElementById('videoSelf');
   const a = document.getElementById('avatarSelf');
   if (isCamOn) {
-    v.srcObject = localStream;
+    if (v.srcObject !== localStream) v.srcObject = localStream;
     v.style.display = 'block';
     a.style.display = 'none';
   } else {
@@ -339,6 +376,7 @@ function updateSelfUI() {
   }
 }
 
+// 効率的なUI更新（無駄な描画のリセットを回避）
 function updatePeerUI() {
   document.getElementById('labelPeer').textContent = peerName;
   document.getElementById('avatarPeer').textContent = peerName.charAt(0);
@@ -346,21 +384,16 @@ function updatePeerUI() {
   const v = document.getElementById('videoPeer');
   const a = document.getElementById('avatarPeer');
 
-  // 相手が画面共有中の場合：スポットライトエリアに画面映像を表示
   if (isPeerScreenSharing && remoteStream) {
     setSpotlight(`${peerName} の画面`, remoteStream);
     v.style.display = 'none';
     a.style.display = 'flex';
-  } 
-  // 相手がカメラONの場合：通常タイルにカメラ映像を表示
-  else if (isPeerCamOn && remoteStream) {
+  } else if (isPeerCamOn && remoteStream) {
     if (!isScreenSharing) removeSpotlight();
-    v.srcObject = remoteStream;
+    if (v.srcObject !== remoteStream) v.srcObject = remoteStream;
     v.style.display = 'block';
     a.style.display = 'none';
-  } 
-  // 映像なし
-  else {
+  } else {
     if (!isScreenSharing) removeSpotlight();
     v.style.display = 'none';
     a.style.display = 'flex';
@@ -381,16 +414,15 @@ function setSpotlight(title, stream) {
   const area = document.getElementById('spotlightArea');
   const video = document.getElementById('spotlightVideo');
   document.getElementById('spotlightTitle').textContent = `🖥️ ${title}`;
-  if (video.srcObject !== stream) {
-    video.srcObject = stream;
-  }
+  if (video.srcObject !== stream) video.srcObject = stream;
   area.classList.add('active');
 }
 
 function removeSpotlight() {
   const area = document.getElementById('spotlightArea');
+  const video = document.getElementById('spotlightVideo');
   area.classList.remove('active');
-  document.getElementById('spotlightVideo').srcObject = null;
+  video.srcObject = null;
 }
 
 function sendSignal(data) {
@@ -410,7 +442,7 @@ function sendChatMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  sendSignal({ type: 'CHAT', text: text });
+  sendSignal({ type: 'CHAT', text });
   appendChatMessage(myName, text, true);
   input.value = '';
 }
@@ -437,6 +469,14 @@ function copyMyId() {
   if (!myId) return alert("IDを取得中です");
   navigator.clipboard.writeText(myId);
   alert("自分のIDをコピーしました: " + myId);
+}
+
+// リソースの完全削除処理
+function hangup() {
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+  if (peer) peer.destroy();
+  location.reload();
 }
 
 (async () => {
