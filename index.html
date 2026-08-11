@@ -9,81 +9,196 @@
 
 <style>
 *{box-sizing:border-box}
+
 body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#0f172a;
-  color:#fff;
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#0f172a;
+    color:#fff;
 }
+
 .container{
-  width:min(950px,94%);
-  margin:30px auto;
+    width:min(950px,94%);
+    margin:30px auto;
 }
+
 .card{
-  background:#1e293b;
-  border-radius:16px;
-  padding:22px;
-  margin-bottom:18px;
-  box-shadow:0 8px 25px rgba(0,0,0,.25);
+    background:#1e293b;
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:18px;
+    box-shadow:0 8px 25px rgba(0,0,0,.25);
 }
+
 input{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border:1px solid #334155;
-  border-radius:9px;
-  background:#020617;
-  color:#fff;
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    border:1px solid #334155;
+    border-radius:9px;
+    background:#020617;
+    color:#fff;
+    outline:none;
 }
+
+input:focus{
+    border-color:#3b82f6;
+}
+
 button{
-  padding:11px 16px;
-  margin:4px;
-  border:0;
-  border-radius:9px;
-  background:#2563eb;
-  color:#fff;
-  cursor:pointer;
-  font-weight:bold;
+    padding:11px 16px;
+    margin:4px;
+    border:0;
+    border-radius:9px;
+    background:#2563eb;
+    color:#fff;
+    cursor:pointer;
+    font-weight:bold;
 }
-button:hover{background:#1d4ed8}
-button.red{background:#dc2626}
-button.gray{background:#475569}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+button.red{
+    background:#dc2626;
+}
+
+button.gray{
+    background:#475569;
+}
+
+button.green{
+    background:#16a34a;
+}
+
 button:disabled{
-  opacity:.5;
-  cursor:not-allowed;
+    opacity:.5;
+    cursor:not-allowed;
 }
-.hidden{display:none!important}
+
+.hidden{
+    display:none!important;
+}
+
 .status-box{
-  background:#020617;
-  padding:12px;
-  border-radius:9px;
-  margin:8px 0;
+    background:#020617;
+    padding:12px;
+    border-radius:9px;
+    margin:8px 0;
 }
-.online{color:#22c55e}
-.offline{color:#94a3b8}
-.center{text-align:center}
-.mic-icon{
-  font-size:60px;
-  margin:15px;
+
+.online{
+    color:#22c55e;
 }
+
+.offline{
+    color:#94a3b8;
+}
+
 .small{
-  color:#94a3b8;
-  font-size:13px;
+    color:#94a3b8;
+    font-size:13px;
 }
+
+.center{
+    text-align:center;
+}
+
+.mic-icon{
+    font-size:60px;
+    margin:15px;
+}
+
 .user-item{
-  padding:12px;
-  background:#020617;
-  border-radius:9px;
-  margin:7px 0;
+    padding:12px;
+    background:#020617;
+    border-radius:9px;
+    margin:7px 0;
 }
-#message{
-  min-height:25px;
-  margin-top:10px;
-}
+
 .party-id{
-  font-size:22px;
-  font-weight:bold;
-  letter-spacing:2px;
+    font-size:22px;
+    font-weight:bold;
+    letter-spacing:2px;
+}
+
+#message{
+    min-height:25px;
+    margin-top:10px;
+}
+
+#chatMessages{
+    height:300px;
+    overflow-y:auto;
+    background:#020617;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:10px;
+}
+
+.chat-message{
+    padding:8px 10px;
+    margin:6px 0;
+    background:#1e293b;
+    border-radius:8px;
+    word-break:break-word;
+}
+
+.chat-name{
+    font-weight:bold;
+    color:#60a5fa;
+}
+
+.chat-time{
+    color:#64748b;
+    font-size:11px;
+    margin-left:6px;
+}
+
+.chat-input-row{
+    display:flex;
+    gap:6px;
+}
+
+.chat-input-row input{
+    margin:0;
+    flex:1;
+}
+
+.chat-input-row button{
+    margin:0;
+}
+
+.media-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:10px;
+    margin-top:12px;
+}
+
+video{
+    width:100%;
+    max-height:300px;
+    background:#000;
+    border-radius:10px;
+    object-fit:contain;
+}
+
+.media-label{
+    font-size:13px;
+    color:#94a3b8;
+    margin-bottom:5px;
+}
+
+.media-box{
+    background:#020617;
+    padding:8px;
+    border-radius:10px;
+}
+
+#screenVideo{
+    max-height:500px;
 }
 </style>
 </head>
@@ -93,52 +208,52 @@ button:disabled{
 <div class="container">
 
 <div class="card">
-<h1>🎙️ Browser VC</h1>
-<p>ブラウザだけで使えるボイスチャット</p>
+    <h1>🎙️ Browser VC</h1>
+    <p>ブラウザだけで使えるボイスチャット</p>
 </div>
 
 
 <!-- =========================
-     LOGIN / ACCOUNT
+     AUTH
 ========================= -->
 
 <div id="authScreen" class="card">
 
-<h2>🔐 アカウント</h2>
+    <h2>🔐 アカウント</h2>
 
-<input
- id="usernameInput"
- type="text"
- placeholder="ユーザー名"
- maxlength="20"
- autocomplete="username"
->
+    <input
+        id="usernameInput"
+        type="text"
+        placeholder="ユーザー名"
+        maxlength="20"
+        autocomplete="username"
+    >
 
-<input
- id="passwordInput"
- type="password"
- placeholder="パスワード"
- maxlength="72"
- autocomplete="current-password"
->
+    <input
+        id="passwordInput"
+        type="password"
+        placeholder="パスワード"
+        maxlength="72"
+        autocomplete="current-password"
+    >
 
-<button id="loginButton">
-ログイン
-</button>
+    <button id="loginButton">
+        ログイン
+    </button>
 
-<button id="createAccountButton">
-アカウント作成
-</button>
+    <button id="createAccountButton">
+        アカウント作成
+    </button>
 
-<button id="guestButton" class="gray">
-仮アカウント作成
-</button>
+    <button id="guestButton" class="gray">
+        仮アカウント作成
+    </button>
 
-<div id="message"></div>
+    <div id="message"></div>
 
-<p class="small">
-メールアドレスは使用しません。
-</p>
+    <p class="small">
+        メールアドレスは使用しません。
+    </p>
 
 </div>
 
@@ -154,114 +269,204 @@ button:disabled{
 
 <div class="card">
 
-<h2>👤 アカウント</h2>
+    <h2>👤 アカウント</h2>
 
-<div class="status-box">
-ユーザー名：
-<strong id="displayUsername"></strong>
+    <div class="status-box">
+        ユーザー名：
+        <strong id="displayUsername"></strong>
+    </div>
+
+    <div class="status-box">
+        アカウント種類：
+        <span id="accountType"></span>
+    </div>
+
+    <div class="status-box">
+        状態：
+        <span id="displayStatus" class="online">
+            ● オンライン
+        </span>
+    </div>
+
+    <button id="logoutButton" class="red">
+        ログアウト
+    </button>
+
 </div>
 
-<div class="status-box">
-アカウント種類：
-<span id="accountType"></span>
-</div>
 
-<div class="status-box">
-状態：
-<span id="displayStatus" class="online">
-● オンライン
-</span>
-</div>
-
-<button id="logoutButton" class="red">
-ログアウト
-</button>
-
-</div>
-
-
-<!-- VC -->
+<!-- =========================
+     CHAT
+========================= -->
 
 <div class="card">
 
-<h2>🎤 ボイスチャット</h2>
+    <h2>💬 チャット</h2>
 
-<div class="center">
+    <div id="chatMessages"></div>
 
-<div id="micIcon" class="mic-icon">
-🔇
-</div>
+    <div class="chat-input-row">
 
-<p id="micStatus">
-マイクOFF
-</p>
+        <input
+            id="chatInput"
+            type="text"
+            placeholder="メッセージを入力..."
+            maxlength="500"
+        >
 
-<button id="micButton">
-🎙️ マイクON
-</button>
+        <button id="sendChatButton">
+            送信
+        </button>
 
-<button id="voiceLeaveButton" class="red">
-VC退出
-</button>
-
-</div>
+    </div>
 
 </div>
 
 
-<!-- FRIEND -->
+<!-- =========================
+     VOICE
+========================= -->
 
 <div class="card">
 
-<h2>👥 フレンド</h2>
+    <h2>🎤 ボイスチャット</h2>
 
-<input
- id="friendUsernameInput"
- type="text"
- placeholder="フレンドのユーザー名"
- maxlength="20"
->
+    <div class="center">
 
-<button id="friendRequestButton">
-フレンド申請
-</button>
+        <div id="micIcon" class="mic-icon">
+            🔇
+        </div>
 
-<div id="friendList">
-<p class="small">
-フレンドはいません。
-</p>
+        <p id="micStatus">
+            マイクOFF
+        </p>
+
+        <button id="micButton">
+            🎙️ マイクON
+        </button>
+
+        <button id="voiceLeaveButton" class="red">
+            VC退出
+        </button>
+
+    </div>
+
 </div>
 
-</div>
 
-
-<!-- PARTY -->
+<!-- =========================
+     CAMERA / SCREEN
+========================= -->
 
 <div class="card">
 
-<h2>🎮 パーティー</h2>
+    <h2>📹 カメラ・画面共有</h2>
 
-<button id="createPartyButton">
-パーティー作成
-</button>
+    <button id="cameraButton">
+        📷 カメラON
+    </button>
 
-<button id="joinPartyButton">
-パーティー参加
-</button>
+    <button id="screenButton">
+        🖥️ 画面共有
+    </button>
 
-<button id="leavePartyButton" class="red">
-パーティー退出
-</button>
+    <button id="stopMediaButton" class="red">
+        ⏹ 停止
+    </button>
 
-<div id="partyStatus" class="status-box">
-パーティーに参加していません。
+    <div class="media-grid">
+
+        <div class="media-box">
+
+            <div class="media-label">
+                カメラ
+            </div>
+
+            <video
+                id="cameraVideo"
+                autoplay
+                muted
+                playsinline
+            ></video>
+
+        </div>
+
+        <div class="media-box">
+
+            <div class="media-label">
+                画面共有
+            </div>
+
+            <video
+                id="screenVideo"
+                autoplay
+                muted
+                playsinline
+            ></video>
+
+        </div>
+
+    </div>
+
 </div>
 
-<div
- id="partyMembers"
- class="status-box hidden"
->
+
+<!-- =========================
+     FRIEND
+========================= -->
+
+<div class="card">
+
+    <h2>👥 フレンド</h2>
+
+    <input
+        id="friendUsernameInput"
+        type="text"
+        placeholder="フレンドのユーザー名"
+        maxlength="20"
+    >
+
+    <button id="friendRequestButton">
+        フレンド申請
+    </button>
+
+    <div id="friendList">
+        <p class="small">
+            フレンドはいません。
+        </p>
+    </div>
+
 </div>
+
+
+<!-- =========================
+     PARTY
+========================= -->
+
+<div class="card">
+
+    <h2>🎮 パーティー</h2>
+
+    <button id="createPartyButton">
+        パーティー作成
+    </button>
+
+    <button id="joinPartyButton">
+        パーティー参加
+    </button>
+
+    <button id="leavePartyButton" class="red">
+        パーティー退出
+    </button>
+
+    <div id="partyStatus" class="status-box">
+        パーティーに参加していません。
+    </div>
+
+    <div
+        id="partyMembers"
+        class="status-box hidden"
+    ></div>
 
 </div>
 
@@ -284,9 +489,29 @@ const SUPABASE_KEY =
 
 const supabaseClient =
 supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
+    SUPABASE_URL,
+    SUPABASE_KEY
 );
+
+
+/* ==================================================
+   STATE
+================================================== */
+
+let currentUser = null;
+
+let microphoneStream = null;
+let cameraStream = null;
+let screenStream = null;
+
+let microphoneEnabled = false;
+let cameraEnabled = false;
+let screenEnabled = false;
+
+let currentPartyId = null;
+
+let partyChannel = null;
+let chatChannel = null;
 
 
 /* ==================================================
@@ -341,6 +566,30 @@ document.getElementById("micStatus");
 const voiceLeaveButton =
 document.getElementById("voiceLeaveButton");
 
+const cameraButton =
+document.getElementById("cameraButton");
+
+const screenButton =
+document.getElementById("screenButton");
+
+const stopMediaButton =
+document.getElementById("stopMediaButton");
+
+const cameraVideo =
+document.getElementById("cameraVideo");
+
+const screenVideo =
+document.getElementById("screenVideo");
+
+const chatMessages =
+document.getElementById("chatMessages");
+
+const chatInput =
+document.getElementById("chatInput");
+
+const sendChatButton =
+document.getElementById("sendChatButton");
+
 const friendUsernameInput =
 document.getElementById("friendUsernameInput");
 
@@ -367,146 +616,126 @@ document.getElementById("partyMembers");
 
 
 /* ==================================================
-   STATE
-================================================== */
-
-let currentUser = null;
-let microphoneStream = null;
-let microphoneEnabled = false;
-let currentPartyId = null;
-let partyChannel = null;
-
-
-/* ==================================================
    MESSAGE
 ================================================== */
 
 function setMessage(text,error=false){
 
-message.textContent=text;
+    message.textContent=text;
 
-message.style.color=
-error ? "#ef4444" : "#22c55e";
+    message.style.color =
+        error
+        ? "#ef4444"
+        : "#22c55e";
 
 }
 
 
 /* ==================================================
-   USERNAME CHECK
+   USERNAME
 ================================================== */
 
 function validUsername(username){
 
-return /^[a-zA-Z0-9_ぁ-んァ-ヶ一-龠]{3,20}$/
-.test(username);
+    return /^[a-zA-Z0-9_ぁ-んァ-ヶ一-龠]{3,20}$/
+        .test(username);
 
 }
 
 
 /* ==================================================
-   CREATE ACCOUNT
+   ACCOUNT CREATE
 ================================================== */
 
 createAccountButton.addEventListener(
 "click",
 async()=>{
 
-const username=
-usernameInput.value.trim();
+    const username =
+        usernameInput.value.trim();
 
-const password=
-passwordInput.value;
+    const password =
+        passwordInput.value;
 
+    if(!validUsername(username)){
 
-if(!validUsername(username)){
+        setMessage(
+            "ユーザー名は3～20文字で入力してください。",
+            true
+        );
 
-setMessage(
-"ユーザー名は3～20文字で入力してください。",
-true
-);
+        return;
+    }
 
-return;
+    if(password.length<6){
 
-}
+        setMessage(
+            "パスワードは6文字以上にしてください。",
+            true
+        );
 
+        return;
+    }
 
-if(password.length<6){
+    createAccountButton.disabled=true;
 
-setMessage(
-"パスワードは6文字以上にしてください。",
-true
-);
+    try{
 
-return;
+        const {data,error} =
+            await supabaseClient.rpc(
+                "create_user_account",
+                {
+                    p_username:username,
+                    p_password:password
+                }
+            );
 
-}
+        if(error){
 
+            console.error(error);
 
-createAccountButton.disabled=true;
+            setMessage(
+                "アカウント作成に失敗しました。",
+                true
+            );
 
+            return;
+        }
 
-try{
+        if(!data){
 
-const {data,error}=
-await supabaseClient.rpc(
-"create_user_account",
-{
-p_username:username,
-p_password:password
-}
-);
+            setMessage(
+                "そのユーザー名は既に使用されています。",
+                true
+            );
 
+            return;
+        }
 
-if(error){
+        setMessage(
+            "アカウントを作成しました！"
+        );
 
-console.error(error);
+        passwordInput.value="";
 
-setMessage(
-"アカウント作成に失敗しました。",
-true
-);
+    }
+    catch(error){
 
-return;
+        console.error(error);
 
-}
+        setMessage(
+            "エラーが発生しました。",
+            true
+        );
 
+    }
+    finally{
 
-if(!data){
+        createAccountButton.disabled=false;
 
-setMessage(
-"そのユーザー名は既に使用されています。",
-true
-);
+    }
 
-return;
-
-}
-
-
-setMessage(
-"アカウントを作成しました！"
-);
-
-passwordInput.value="";
-
-
-}catch(error){
-
-console.error(error);
-
-setMessage(
-"エラーが発生しました。",
-true
-);
-
-}finally{
-
-createAccountButton.disabled=false;
-
-}
-
-}
-);
+});
 
 
 /* ==================================================
@@ -517,100 +746,89 @@ loginButton.addEventListener(
 "click",
 async()=>{
 
-const username=
-usernameInput.value.trim();
+    const username =
+        usernameInput.value.trim();
 
-const password=
-passwordInput.value;
+    const password =
+        passwordInput.value;
 
+    if(!username || !password){
 
-if(!username||!password){
+        setMessage(
+            "ユーザー名とパスワードを入力してください。",
+            true
+        );
 
-setMessage(
-"ユーザー名とパスワードを入力してください。",
-true
-);
+        return;
+    }
 
-return;
+    loginButton.disabled=true;
 
-}
+    try{
 
+        const {data,error} =
+            await supabaseClient.rpc(
+                "login_user",
+                {
+                    p_username:username,
+                    p_password:password
+                }
+            );
 
-loginButton.disabled=true;
+        if(error){
 
+            console.error(error);
 
-try{
+            setMessage(
+                "ログインに失敗しました。",
+                true
+            );
 
-const {data,error}=
-await supabaseClient.rpc(
-"login_user",
-{
-p_username:username,
-p_password:password
-}
-);
+            return;
+        }
 
+        if(!data){
 
-if(error){
+            setMessage(
+                "ユーザー名またはパスワードが違います。",
+                true
+            );
 
-console.error(error);
+            return;
+        }
 
-setMessage(
-"ログインに失敗しました。",
-true
-);
+        currentUser =
+            typeof data==="string"
+            ? JSON.parse(data)
+            : data;
 
-return;
+        currentUser.is_guest=false;
 
-}
+        localStorage.setItem(
+            "browser_vc_user",
+            JSON.stringify(currentUser)
+        );
 
+        await enterMainScreen();
 
-if(!data){
+    }
+    catch(error){
 
-setMessage(
-"ユーザー名またはパスワードが違います。",
-true
-);
+        console.error(error);
 
-return;
+        setMessage(
+            "ログインエラーが発生しました。",
+            true
+        );
 
-}
+    }
+    finally{
 
+        loginButton.disabled=false;
 
-currentUser=
-typeof data==="string"
-?JSON.parse(data)
-:data;
+    }
 
-currentUser.is_guest=false;
-
-
-localStorage.setItem(
-"browser_vc_user",
-JSON.stringify(currentUser)
-);
-
-
-await enterMainScreen();
-
-
-}catch(error){
-
-console.error(error);
-
-setMessage(
-"ログインエラーが発生しました。",
-true
-);
-
-}finally{
-
-loginButton.disabled=false;
-
-}
-
-}
-);
+});
 
 
 /* ==================================================
@@ -621,101 +839,87 @@ guestButton.addEventListener(
 "click",
 async()=>{
 
-guestButton.disabled=true;
+    guestButton.disabled=true;
 
+    try{
 
-try{
+        const random =
+            Math.random()
+            .toString(36)
+            .substring(2,8)
+            .toUpperCase();
 
-const random=
-Math.random()
-.toString(36)
-.substring(2,8)
-.toUpperCase();
+        currentUser = {
 
+            id:
+                "guest_"+crypto.randomUUID(),
 
-const guestId=
-"guest_"+crypto.randomUUID();
+            username:
+                "Guest_"+random,
 
+            is_guest:true,
 
-currentUser={
+            status:"online"
 
-id:guestId,
+        };
 
-username:"Guest_"+random,
+        localStorage.setItem(
+            "browser_vc_user",
+            JSON.stringify(currentUser)
+        );
 
-is_guest:true,
+        await enterMainScreen();
 
-status:"online"
+    }
+    catch(error){
 
-};
+        console.error(error);
 
+        setMessage(
+            "仮アカウントの作成に失敗しました。",
+            true
+        );
 
-localStorage.setItem(
-"browser_vc_user",
-JSON.stringify(currentUser)
-);
+    }
+    finally{
 
+        guestButton.disabled=false;
 
-await enterMainScreen();
+    }
 
-
-}catch(error){
-
-console.error(error);
-
-setMessage(
-"仮アカウントの作成に失敗しました。",
-true
-);
-
-}finally{
-
-guestButton.disabled=false;
-
-}
-
-}
-);
+});
 
 
 /* ==================================================
-   MAIN SCREEN
+   MAIN
 ================================================== */
 
 async function enterMainScreen(){
 
-authScreen.classList.add("hidden");
+    authScreen.classList.add("hidden");
 
-mainScreen.classList.remove("hidden");
+    mainScreen.classList.remove("hidden");
 
+    displayUsername.textContent =
+        currentUser.username;
 
-displayUsername.textContent=
-currentUser.username;
+    accountType.textContent =
+        currentUser.is_guest
+        ? "🟡 仮アカウント"
+        : "🟢 通常アカウント";
 
+    displayStatus.textContent =
+        "● オンライン";
 
-accountType.textContent=
-currentUser.is_guest
-?"🟡 仮アカウント"
-:"🟢 通常アカウント";
+    displayStatus.className="online";
 
+    if(!currentUser.is_guest){
 
-displayStatus.textContent=
-"● オンライン";
+        await updateOnlineStatus("online");
 
-displayStatus.className=
-"online";
+    }
 
-
-if(!currentUser.is_guest){
-
-await updateOnlineStatus(
-"online"
-);
-
-}
-
-
-await loadFriends();
+    await loadFriends();
 
 }
 
@@ -726,95 +930,192 @@ await loadFriends();
 
 async function updateOnlineStatus(status){
 
-if(
-!currentUser||
-currentUser.is_guest
-)return;
+    if(
+        !currentUser ||
+        currentUser.is_guest
+    ) return;
 
+    const {error} =
+        await supabaseClient
+        .from("users")
+        .update({
+            status:status,
+            updated_at:
+                new Date().toISOString()
+        })
+        .eq("id",currentUser.id);
 
-const {error}=
-await supabaseClient
-.from("users")
-.update({
-status:status,
-updated_at:new Date().toISOString()
-})
-.eq("id",currentUser.id);
-
-
-if(error)
-console.error(error);
-
-
-if(status==="online"){
-
-displayStatus.textContent=
-"● オンライン";
-
-displayStatus.className=
-"online";
-
-}else{
-
-displayStatus.textContent=
-"● オフライン";
-
-displayStatus.className=
-"offline";
-
-}
+    if(error)
+        console.error(error);
 
 }
 
 
 /* ==================================================
-   LOGOUT
+   CHAT CHANNEL
 ================================================== */
 
-logoutButton.addEventListener(
-"click",
-async()=>{
+async function startChat(){
 
-await stopMicrophone();
+    if(chatChannel){
 
-await leaveParty();
+        try{
+            await supabaseClient
+                .removeChannel(chatChannel);
+        }
+        catch{}
 
+    }
 
-if(
-currentUser &&
-!currentUser.is_guest
-){
+    chatChannel =
+        supabaseClient.channel(
+            "global-chat",
+            {
+                config:{
+                    broadcast:{
+                        self:false
+                    }
+                }
+            }
+        );
 
-await updateOnlineStatus(
-"offline"
-);
+    chatChannel.on(
+        "broadcast",
+        {
+            event:"chat"
+        },
+        payload=>{
+
+            if(!payload.payload)
+                return;
+
+            addChatMessage(
+                payload.payload
+            );
+
+        }
+    );
+
+    await chatChannel.subscribe();
 
 }
 
 
-localStorage.removeItem(
-"browser_vc_user"
-);
+/* ==================================================
+   CHAT SEND
+================================================== */
 
+async function sendChat(){
 
-currentUser=null;
+    const text =
+        chatInput.value.trim();
 
+    if(!text || !currentUser)
+        return;
 
-mainScreen.classList.add(
-"hidden"
-);
+    const data={
 
-authScreen.classList.remove(
-"hidden"
-);
+        username:
+            currentUser.username,
 
+        user_id:
+            currentUser.id,
 
-usernameInput.value="";
-passwordInput.value="";
+        message:
+            text,
 
-setMessage("");
+        time:
+            new Date().toLocaleTimeString(
+                "ja-JP",
+                {
+                    hour:"2-digit",
+                    minute:"2-digit"
+                }
+            )
+
+    };
+
+    addChatMessage(data);
+
+    if(chatChannel){
+
+        await chatChannel.send({
+
+            type:"broadcast",
+
+            event:"chat",
+
+            payload:data
+
+        });
+
+    }
+
+    chatInput.value="";
 
 }
+
+
+function addChatMessage(data){
+
+    const div =
+        document.createElement("div");
+
+    div.className="chat-message";
+
+    const name =
+        document.createElement("span");
+
+    name.className="chat-name";
+
+    name.textContent =
+        data.username;
+
+    const time =
+        document.createElement("span");
+
+    time.className="chat-time";
+
+    time.textContent =
+        data.time || "";
+
+    const text =
+        document.createElement("div");
+
+    text.textContent =
+        data.message;
+
+    div.appendChild(name);
+    div.appendChild(time);
+    div.appendChild(text);
+
+    chatMessages.appendChild(div);
+
+    chatMessages.scrollTop =
+        chatMessages.scrollHeight;
+
+}
+
+
+sendChatButton.addEventListener(
+    "click",
+    sendChat
+);
+
+
+chatInput.addEventListener(
+    "keydown",
+    event=>{
+
+        if(event.key==="Enter"){
+
+            event.preventDefault();
+
+            sendChat();
+
+        }
+
+    }
 );
 
 
@@ -824,91 +1125,277 @@ setMessage("");
 
 async function startMicrophone(){
 
-try{
+    try{
 
-microphoneStream=
-await navigator.mediaDevices
-.getUserMedia({
-audio:true
-});
+        microphoneStream =
+            await navigator.mediaDevices
+            .getUserMedia({
+                audio:true
+            });
 
+        microphoneEnabled=true;
 
-microphoneEnabled=true;
+        micIcon.textContent="🎙️";
 
-micIcon.textContent="🎙️";
+        micStatus.textContent=
+            "マイクON";
 
-micStatus.textContent=
-"マイクON";
+        micButton.textContent=
+            "🔇 マイクOFF";
 
-micButton.textContent=
-"🔇 マイクOFF";
+    }
+    catch(error){
 
+        console.error(error);
 
-}catch(error){
+        micStatus.textContent=
+            "マイクを使用できません。";
 
-console.error(error);
-
-micStatus.textContent=
-"マイクを使用できません。";
-
-}
+    }
 
 }
 
 
 async function stopMicrophone(){
 
-if(microphoneStream){
+    if(microphoneStream){
 
-microphoneStream
-.getTracks()
-.forEach(
-track=>track.stop()
-);
+        microphoneStream
+        .getTracks()
+        .forEach(
+            track=>track.stop()
+        );
 
-microphoneStream=null;
+        microphoneStream=null;
 
-}
+    }
 
+    microphoneEnabled=false;
 
-microphoneEnabled=false;
+    micIcon.textContent="🔇";
 
-micIcon.textContent="🔇";
+    micStatus.textContent=
+        "マイクOFF";
 
-micStatus.textContent=
-"マイクOFF";
-
-micButton.textContent=
-"🎙️ マイクON";
+    micButton.textContent=
+        "🎙️ マイクON";
 
 }
 
 
 micButton.addEventListener(
-"click",
-async()=>{
+    "click",
+    async()=>{
 
-if(microphoneEnabled){
+        if(microphoneEnabled){
 
-await stopMicrophone();
+            await stopMicrophone();
 
-}else{
+        }
+        else{
 
-await startMicrophone();
+            await startMicrophone();
 
-}
+        }
 
-}
+    }
 );
 
 
 voiceLeaveButton.addEventListener(
-"click",
-async()=>{
+    "click",
+    async()=>{
 
-await stopMicrophone();
+        await stopMicrophone();
+
+    }
+);
+
+
+/* ==================================================
+   CAMERA
+================================================== */
+
+async function startCamera(){
+
+    try{
+
+        cameraStream =
+            await navigator.mediaDevices
+            .getUserMedia({
+                video:true,
+                audio:false
+            });
+
+        cameraVideo.srcObject =
+            cameraStream;
+
+        cameraEnabled=true;
+
+        cameraButton.textContent =
+            "📷 カメラOFF";
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "カメラを使用できません。"
+        );
+
+    }
 
 }
+
+
+async function stopCamera(){
+
+    if(cameraStream){
+
+        cameraStream
+        .getTracks()
+        .forEach(
+            track=>track.stop()
+        );
+
+        cameraStream=null;
+
+    }
+
+    cameraVideo.srcObject=null;
+
+    cameraEnabled=false;
+
+    cameraButton.textContent =
+        "📷 カメラON";
+
+}
+
+
+cameraButton.addEventListener(
+    "click",
+    async()=>{
+
+        if(cameraEnabled){
+
+            await stopCamera();
+
+        }
+        else{
+
+            await startCamera();
+
+        }
+
+    }
+);
+
+
+/* ==================================================
+   SCREEN SHARE
+================================================== */
+
+async function startScreenShare(){
+
+    try{
+
+        screenStream =
+            await navigator.mediaDevices
+            .getDisplayMedia({
+                video:true,
+                audio:true
+            });
+
+        screenVideo.srcObject =
+            screenStream;
+
+        screenEnabled=true;
+
+        screenButton.textContent =
+            "🖥️ 画面共有中";
+
+
+        const videoTrack =
+            screenStream.getVideoTracks()[0];
+
+        videoTrack.addEventListener(
+            "ended",
+            async()=>{
+
+                await stopScreenShare();
+
+            }
+        );
+
+    }
+    catch(error){
+
+        console.error(error);
+
+    }
+
+}
+
+
+async function stopScreenShare(){
+
+    if(screenStream){
+
+        screenStream
+        .getTracks()
+        .forEach(
+            track=>track.stop()
+        );
+
+        screenStream=null;
+
+    }
+
+    screenVideo.srcObject=null;
+
+    screenEnabled=false;
+
+    screenButton.textContent =
+        "🖥️ 画面共有";
+
+}
+
+
+screenButton.addEventListener(
+    "click",
+    async()=>{
+
+        if(screenEnabled){
+
+            await stopScreenShare();
+
+        }
+        else{
+
+            await startScreenShare();
+
+        }
+
+    }
+);
+
+
+/* ==================================================
+   STOP MEDIA
+================================================== */
+
+stopMediaButton.addEventListener(
+    "click",
+    async()=>{
+
+        await stopMicrophone();
+
+        await stopCamera();
+
+        await stopScreenShare();
+
+    }
 );
 
 
@@ -920,98 +1407,95 @@ friendRequestButton.addEventListener(
 "click",
 async()=>{
 
-if(!currentUser)return;
+    if(!currentUser)
+        return;
 
+    if(currentUser.is_guest){
 
-if(currentUser.is_guest){
+        alert(
+            "仮アカウントではフレンド機能を使用できません。"
+        );
 
-alert(
-"仮アカウントではフレンド申請を使用できません。"
-);
+        return;
 
-return;
+    }
 
-}
+    const username =
+        friendUsernameInput.value.trim();
 
+    if(!username){
 
-const username=
-friendUsernameInput.value.trim();
+        alert(
+            "ユーザー名を入力してください。"
+        );
 
+        return;
 
-if(!username){
+    }
 
-alert(
-"ユーザー名を入力してください。"
-);
+    if(username===currentUser.username){
 
-return;
+        alert(
+            "自分自身には申請できません。"
+        );
 
-}
+        return;
 
+    }
 
-if(username===currentUser.username){
+    const {data:target,error} =
+        await supabaseClient
+        .from("users")
+        .select("id,username")
+        .eq("username",username)
+        .maybeSingle();
 
-alert(
-"自分自身には申請できません。"
-);
+    if(error || !target){
 
-return;
+        alert(
+            "ユーザーが見つかりません。"
+        );
 
-}
+        return;
 
+    }
 
-const {data:target,error}=
-await supabaseClient
-.from("users")
-.select("id,username")
-.eq("username",username)
-.maybeSingle();
+    const {error:requestError} =
+        await supabaseClient
+        .from("friend_requests")
+        .insert({
 
+            sender_id:
+                currentUser.id,
 
-if(error||!target){
+            receiver_id:
+                target.id,
 
-alert(
-"ユーザーが見つかりません。"
-);
+            status:
+                "pending"
 
-return;
+        });
 
-}
+    if(requestError){
 
+        console.error(requestError);
 
-const {error:requestError}=
-await supabaseClient
-.from("friend_requests")
-.insert({
-sender_id:currentUser.id,
-receiver_id:target.id,
-status:"pending"
+        alert(
+            "フレンド申請に失敗しました。"
+        );
+
+        return;
+
+    }
+
+    friendUsernameInput.value="";
+
+    alert(
+        target.username+
+        " さんにフレンド申請を送りました！"
+    );
+
 });
-
-
-if(requestError){
-
-console.error(requestError);
-
-alert(
-"フレンド申請に失敗しました。"
-);
-
-return;
-
-}
-
-
-friendUsernameInput.value="";
-
-
-alert(
-target.username+
-" さんにフレンド申請を送りました！"
-);
-
-}
-);
 
 
 /* ==================================================
@@ -1020,94 +1504,92 @@ target.username+
 
 async function loadFriends(){
 
-if(
-!currentUser ||
-currentUser.is_guest
-){
+    if(
+        !currentUser ||
+        currentUser.is_guest
+    ){
 
-friendList.innerHTML=
-'<p class="small">仮アカウントではフレンド機能を使用できません。</p>';
+        friendList.innerHTML =
+            '<p class="small">仮アカウントではフレンド機能を使用できません。</p>';
 
-return;
+        return;
 
-}
+    }
 
+    const {data,error} =
+        await supabaseClient
+        .from("friendships")
+        .select(`
+            friend_id,
+            users:friend_id(
+                username,
+                status
+            )
+        `)
+        .eq(
+            "user_id",
+            currentUser.id
+        );
 
-const {data,error}=
-await supabaseClient
-.from("friendships")
-.select(`
-friend_id,
-users:friend_id(
-username,
-status
-)
-`)
-.eq("user_id",currentUser.id);
+    if(error){
 
+        console.error(error);
 
-if(error){
+        friendList.innerHTML =
+            "<p>フレンドを読み込めませんでした。</p>";
 
-console.error(error);
+        return;
 
-friendList.innerHTML=
-"<p>フレンドを読み込めませんでした。</p>";
+    }
 
-return;
+    friendList.innerHTML="";
 
-}
+    if(!data || data.length===0){
 
+        friendList.innerHTML =
+            '<p class="small">フレンドはいません。</p>';
 
-friendList.innerHTML="";
+        return;
 
+    }
 
-if(!data||data.length===0){
+    data.forEach(friend=>{
 
-friendList.innerHTML=
-'<p class="small">フレンドはいません。</p>';
+        const user =
+            friend.users;
 
-return;
+        const div =
+            document.createElement("div");
 
-}
+        div.className =
+            "user-item";
 
+        const name =
+            document.createElement("strong");
 
-data.forEach(friend=>{
+        name.textContent =
+            user.username;
 
-const user=friend.users;
+        const status =
+            document.createElement("span");
 
-const div=
-document.createElement("div");
+        status.textContent =
+            user.status==="online"
+            ? " ● オンライン"
+            : " ● オフライン";
 
-div.className="user-item";
+        status.className =
+            user.status==="online"
+            ? "online"
+            : "offline";
 
+        div.appendChild(name);
 
-const name=
-document.createElement("strong");
+        div.appendChild(status);
 
-name.textContent=
-user.username;
+        friendList.appendChild(div);
 
-
-const status=
-document.createElement("span");
-
-status.textContent=
-user.status==="online"
-?" ● オンライン"
-:" ● オフライン";
-
-status.className=
-user.status==="online"
-?"online"
-:"offline";
-
-
-div.appendChild(name);
-div.appendChild(status);
-
-friendList.appendChild(div);
-
-});
+    });
 
 }
 
@@ -1120,37 +1602,33 @@ createPartyButton.addEventListener(
 "click",
 async()=>{
 
-if(!currentUser)return;
+    if(!currentUser)
+        return;
 
+    await leaveParty();
 
-await leaveParty();
+    currentPartyId =
+        crypto.randomUUID()
+        .replaceAll("-","")
+        .substring(0,8)
+        .toUpperCase();
 
+    await joinPartyChannel(
+        currentPartyId
+    );
 
-currentPartyId=
-crypto.randomUUID()
-.replaceAll("-","")
-.substring(0,8)
-.toUpperCase();
+    partyStatus.innerHTML =
+        `
+        <div>パーティー作成済み</div>
+        <div class="party-id">
+            ${currentPartyId}
+        </div>
+        <div class="small">
+            このIDをフレンドに共有してください。
+        </div>
+        `;
 
-
-await joinPartyChannel(
-currentPartyId
-);
-
-
-partyStatus.innerHTML=
-`
-<div>パーティー作成済み</div>
-<div class="party-id">
-${currentPartyId}
-</div>
-<div class="small">
-このIDをフレンドに共有してください。
-</div>
-`;
-
-}
-);
+});
 
 
 /* ==================================================
@@ -1161,128 +1639,128 @@ joinPartyButton.addEventListener(
 "click",
 async()=>{
 
-const id=
-prompt(
-"パーティーIDを入力してください。"
-);
+    const id =
+        prompt(
+            "パーティーIDを入力してください。"
+        );
 
+    if(!id)
+        return;
 
-if(!id)return;
+    const partyId =
+        id.trim().toUpperCase();
 
+    if(
+        !/^[A-Z0-9]{4,20}$/
+        .test(partyId)
+    ){
 
-const partyId=
-id.trim().toUpperCase();
+        alert(
+            "正しいパーティーIDを入力してください。"
+        );
 
+        return;
 
-if(!/^[A-Z0-9]{4,20}$/.test(partyId)){
+    }
 
-alert(
-"正しいパーティーIDを入力してください。"
-);
+    await leaveParty();
 
-return;
+    currentPartyId =
+        partyId;
 
-}
+    await joinPartyChannel(
+        currentPartyId
+    );
 
+    partyStatus.innerHTML =
+        `
+        <div>パーティー参加中</div>
+        <div class="party-id">
+            ${currentPartyId}
+        </div>
+        `;
 
-await leaveParty();
-
-
-currentPartyId=
-partyId;
-
-
-await joinPartyChannel(
-currentPartyId
-);
-
-
-partyStatus.innerHTML=
-`
-<div>パーティー参加中</div>
-<div class="party-id">
-${currentPartyId}
-</div>
-`;
-
-}
-);
+});
 
 
 /* ==================================================
    PARTY CHANNEL
 ================================================== */
 
-async function joinPartyChannel(partyId){
+async function joinPartyChannel(
+    partyId
+){
 
-if(!currentUser)return;
+    if(!currentUser)
+        return;
 
-
-partyChannel=
-supabaseClient.channel(
-"party-"+partyId,
-{
-config:{
-presence:{
-key:currentUser.id
-}
-}
-}
-);
-
-
-partyChannel.on(
-"presence",
-{event:"sync"},
-()=>{
-updatePartyMembers();
-}
-);
+    partyChannel =
+        supabaseClient.channel(
+            "party-"+partyId,
+            {
+                config:{
+                    presence:{
+                        key:currentUser.id
+                    }
+                }
+            }
+        );
 
 
-partyChannel.on(
-"presence",
-{event:"join"},
-()=>{
-updatePartyMembers();
-}
-);
+    partyChannel.on(
+        "presence",
+        {event:"sync"},
+        ()=>{
+            updatePartyMembers();
+        }
+    );
 
 
-partyChannel.on(
-"presence",
-{event:"leave"},
-()=>{
-updatePartyMembers();
-}
-);
+    partyChannel.on(
+        "presence",
+        {event:"join"},
+        ()=>{
+            updatePartyMembers();
+        }
+    );
 
 
-await partyChannel.subscribe(
-async status=>{
+    partyChannel.on(
+        "presence",
+        {event:"leave"},
+        ()=>{
+            updatePartyMembers();
+        }
+    );
 
-if(status==="SUBSCRIBED"){
 
-await partyChannel.track({
+    await partyChannel.subscribe(
+        async status=>{
 
-username:
-currentUser.username,
+            if(
+                status==="SUBSCRIBED"
+            ){
 
-user_id:
-currentUser.id,
+                await partyChannel.track({
 
-is_guest:
-!!currentUser.is_guest,
+                    username:
+                        currentUser.username,
 
-online_at:
-new Date().toISOString()
+                    user_id:
+                        currentUser.id,
 
-});
+                    is_guest:
+                        !!currentUser.is_guest,
 
-}
+                    online_at:
+                        new Date().toISOString()
 
-}
-);
+                });
+
+            }
+
+        }
+    );
 
 }
 
@@ -1293,48 +1771,49 @@ new Date().toISOString()
 
 function updatePartyMembers(){
 
-if(!partyChannel)return;
+    if(!partyChannel)
+        return;
 
+    const state =
+        partyChannel.presenceState();
 
-const state=
-partyChannel.presenceState();
+    const members=[];
 
-const members=[];
+    Object.values(state)
+    .forEach(entries=>{
 
+        entries.forEach(
+            entry=>{
+                members.push(entry);
+            }
+        );
 
-Object.values(state)
-.forEach(entries=>{
+    });
 
-entries.forEach(entry=>{
-members.push(entry);
-});
+    partyMembers.classList.remove(
+        "hidden"
+    );
 
-});
+    partyMembers.innerHTML =
+        "<strong>参加者</strong><br>";
 
+    members.forEach(member=>{
 
-partyMembers.classList.remove(
-"hidden"
-);
+        const div =
+            document.createElement("div");
 
+        div.textContent =
+            "🟢 "+
+            member.username+
+            (
+                member.is_guest
+                ? " (仮)"
+                : ""
+            );
 
-partyMembers.innerHTML=
-"<strong>参加者</strong><br>";
+        partyMembers.appendChild(div);
 
-
-members.forEach(member=>{
-
-const div=
-document.createElement("div");
-
-div.textContent=
-"🟢 "+
-member.username+
-(member.is_guest?" (仮)":"");
-
-
-partyMembers.appendChild(div);
-
-});
+    });
 
 }
 
@@ -1345,136 +1824,193 @@ partyMembers.appendChild(div);
 
 async function leaveParty(){
 
-if(partyChannel){
+    if(partyChannel){
 
-try{
-await partyChannel.untrack();
-}catch{}
+        try{
+            await partyChannel.untrack();
+        }
+        catch{}
 
-try{
-await supabaseClient.removeChannel(
-partyChannel
-);
-}catch{}
+        try{
+            await supabaseClient
+                .removeChannel(
+                    partyChannel
+                );
+        }
+        catch{}
 
-partyChannel=null;
+        partyChannel=null;
 
-}
+    }
 
+    currentPartyId=null;
 
-currentPartyId=null;
+    partyMembers.classList.add(
+        "hidden"
+    );
 
-
-partyMembers.classList.add(
-"hidden"
-);
-
-
-partyStatus.textContent=
-"パーティーに参加していません。";
+    partyStatus.textContent =
+        "パーティーに参加していません。";
 
 }
 
 
 leavePartyButton.addEventListener(
-"click",
-async()=>{
-await leaveParty();
-}
+    "click",
+    async()=>{
+        await leaveParty();
+    }
 );
 
 
 /* ==================================================
-   RESTORE SESSION
+   LOGOUT
+================================================== */
+
+logoutButton.addEventListener(
+"click",
+async()=>{
+
+    await stopMicrophone();
+
+    await stopCamera();
+
+    await stopScreenShare();
+
+    await leaveParty();
+
+    if(chatChannel){
+
+        try{
+            await supabaseClient
+                .removeChannel(chatChannel);
+        }
+        catch{}
+
+        chatChannel=null;
+
+    }
+
+    if(
+        currentUser &&
+        !currentUser.is_guest
+    ){
+
+        await updateOnlineStatus(
+            "offline"
+        );
+
+    }
+
+    localStorage.removeItem(
+        "browser_vc_user"
+    );
+
+    currentUser=null;
+
+    mainScreen.classList.add(
+        "hidden"
+    );
+
+    authScreen.classList.remove(
+        "hidden"
+    );
+
+    usernameInput.value="";
+    passwordInput.value="";
+
+    chatMessages.innerHTML="";
+
+    setMessage("");
+
+});
+
+
+/* ==================================================
+   RESTORE
 ================================================== */
 
 async function restoreSession(){
 
-const saved=
-localStorage.getItem(
-"browser_vc_user"
-);
+    const saved =
+        localStorage.getItem(
+            "browser_vc_user"
+        );
+
+    if(!saved)
+        return;
+
+    try{
+
+        currentUser =
+            JSON.parse(saved);
+
+        if(
+            !currentUser ||
+            !currentUser.id ||
+            !currentUser.username
+        ){
+
+            throw new Error(
+                "Invalid account"
+            );
+
+        }
 
 
-if(!saved)return;
+        if(!currentUser.is_guest){
 
+            const {data,error} =
+                await supabaseClient
+                .from("users")
+                .select(
+                    "id,username,status"
+                )
+                .eq(
+                    "id",
+                    currentUser.id
+                )
+                .maybeSingle();
 
-try{
+            if(error || !data){
 
-currentUser=
-JSON.parse(saved);
+                localStorage.removeItem(
+                    "browser_vc_user"
+                );
 
+                currentUser=null;
 
-if(
-!currentUser ||
-!currentUser.id ||
-!currentUser.username
-){
+                return;
 
-throw new Error(
-"Invalid account"
-);
+            }
 
-}
+            currentUser=data;
 
+            currentUser.is_guest=false;
 
-/*
-通常アカウントだけDB確認
-仮アカウントはlocalStorageから復元
-*/
+            localStorage.setItem(
+                "browser_vc_user",
+                JSON.stringify(
+                    currentUser
+                )
+            );
 
-if(!currentUser.is_guest){
+        }
 
-const {data,error}=
-await supabaseClient
-.from("users")
-.select(
-"id,username,status"
-)
-.eq("id",currentUser.id)
-.maybeSingle();
+        await enterMainScreen();
 
+    }
+    catch(error){
 
-if(error||!data){
+        console.error(error);
 
-localStorage.removeItem(
-"browser_vc_user"
-);
+        localStorage.removeItem(
+            "browser_vc_user"
+        );
 
-currentUser=null;
+        currentUser=null;
 
-return;
-
-}
-
-
-currentUser=data;
-
-currentUser.is_guest=false;
-
-
-localStorage.setItem(
-"browser_vc_user",
-JSON.stringify(currentUser)
-);
-
-}
-
-
-await enterMainScreen();
-
-
-}catch(error){
-
-console.error(error);
-
-localStorage.removeItem(
-"browser_vc_user"
-);
-
-currentUser=null;
-
-}
+    }
 
 }
 
@@ -1487,25 +2023,54 @@ window.addEventListener(
 "beforeunload",
 ()=>{
 
-if(microphoneStream){
+    if(microphoneStream){
 
-microphoneStream
-.getTracks()
-.forEach(
-track=>track.stop()
-);
+        microphoneStream
+        .getTracks()
+        .forEach(
+            track=>track.stop()
+        );
 
-}
+    }
 
-}
-);
+    if(cameraStream){
+
+        cameraStream
+        .getTracks()
+        .forEach(
+            track=>track.stop()
+        );
+
+    }
+
+    if(screenStream){
+
+        screenStream
+        .getTracks()
+        .forEach(
+            track=>track.stop()
+        );
+
+    }
+
+});
 
 
 /* ==================================================
    START
 ================================================== */
 
-restoreSession();
+(async()=>{
+
+    await restoreSession();
+
+    if(currentUser){
+
+        await startChat();
+
+    }
+
+})();
 
 </script>
 
