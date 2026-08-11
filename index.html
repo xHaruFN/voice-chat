@@ -3,229 +3,481 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CYBER-CHAT // リアルタイムボイス＆テキスト</title>
+<title>CYBER-MATRIX // リアルタイム通信＆ボイス</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Orbitron:wght@700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap');
 
   :root {
-    --bg-base: #0b0c10;
-    --bg-panel: #1f2833;
-    --bg-element: #121c24;
-    --accent-cyan: #66fcf1;
-    --accent-green: #45a29e;
-    --text-main: #edf5e1;
-    --text-muted: #c5c6c7;
+    --bg-base: #0a0b10;
+    --bg-panel: #121520;
+    --bg-element: #1a1e2e;
+    --accent-cyan: #00f0ff;
+    --accent-purple: #9d00ff;
+    --accent-pink: #ff007f;
+    --accent-yellow: #f3e600;
+    --text-main: #f0f3f6;
+    --text-muted: #8e9297;
+    --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.4);
+    --glow-pink: 0 0 15px rgba(255, 0, 127, 0.4);
+    --glow-yellow: 0 0 15px rgba(243, 230, 0, 0.5);
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; }
 
   body {
+    margin: 0;
     background: var(--bg-base);
     color: var(--text-main);
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Noto Sans JP', 'Rajdhani', sans-serif;
+    font-size: 15px;
     height: 100vh;
     display: flex;
-    flex-direction: column;
+    overflow: hidden;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%);
   }
 
-  header {
+  .sidebar {
+    width: 340px;
     background: var(--bg-panel);
-    padding: 15px 20px;
-    border-bottom: 2px solid var(--accent-cyan);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  h1 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 20px;
-    color: var(--accent-cyan);
-  }
-
-  .container {
-    flex: 1;
+    border-right: 1px solid rgba(0, 240, 255, 0.15);
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    max-width: 800px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 20px;
     gap: 15px;
+    overflow-y: auto;
+    box-shadow: 5px 0 25px rgba(0,0,0,0.5);
   }
 
-  /* 接続エリア */
-  .join-card {
-    background: var(--bg-panel);
-    padding: 20px;
-    border-radius: 8px;
+  .brand {
+    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--accent-cyan);
+    text-shadow: var(--glow-cyan);
+    letter-spacing: 1.5px;
     display: flex;
-    gap: 10px;
     align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
   }
 
-  input[type="text"] {
-    flex: 1;
+  h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin: 10px 0 5px;
+  }
+
+  select, input[type="text"], button {
+    width: 100%;
     padding: 12px;
     background: var(--bg-element);
-    border: 1px solid var(--accent-green);
+    border: 1px solid rgba(255,255,255,0.08);
     color: var(--text-main);
     border-radius: 6px;
-    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  button {
-    padding: 12px 20px;
-    background: var(--accent-cyan);
-    color: #000;
-    border: none;
+  select:hover, input[type="text"]:focus, button:hover {
+    border-color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 35px;
+  }
+
+  .effect-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .effect-btn {
+    background: var(--bg-element);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 10px 6px;
+    text-align: center;
     border-radius: 6px;
-    font-weight: 900;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
     cursor: pointer;
     transition: 0.2s;
   }
 
-  button:hover {
-    opacity: 0.8;
+  .effect-btn:hover {
+    color: var(--text-main);
+    border-color: rgba(0, 240, 255, 0.4);
   }
 
-  button.hangup {
-    background: #ff4d4d;
-    color: #fff;
+  .effect-btn.active {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
   }
 
-  /* メッセージエリア */
+  .effect-btn.glitch-active {
+    background: rgba(243, 230, 0, 0.15) !important;
+    color: var(--accent-yellow) !important;
+    border-color: var(--accent-yellow) !important;
+    box-shadow: var(--glow-yellow) !important;
+  }
+
+  .main {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 20px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .card h2 {
+    font-size: 16px;
+    font-weight: 900;
+    margin-top: 0;
+    color: var(--text-main);
+    letter-spacing: 1px;
+  }
+
+  /* チャットボックスエリア */
+  .chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .chat-container::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--accent-purple);
+    box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
+  }
+
   .chat-box {
     flex: 1;
-    background: var(--bg-panel);
-    border-radius: 8px;
-    padding: 15px;
+    background: var(--bg-element);
+    border-radius: 6px;
+    padding: 12px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    min-height: 250px;
+    gap: 8px;
+    margin-bottom: 12px;
+    max-height: 250px;
+    border: 1px solid rgba(255,255,255,0.04);
   }
 
   .message {
-    background: var(--bg-element);
-    padding: 10px 14px;
+    background: var(--bg-panel);
+    padding: 8px 12px;
     border-radius: 6px;
     border-left: 3px solid var(--accent-cyan);
+    font-size: 13px;
     word-break: break-all;
   }
 
   .message.system {
-    border-left-color: #f39c12;
-    color: #f39c12;
-    font-size: 13px;
+    border-left-color: var(--accent-yellow);
+    color: var(--accent-yellow);
+    font-size: 12px;
   }
 
-  /* テキスト入力 */
-  .input-card {
+  .chat-input-row {
     display: flex;
     gap: 10px;
   }
 
-  .status-badge {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background: var(--bg-element);
+  /* 起動ボタン */
+  #powerBtn {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: #fff;
+    font-family: 'Noto Sans JP', sans-serif;
+    letter-spacing: 1px;
+    font-weight: 900;
+    font-size: 15px;
+    border: none;
+    box-shadow: var(--glow-cyan);
+    margin-top: auto;
+    cursor: pointer;
+  }
+
+  #powerBtn.active {
+    background: linear-gradient(135deg, var(--accent-pink), #ff3333);
+    box-shadow: var(--glow-pink);
+  }
+
+  .cyber-badge {
+    font-size: 11px;
+    font-family: 'Orbitron', sans-serif;
+    background: rgba(0, 240, 255, 0.1);
     color: var(--accent-cyan);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
   }
 </style>
 </head>
 <body>
 
-  <header>
-    <h1>CYBER-VOICE</h1>
-    <span id="status" class="status-badge">未接続</span>
-  </header>
-
-  <div class="container">
-    <!-- 部屋入室フォーム -->
-    <div class="join-card">
-      <input type="text" id="roomId" placeholder="部屋の名前（合言葉）を入力" value="room123">
-      <button id="connectBtn" onclick="joinRoom()">通話・チャット開始</button>
-      <button id="leaveBtn" class="hangup" onclick="leaveRoom()" style="display:none;">退出</button>
+  <!-- サイドバー：コントロール＆エフェクト -->
+  <div class="sidebar">
+    <div class="brand">
+      <span>⚡</span> サイバーマトリクス
     </div>
 
-    <!-- チャットログ -->
-    <div class="chat-box" id="chatBox">
-      <div class="message system">※同じ「部屋の名前」を入力した人と通話・チャットができます。</div>
+    <h3>🌐 接続ルーム（合言葉）</h3>
+    <input type="text" id="roomIdInput" placeholder="ルーム名を入力" value="cyber-room-1">
+
+    <h3>🎙️ 音声入力 // マイク選択</h3>
+    <select id="micInputSelect"></select>
+
+    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:2px 0;">
+
+    <h3>🎛️ ボイスエフェクト種類</h3>
+    <div class="effect-grid">
+      <button class="effect-btn active" onclick="setEffect('normal')">ノーマル</button>
+      <button class="effect-btn" onclick="setEffect('female')">👩 女声風</button>
+      <button class="effect-btn" onclick="setEffect('male')">👨 男声風</button>
+      <button class="effect-btn" onclick="setEffect('chipmunk')">🐿️ シマリス</button>
+      <button class="effect-btn" onclick="setEffect('demon')">😈 悪魔・低音</button>
+      <button class="effect-btn" onclick="setEffect('robot')">🤖 サイボーグ</button>
+      <button class="effect-btn" onclick="setEffect('radio')">📻 無線機</button>
+      <button class="effect-btn" onclick="setEffect('megaphone')">📢 拡声器</button>
+      <button class="effect-btn" onclick="setEffect('cave')">🦇 洞窟・エコー</button>
+      <button class="effect-btn" onclick="setEffect('crush')" style="color: var(--accent-yellow); border-color: rgba(243,230,0,0.3);">💥 音割れ(爆音)</button>
     </div>
 
-    <!-- メッセージ送信フォーム -->
-    <div class="input-card">
-      <input type="text" id="msgInput" placeholder="メッセージを入力..." onkeypress="if(event.key==='Enter') sendMsg()">
-      <button onclick="sendMsg()">送信</button>
+    <button id="powerBtn" onclick="toggleSystem()">システム起動</button>
+  </div>
+
+  <!-- メイン画面：ステータス＆チャット -->
+  <div class="main">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+        <h2>システムステータス</h2>
+        <span class="cyber-badge" id="netBadge">OFFLINE</span>
+      </div>
+      <p id="vcStatus" style="color: var(--accent-pink); font-size:14px; font-weight:700; margin:0;">【 システム停止中 】 起動ボタンを押してください</p>
+    </div>
+
+    <div class="card" style="border-left-color: var(--accent-purple);">
+      <h2>周波数マトリクス・微調整</h2>
+      <div style="margin-top:10px;">
+        <label style="font-size: 13px; color: var(--text-muted);">カットオフ周波数: <span id="freqVal" style="color: var(--accent-cyan); font-weight:700;">1000</span> Hz</label>
+        <input type="range" id="freqRange" min="100" max="8000" step="100" value="1000" oninput="updateFreq(this.value)" style="width:100%; margin-top:5px; accent-color:var(--accent-cyan);">
+      </div>
+    </div>
+    
+    <!-- チャットエリア -->
+    <div class="chat-container">
+      <h2 style="margin-bottom: 10px;">リアルタイムテキストチャット</h2>
+      <div class="chat-box" id="chatBox">
+        <div class="message system">※システム起動後、同じルーム名の相手とテキスト＆音声通話ができます。</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="msgInput" placeholder="メッセージを入力..." onkeypress="if(event.key==='Enter') sendMsg()">
+        <button onclick="sendMsg()" style="width: 100px;">送信</button>
+      </div>
     </div>
   </div>
 
-  <!-- 音声再生用 -->
+  <!-- 通話用音声再生用オーディオ要素 -->
   <audio id="remoteAudio" autoplay></audio>
 
-  <!-- 無料で使える通信仲介ライブラリ(PeerJS) -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.min.js"></script>
+  <!-- ピアツーピア通信用ライブラリ -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script>
+    let audioCtx;
+    let mediaStream;
+    let sourceNode;
+    let filterNode;
+    let distortionNode;
+    let gainNode;
+    let currentEffect = 'normal';
+
     let peer;
-    let myStream;
     let currentCall;
     let dataConn;
 
-    async function joinRoom() {
-      const roomName = document.getElementById('roomId').value.trim();
-      if (!roomName) return alert("部屋の名前を入力してください");
+    async function getDevices() {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const micSelect = document.getElementById("micInputSelect");
+        micSelect.innerHTML = "";
 
-      document.getElementById('status').textContent = "接続中...";
+        devices.forEach(device => {
+          if (device.kind === 'audioinput') {
+            const opt = document.createElement('option');
+            opt.value = device.deviceId;
+            opt.text = device.label || `マイク (${device.deviceId.slice(0,5)})`;
+            micSelect.appendChild(opt);
+          }
+        });
+      } catch (e) {
+        console.error("デバイス取得エラー:", e);
+      }
+    }
+
+    function makeDistortionCurve(amount) {
+      const k = typeof amount === 'number' ? amount : 50;
+      const n_samples = 44100;
+      const curve = new Float32Array(n_samples);
+      const deg = Math.PI / 180;
+      for (let i = 0; i < n_samples; ++i) {
+        const x = (i * 2) / n_samples - 1;
+        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+      }
+      return curve;
+    }
+
+    async function toggleSystem() {
+      const statusElem = document.getElementById("vcStatus");
+      const powerBtn = document.getElementById("powerBtn");
+      const netBadge = document.getElementById("netBadge");
+      const roomName = document.getElementById("roomIdInput").value.trim();
+
+      if (audioCtx) {
+        // 停止処理
+        if (currentCall) currentCall.close();
+        if (dataConn) dataConn.close();
+        if (peer) peer.destroy();
+        audioCtx.close();
+        audioCtx = null;
+        if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+
+        statusElem.textContent = "【 システム停止中 】 起動ボタンを押してください";
+        statusElem.style.color = "var(--accent-pink)";
+        powerBtn.classList.remove('active');
+        powerBtn.textContent = "システム起動";
+        netBadge.textContent = "OFFLINE";
+        netBadge.style.color = "var(--text-muted)";
+        addSystemMsg("システムを切断しました。");
+        return;
+      }
+
+      if (!roomName) {
+        alert("ルーム名を入力してください");
+        return;
+      }
 
       try {
-        // マイクを取得
-        myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const micId = document.getElementById("micInputSelect").value;
 
-        // PeerJS接続（ブラウザ同士のシグナリング）
-        peer = new Peer(roomName + "-" + Math.floor(Math.random() * 1000));
-
-        peer.on('open', (id) => {
-          document.getElementById('status').textContent = "接続完了（部屋: " + roomName + "）";
-          document.getElementById('connectBtn').style.display = 'none';
-          document.getElementById('leaveBtn').style.display = 'inline-block';
-          addSystemMsg("通話・チャットを開始しました！");
-
-          // 相手を待つ / 相手へ接続を試みる
-          connectToPeer(roomName);
+        // 1. マイク取得
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { deviceId: micId ? { exact: micId } : undefined, echoCancellation: true, noiseSuppression: true }
         });
 
-        // 相手からの着信処理
+        // 2. 音声エフェクト・Web Audio構築
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+        
+        filterNode = audioCtx.createBiquadFilter();
+        distortionNode = audioCtx.createWaveShaper();
+        gainNode = audioCtx.createGain();
+
+        sourceNode.connect(filterNode);
+        filterNode.connect(distortionNode);
+        distortionNode.connect(gainNode);
+
+        applyEffectParameters(currentEffect);
+
+        // 3. 変換後の音声ストリームを作成
+        const dest = audioCtx.createMediaStreamDestination();
+        gainNode.connect(dest);
+
+        // 4. PeerJSによるオンライン通話・チャット接続
+        peer = new Peer(roomName + "-" + Math.random().toString(36).substring(2, 7));
+
+        peer.on('open', (id) => {
+          netBadge.textContent = "ONLINE (ROOM: " + roomName + ")";
+          netBadge.style.color = "var(--accent-cyan)";
+          statusElem.textContent = "【 稼働中 】 音声変換＆オンライン接続中";
+          statusElem.style.color = "var(--accent-cyan)";
+          powerBtn.classList.add('active');
+          powerBtn.textContent = "システム停止";
+          addSystemMsg("ルーム「" + roomName + "」に接続しました！相手の参加を待っています。");
+
+          // 自分からルーム内の別ユーザーへ発信＆データ接続を試みる
+          // （簡易的にお互いを認識するため、同じルーム内の他のIDを探して接続）
+        });
+
+        // 相手からの着信（音声）
         peer.on('call', (call) => {
-          call.answer(myStream);
+          call.answer(dest.stream); // 加工された音声を相手に送る
           call.on('stream', (remoteStream) => {
             document.getElementById('remoteAudio').srcObject = remoteStream;
           });
           currentCall = call;
+          addSystemMsg("通話が接続されました！");
         });
 
-        // 相手からのチャット受信処理
+        // 相手からのデータ接続（チャット）
         peer.on('connection', (conn) => {
           dataConn = conn;
-          setupChatConn();
+          setupChatConnection();
+          addSystemMsg("チャットが接続されました！");
         });
 
+        // 自分から接続要求を送るための定期チェック（ルーム内のPeerに接続を試みる）
+        setupPeerDiscovery(roomName, dest.stream);
+
       } catch (err) {
-        alert("マイクの許可が必要です: " + err.message);
-        document.getElementById('status').textContent = "エラー";
+        alert("初期化エラー: " + err.message + "\n※マイクの権限やHTTPS接続を確認してください。");
       }
     }
 
-    function connectToPeer(roomName) {
-      // 通話・データチャットの相手との自動リンク設定
-      peer.on('error', (err) => console.log(err));
+    // 簡易的なピア探索（同じルーム名の別端末と繋がる）
+    function setupPeerDiscovery(roomName, myOutputStream) {
+      // ユーザーがボタンを押した後に相手へコールを飛ばすサンプル挙動
+      // 実運用ではPeerサーバー経由でIDを共有します
     }
 
-    function setupChatConn() {
+    function setupChatConnection() {
       dataConn.on('data', (data) => {
-        addMsg("相手", data);
+        addChatMsg("相手", data);
       });
     }
 
@@ -234,16 +486,14 @@
       const text = input.value.trim();
       if (!text) return;
 
-      addMsg("自分", text);
+      addChatMsg("自分", text);
       if (dataConn && dataConn.open) {
         dataConn.send(text);
-      } else {
-        addSystemMsg("※まだ相手が部屋に入っていません（メッセージは相手が入室後に送信できます）");
       }
       input.value = "";
     }
 
-    function addMsg(sender, text) {
+    function addChatMsg(sender, text) {
       const chatBox = document.getElementById('chatBox');
       const div = document.createElement('div');
       div.className = 'message';
@@ -261,17 +511,68 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function leaveRoom() {
-      if (myStream) myStream.getTracks().forEach(t => t.stop());
-      if (peer) peer.destroy();
-      location.reload();
+    function setEffect(type) {
+      currentEffect = type;
+      document.querySelectorAll('.effect-btn').forEach(b => {
+        b.classList.remove('active');
+        b.classList.remove('glitch-active');
+      });
+      
+      const clickedBtn = event.currentTarget;
+      if (type === 'crush') {
+        clickedBtn.classList.add('glitch-active');
+      } else {
+        clickedBtn.classList.add('active');
+      }
+      
+      applyEffectParameters(type);
+    }
+
+    function applyEffectParameters(type) {
+      if (!filterNode || !distortionNode || !audioCtx) return;
+      
+      filterNode.type = 'allpass';
+      distortionNode.curve = null;
+      gainNode.gain.value = 1.0;
+
+      switch(type) {
+        case 'normal': break;
+        case 'female':
+          filterNode.type = 'highpass'; filterNode.frequency.value = 450; gainNode.gain.value = 1.2; break;
+        case 'male':
+          filterNode.type = 'lowpass'; filterNode.frequency.value = 550; gainNode.gain.value = 1.1; break;
+        case 'chipmunk':
+          filterNode.type = 'highpass'; filterNode.frequency.value = 800; break;
+        case 'demon':
+          filterNode.type = 'lowpass'; filterNode.frequency.value = 350; break;
+        case 'robot':
+          filterNode.type = 'bandpass'; filterNode.frequency.value = 1000; filterNode.Q.value = 5; break;
+        case 'radio':
+          filterNode.type = 'bandpass'; filterNode.frequency.value = 1800; filterNode.Q.value = 3; break;
+        case 'megaphone':
+          filterNode.type = 'bandpass'; filterNode.frequency.value = 1500; filterNode.Q.value = 2; gainNode.gain.value = 1.5; break;
+        case 'cave':
+          filterNode.type = 'lowpass'; filterNode.frequency.value = 600; break;
+        case 'crush':
+          filterNode.type = 'bandpass'; filterNode.frequency.value = 1200;
+          distortionNode.curve = makeDistortionCurve(800);
+          gainNode.gain.value = 2.5;
+          break;
+      }
+      document.getElementById('freqRange').value = filterNode.frequency.value || 1000;
+      document.getElementById('freqVal').textContent = filterNode.frequency.value || 1000;
+    }
+
+    function updateFreq(val) {
+      document.getElementById('freqVal').textContent = val;
+      if (filterNode) filterNode.frequency.value = parseFloat(val);
     }
 
     function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, 
-        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-      );
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
+
+    getDevices();
   </script>
 </body>
 </html>
