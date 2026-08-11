@@ -2,173 +2,58 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Discord Style Voice Chat</title>
 <style>
-/* Discord風カラースキーム */
-:root {
-  --bg-dark: #36393f;
-  --bg-darker: #2f3136;
-  --bg-deep: #202225;
-  --text-main: #dcddde;
-  --text-muted: #72767d;
-  --accent: #5865f2; /* Discordブルー */
-  --green: #3ba55d;
-  --red: #ed4245;
-}
-
-body {
-  margin: 0;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  background: var(--bg-darker);
-  color: var(--text-main);
-  height: 100vh;
-  display: flex;
-}
-
-/* サーバーリスト風ナビ */
-.nav-bar {
-  width: 72px;
-  background: var(--bg-deep);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-.nav-icon {
-  width: 48px;
-  height: 48px;
-  background: var(--bg-dark);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.nav-icon:hover { border-radius: 15px; background: var(--accent); }
-
-/* サイドバー */
-.sidebar {
-  width: 240px;
-  background: var(--bg-dark);
-  display: flex;
-  flex-direction: column;
-}
-.sidebar-header {
-  padding: 20px;
-  font-weight: bold;
-  border-bottom: 1px solid var(--bg-deep);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.2);
-}
-
-/* メインチャットエリア */
-.main-chat {
-  flex: 1;
-  background: var(--bg-darker);
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-/* 共通UI */
-.card {
-  background: var(--bg-dark);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-}
-button {
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-weight: bold;
-}
-input {
-  background: var(--bg-deep);
-  border: none;
-  padding: 10px;
-  color: white;
-  border-radius: 3px;
-  width: 100%;
-}
-.msg-area {
-  background: var(--bg-dark);
-  height: 300px;
-  overflow-y: auto;
-  padding: 10px;
-  border-radius: 5px;
-}
-.message { margin: 10px 0; padding: 5px; }
-.message.mine { color: var(--green); text-align: right; }
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
+  :root { --bg: #2f3136; --accent: #5865f2; }
+  body { background: var(--bg); color: white; font-family: sans-serif; display: flex; height: 100vh; margin: 0; }
+  
+  /* ランチャー用サイドバー */
+  .launcher-sidebar { width: 260px; background: #202225; padding: 20px; border-right: 1px solid #000; }
+  .btn { background: var(--accent); border: none; color: white; padding: 10px; width: 100%; margin-top: 10px; cursor: pointer; border-radius: 4px; }
+  .file-input { background: #40444b; padding: 10px; margin-top: 5px; width: 100%; border-radius: 4px; }
+  
+  .main-area { flex: 1; padding: 30px; }
+  .status-card { background: var(--bg); padding: 20px; border-radius: 8px; border: 1px solid #444; }
 </style>
 </head>
 <body>
 
-<!-- ナビゲーション -->
-<div class="nav-bar">
-  <div class="nav-icon" onclick="switchTab('friendsTab')">🏠</div>
-  <div class="nav-icon" onclick="switchTab('chatTab')">💬</div>
-  <div class="nav-icon" onclick="switchTab('settingsTab')">⚙️</div>
+<div class="launcher-sidebar">
+  <h3>⚙️ Reboot Launcher</h3>
+  
+  <label>シーズンファイル (フォルダ選択)</label>
+  <input type="file" webkitdirectory class="file-input" id="seasonFolder">
+  
+  <label style="margin-top:20px; display:block;">カスタムDLL</label>
+  <input type="file" accept=".dll" class="file-input" id="dllFile">
+  
+  <button class="btn" onclick="launchGame()">🚀 ゲーム起動</button>
 </div>
 
-<!-- サイドバー -->
-<div class="sidebar">
-  <div class="sidebar-header">Voice Chat Alpha</div>
-  <div id="friendList" style="padding:10px;"></div>
-</div>
-
-<!-- メインコンテンツ -->
-<div class="main-chat">
-  <div id="contentArea">
-    <!-- コンテンツが切り替わる -->
-    <div id="friendsTab" class="page">
-      <h2>👥 フレンド一覧</h2>
-      <div id="friendListContainer"></div>
-    </div>
-    
-    <div id="chatTab" class="page" style="display:none;">
-      <h2 id="dmTitle">トーク</h2>
-      <div class="msg-area" id="dmMessages"></div>
-      <div style="margin-top:10px; display:flex; gap:10px;">
-        <input id="dmInput" placeholder="メッセージを送信...">
-        <button onclick="sendDM()">送信</button>
-      </div>
-    </div>
+<div class="main-area">
+  <div class="status-card">
+    <h2>状態: <span id="status">待機中</span></h2>
+    <p id="log">DLLやシーズンを選択してください。</p>
   </div>
 </div>
 
 <script>
-// --- シンプルなDiscord風機能実装 ---
-let db = JSON.parse(localStorage.getItem("discord_db") || '{"users":[],"messages":[]}');
-
-function switchTab(id) {
-  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-  document.getElementById(id).style.display = 'block';
+function launchGame() {
+  const season = document.getElementById('seasonFolder').files;
+  const dll = document.getElementById('dllFile').files[0];
+  
+  if(season.length === 0) return alert("シーズンファイルを選択してください！");
+  
+  document.getElementById('status').textContent = "起動中...";
+  document.getElementById('log').innerHTML = 
+    `シーズンデータ: ${season.length} ファイル読み込み完了<br>` +
+    `カスタムDLL: ${dll ? dll.name : "なし"}<br>` +
+    `<span style="color:var(--accent)">[System] インジェクション準備完了... 擬似実行中</span>`;
+    
+  setTimeout(() => {
+    document.getElementById('status').textContent = "実行中";
+    document.getElementById('log').innerHTML += "<br>✅ ゲームプロセスにフックしました。";
+  }, 2000);
 }
-
-function sendDM() {
-  const input = document.getElementById("dmInput");
-  const msg = document.createElement("div");
-  msg.className = "message mine";
-  msg.textContent = "自分: " + input.value;
-  document.getElementById("dmMessages").appendChild(msg);
-  input.value = "";
-}
-
-// 初期化
-console.log("Discord Style Initialized");
 </script>
 </body>
 </html>
