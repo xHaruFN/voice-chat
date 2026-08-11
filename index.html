@@ -35,14 +35,7 @@
     appId: "YOUR_APP_ID"
   };
 
-  // Firebase の初期化
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  let currentUser = null;
-
-  // --- UI 要素の取得 ---
+  // UI 要素の取得
   const authScreen = document.getElementById('auth-screen');
   const chatScreen = document.getElementById('chat-screen');
   const authTitle = document.getElementById('auth-title');
@@ -59,11 +52,42 @@
   const logoutBtn = document.getElementById('logout-btn');
 
   let isSignUpMode = false;
+  let auth = null;
+  let db = null;
+  let currentUser = null;
 
-  // --- 画面切り替え（新規登録 / ログイン） ---
+  // Firebaseの初期化チェック
+  try {
+    if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+      authError.textContent = "※ Firebaseの設定情報が初期状態です。コード内の firebaseConfig をご自身のキーに書き換えてください。";
+    }
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    // 認証状態の監視
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        authScreen.style.display = 'none';
+        chatScreen.style.display = 'flex';
+        loadMessages();
+      } else {
+        currentUser = null;
+        chatScreen.style.display = 'none';
+        authScreen.style.display = 'flex';
+        messageList.innerHTML = '';
+      }
+    });
+  } catch (e) {
+    console.error("Firebase Initialization Error:", e);
+    authError.textContent = "Firebaseの接続設定エラー: キーを確認してください。";
+  }
+
+  // 画面切り替え（新規登録 / ログイン）
   toggleAuthBtn.addEventListener('click', () => {
     isSignUpMode = !isSignUpMode;
-    authError.textContent = '';
+    authError.textContent = firebaseConfig.apiKey === "YOUR_API_KEY" ? "※ Firebaseの設定情報を書き換えてください。" : '';
     if (isSignUpMode) {
       authTitle.textContent = 'アカウント新規登録';
       nameField.style.display = 'block';
@@ -77,8 +101,13 @@
     }
   });
 
-  // --- アカウント作成 / ログイン 処理 ---
+  // アカウント作成 / ログイン 処理
   authSubmitBtn.addEventListener('click', async () => {
+    if (!auth) {
+      authError.textContent = "Firebaseの設定（firebaseConfig）を入力してください。";
+      return;
+    }
+
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
     const displayName = nameInput.value.trim();
@@ -105,30 +134,15 @@
     }
   });
 
-  // --- ログアウト処理 ---
+  // ログアウト処理
   logoutBtn.addEventListener('click', () => {
-    signOut(auth);
+    if (auth) signOut(auth);
   });
 
-  // --- 認証状態の監視 ---
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      currentUser = user;
-      authScreen.style.display = 'none';
-      chatScreen.style.display = 'flex';
-      loadMessages();
-    } else {
-      currentUser = null;
-      chatScreen.style.display = 'none';
-      authScreen.style.display = 'flex';
-      messageList.innerHTML = '';
-    }
-  });
-
-  // --- メッセージ送信 ---
+  // メッセージ送信
   async function sendMessage() {
     const text = messageInput.value.trim();
-    if (!text || !currentUser) return;
+    if (!text || !currentUser || !db) return;
 
     try {
       await addDoc(collection(db, "messages"), {
@@ -148,8 +162,9 @@
     if (e.key === 'Enter') sendMessage();
   });
 
-  // --- メッセージ受信・同期（リアルタイム） ---
+  // メッセージ受信・同期
   function loadMessages() {
+    if (!db) return;
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
     onSnapshot(q, (snapshot) => {
       messageList.innerHTML = '';
@@ -162,7 +177,7 @@
     });
   }
 
-  // LINE風吹き出しのDOM構築
+  // LINE風吹き出しの描画
   function appendMessageUI(userName, text, isMine, timestamp) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message-group ${isMine ? 'mine' : 'other'}`;
@@ -182,7 +197,7 @@
       `;
     } else {
       msgDiv.innerHTML = `
-        <div class="avatar">${userName ? userName.charAt(0) : 'ユーザー'}</div>
+        <div class="avatar">${userName ? escapeHTML(userName.charAt(0)) : 'ユ'}</div>
         <div class="content">
           <div class="user-name">${escapeHTML(userName)}</div>
           <div class="bubble-row">
@@ -196,7 +211,7 @@
   }
 
   function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, 
+    return (str || '').replace(/[&<>'"]/g, 
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
@@ -212,7 +227,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
-body, html { height: 100%; background: #111; display: flex; justify-content: center; align-items: center; }
+body, html { height: 100%; background: #222; display: flex; justify-content: center; align-items: center; }
 
 /* スマホ枠風コンテナ */
 .app-container {
@@ -225,7 +240,7 @@ body, html { height: 100%; background: #111; display: flex; justify-content: cen
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
 }
 
 /* ログイン / 新規登録画面 */
@@ -247,7 +262,7 @@ body, html { height: 100%; background: #111; display: flex; justify-content: cen
 .btn-primary { width: 100%; padding: 12px; background: var(--line-green); border: none; color: white; font-weight: bold; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
 .btn-primary:hover { opacity: 0.9; }
 .btn-link { background: none; border: none; color: #64748b; text-decoration: underline; font-size: 0.85rem; margin-top: 16px; cursor: pointer; width: 100%; text-align: center; }
-.error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 8px; text-align: center; }
+.error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 12px; text-align: center; line-height: 1.4; }
 
 /* メインチャット画面 */
 .chat-screen {
@@ -347,7 +362,7 @@ header h3 { font-size: 1.1rem; }
 <body>
 
 <div class="app-container">
-  <!-- 認証画面 -->
+  <!-- 認証画面（デフォルトで表示） -->
   <div id="auth-screen" class="auth-screen">
     <h2 id="auth-title">ログイン</h2>
     
