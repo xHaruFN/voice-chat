@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Voice Chat</title>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -78,6 +76,7 @@
 
     .logout {
       background: #dc2626;
+      display: none;
     }
 
     .user {
@@ -114,56 +113,85 @@
       display: none;
     }
 
-    /* ==========================================
-       フレンド
-       ========================================== */
+    /* =========================
+       フレンド欄
+    ========================= */
+
+    .friend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
 
     .friend {
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
       background: #374151;
       padding: 12px;
-      margin: 8px 0;
       border-radius: 10px;
+      transition: 0.15s;
     }
 
-    .friendAvatar {
+    .friend:hover {
+      background: #4b5563;
+      transform: translateX(3px);
+    }
+
+    .friend-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .friend-avatar {
       width: 45px;
       height: 45px;
-      background: #4f46e5;
-      border-radius: 8px;
+      border-radius: 50%;
+      background: #6366f1;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
     }
 
-    .friendInfo {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+    .friend-name {
+      font-weight: bold;
+    }
+
+    .friend-status {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-top: 3px;
     }
 
     .online {
       color: #22c55e;
-      font-size: 13px;
+    }
+
+    .away {
+      color: #facc15;
     }
 
     .offline {
       color: #9ca3af;
-      font-size: 13px;
     }
 
-    .offlineFriend {
-      opacity: 0.6;
-    }
-
-    .friend button {
+    .friend-button {
       padding: 8px 14px;
       margin: 0;
-      background: #22c55e;
+      font-size: 14px;
+      background: #2563eb;
+    }
+
+    .friend-button.remove {
+      background: #4b5563;
+    }
+
+    .empty-friends {
+      color: #9ca3af;
+      padding: 15px 0;
     }
   </style>
 </head>
@@ -176,9 +204,9 @@
 
 <main>
 
-  <!-- ==========================================
+  <!-- =========================
        アカウント
-       ========================================== -->
+  ========================== -->
 
   <div class="card" id="accountCard">
 
@@ -209,6 +237,7 @@
     </button>
 
     <button
+      id="logoutButton"
       class="logout"
       onclick="signOut()"
     >
@@ -222,9 +251,9 @@
   </div>
 
 
-  <!-- ==========================================
+  <!-- =========================
        アカウント設定
-       ========================================== -->
+  ========================== -->
 
   <div
     class="card"
@@ -262,9 +291,9 @@
   </div>
 
 
-  <!-- ==========================================
+  <!-- =========================
        自分
-       ========================================== -->
+  ========================== -->
 
   <div class="card">
 
@@ -306,9 +335,9 @@
   </div>
 
 
-  <!-- ==========================================
-       フォートナイト風フレンド
-       ========================================== -->
+  <!-- =========================
+       フレンド
+  ========================== -->
 
   <div class="card">
 
@@ -317,83 +346,116 @@
     <input
       id="friendSearch"
       type="text"
-      placeholder="🔍 フレンドを検索"
+      placeholder="フレンドを検索"
       oninput="searchFriends()"
     >
 
-    <div id="friendList">
+    <div
+      id="friendList"
+      class="friend-list"
+    >
 
-      <!-- オンラインフレンド -->
+      <div
+        class="friend"
+        data-name="NekoPlayer"
+      >
 
-      <div class="friend">
+        <div class="friend-left">
 
-        <div class="friendAvatar">
-          👤
-        </div>
+          <div class="friend-avatar">
+            🐱
+          </div>
 
-        <div class="friendInfo">
+          <div>
 
-          <strong>xHaruFN</strong>
+            <div class="friend-name">
+              NekoPlayer
+            </div>
 
-          <span class="online">
-            ● オンライン
-          </span>
+            <div class="friend-status online">
+              ● オンライン
+            </div>
+
+          </div>
 
         </div>
 
         <button
-          onclick="joinFriend('xHaruFN')"
+          class="friend-button"
+          onclick="alert('NekoPlayerをパーティーに招待しました！')"
         >
-          参加
+          招待
         </button>
 
       </div>
 
 
-      <!-- オンラインフレンド -->
+      <div
+        class="friend"
+        data-name="TrainMaster"
+      >
 
-      <div class="friend">
+        <div class="friend-left">
 
-        <div class="friendAvatar">
-          👤
-        </div>
+          <div class="friend-avatar">
+            🚆
+          </div>
 
-        <div class="friendInfo">
+          <div>
 
-          <strong>Fortnite_Player</strong>
+            <div class="friend-name">
+              TrainMaster
+            </div>
 
-          <span class="online">
-            ● オンライン
-          </span>
+            <div class="friend-status away">
+              ● 離席中
+            </div>
+
+          </div>
 
         </div>
 
         <button
-          onclick="joinFriend('Fortnite_Player')"
+          class="friend-button"
+          onclick="alert('TrainMasterをパーティーに招待しました！')"
         >
-          参加
+          招待
         </button>
 
       </div>
 
 
-      <!-- オフラインフレンド -->
+      <div
+        class="friend"
+        data-name="xHaruFriend"
+      >
 
-      <div class="friend offlineFriend">
+        <div class="friend-left">
 
-        <div class="friendAvatar">
-          👤
+          <div class="friend-avatar">
+            🎮
+          </div>
+
+          <div>
+
+            <div class="friend-name">
+              xHaruFriend
+            </div>
+
+            <div class="friend-status offline">
+              ● オフライン
+            </div>
+
+          </div>
+
         </div>
 
-        <div class="friendInfo">
-
-          <strong>ExamplePlayer</strong>
-
-          <span class="offline">
-            ● オフライン
-          </span>
-
-        </div>
+        <button
+          class="friend-button remove"
+          onclick="alert('このフレンドはオフラインです。')"
+        >
+          オフライン
+        </button>
 
       </div>
 
@@ -406,16 +468,16 @@
   </div>
 
 
-  <!-- ==========================================
+  <!-- =========================
        パーティー
-       ========================================== -->
+  ========================== -->
 
   <div class="card">
 
     <h2>🎉 パーティー</h2>
 
     <p>
-      パーティーを作成してフレンドと遊ぼう！
+      フレンドとパーティーを作成できます。
     </p>
 
     <button onclick="createParty()">
@@ -558,6 +620,21 @@
       return;
     }
 
+    resetUserUI();
+
+    document.getElementById(
+      "accountStatus"
+    ).textContent =
+      "ログアウトしました";
+  }
+
+
+  // ==========================================
+  // UIを未ログイン状態に戻す
+  // ==========================================
+
+  function resetUserUI() {
+
     document.getElementById(
       "username"
     ).textContent =
@@ -569,12 +646,12 @@
       "⚪ オフライン";
 
     document.getElementById(
-      "accountStatus"
-    ).textContent =
-      "ログアウトしました";
+      "settingsCard"
+    ).style.display =
+      "none";
 
     document.getElementById(
-      "settingsCard"
+      "logoutButton"
     ).style.display =
       "none";
   }
@@ -608,6 +685,16 @@
     ).textContent =
       "👻 仮アカウント: " +
       guestName;
+
+    document.getElementById(
+      "logoutButton"
+    ).style.display =
+      "inline-block";
+
+    document.getElementById(
+      "settingsCard"
+    ).style.display =
+      "none";
 
     alert(
       "仮アカウントを作成しました！\n\n" +
@@ -645,6 +732,11 @@
       "settingsCard"
     ).style.display =
       "block";
+
+    document.getElementById(
+      "logoutButton"
+    ).style.display =
+      "inline-block";
   }
 
 
@@ -692,7 +784,8 @@
 
     document.getElementById(
       "newEmail"
-    ).value = "";
+    ).value =
+      "";
   }
 
 
@@ -740,7 +833,79 @@
 
     document.getElementById(
       "newPassword"
-    ).value = "";
+    ).value =
+      "";
+  }
+
+
+  // ==========================================
+  // フレンド検索
+  // ==========================================
+
+  function searchFriends() {
+
+    const keyword =
+      document.getElementById(
+        "friendSearch"
+      ).value
+        .trim()
+        .toLowerCase();
+
+    const friends =
+      document.querySelectorAll(
+        ".friend"
+      );
+
+    friends.forEach(friend => {
+
+      const name =
+        friend
+          .getAttribute("data-name")
+          .toLowerCase();
+
+      if (name.includes(keyword)) {
+        friend.style.display =
+          "flex";
+      } else {
+        friend.style.display =
+          "none";
+      }
+
+    });
+  }
+
+
+  // ==========================================
+  // フレンド追加
+  // ==========================================
+
+  function addFriend() {
+
+    const name =
+      prompt(
+        "追加したいフレンドの名前を入力してください。"
+      );
+
+    if (!name) {
+      return;
+    }
+
+    alert(
+      name +
+      " にフレンド申請を送りました！"
+    );
+  }
+
+
+  // ==========================================
+  // パーティー
+  // ==========================================
+
+  function createParty() {
+
+    alert(
+      "🎉 パーティーを作成しました！"
+    );
   }
 
 
@@ -808,74 +973,6 @@
 
 
   // ==========================================
-  // フレンド検索
-  // ==========================================
-
-  function searchFriends() {
-
-    const search =
-      document
-        .getElementById("friendSearch")
-        .value
-        .toLowerCase();
-
-    const friends =
-      document.querySelectorAll(".friend");
-
-    friends.forEach(friend => {
-
-      const name =
-        friend
-          .querySelector("strong")
-          .textContent
-          .toLowerCase();
-
-      friend.style.display =
-        name.includes(search)
-          ? "flex"
-          : "none";
-    });
-  }
-
-
-  // ==========================================
-  // フレンド追加
-  // ==========================================
-
-  function addFriend() {
-
-    alert(
-      "フレンド追加機能は次の段階で追加します！"
-    );
-  }
-
-
-  // ==========================================
-  // フレンドのパーティー参加
-  // ==========================================
-
-  function joinFriend(friendName) {
-
-    alert(
-      friendName +
-      " のパーティーに参加します！"
-    );
-  }
-
-
-  // ==========================================
-  // パーティー
-  // ==========================================
-
-  function createParty() {
-
-    alert(
-      "パーティー作成機能は次の段階で追加します！"
-    );
-  }
-
-
-  // ==========================================
   // ログイン状態確認
   // ==========================================
 
@@ -889,7 +986,13 @@
       await supabaseClient.auth.getUser();
 
     if (user) {
+
       updateUserUI(user);
+
+    } else {
+
+      resetUserUI();
+
     }
   }
 
@@ -899,5 +1002,3 @@
 
 </body>
 </html>
-```
-
