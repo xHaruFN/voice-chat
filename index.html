@@ -22,7 +22,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
 
-/* 入室モーダル */
+/* 入室画面 */
 .join-screen { position: fixed; inset: 0; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .join-box { background: var(--bg-card); border: 1px solid var(--border); padding: 32px; border-radius: 16px; width: 90%; max-width: 380px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); text-align: center; }
 .join-box h1 { font-size: 1.4rem; margin-bottom: 20px; color: var(--primary); }
@@ -31,7 +31,7 @@ body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; d
 .join-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
 .join-btn:hover { background: var(--primary-hover); }
 
-/* メイン画面 */
+/* ヘッダー */
 header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
 .logo { font-weight: 800; font-size: 1.1rem; }
 .room-tag { background: var(--bg-dark); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: #818cf8; }
@@ -45,12 +45,15 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 .spotlight-area video { width: 100%; max-height: 480px; object-fit: contain; display: block; }
 .spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; color: #818cf8; }
 
-/* ユーザー表示グリッド */
+/* ユーザーグリッド */
 .video-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .user-tile { background: var(--bg-card); border-radius: 16px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
 .user-tile video { width: 100%; height: 100%; object-fit: cover; }
-.avatar { width: 80px; height: 80px; border-radius: 50%; background: #334155; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; border: 4px solid transparent; transition: border-color 0.2s, box-shadow 0.2s; }
-.avatar.speaking { border-color: var(--speaking); box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+
+/* アバターと喋っている時のエフェクト */
+.avatar { width: 85px; height: 85px; border-radius: 50%; background: #334155; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; border: 4px solid transparent; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.avatar.speaking { border-color: var(--speaking); box-shadow: 0 0 25px rgba(16, 185, 129, 0.7); transform: scale(1.05); }
+
 .tile-overlay { position: absolute; bottom: 10px; left: 10px; right: 10px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(6px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05); }
 
 /* サイドバー（チャット） */
@@ -61,7 +64,7 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 .msg .author { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
 .sys-msg { font-size: 0.75rem; color: var(--text-muted); text-align: center; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 12px; }
 
-/* 下部操作バー */
+/* 操作バー */
 .controls-bar { height: 72px; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 16px; }
 .control-btn { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg-input); color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
 .control-btn.active { background: var(--primary); border-color: transparent; }
@@ -73,7 +76,6 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 </head>
 <body>
 
-<!-- 部屋名入力画面 -->
 <div id="joinScreen" class="join-screen">
   <div class="join-box">
     <h1>🎙️ ボイス＆画面共有</h1>
@@ -149,8 +151,8 @@ let isCamOn = false;
 let isScreenSharing = false;
 let isPeerScreenSharing = false;
 let isPeerCamOn = false;
+let isSelfSpeaking = false;
 
-// 部屋への入室処理（部屋名を固定ID化して接続）
 async function joinRoom() {
   myName = document.getElementById('usernameInput').value.trim() || 'ユーザー1';
   roomName = document.getElementById('roomInput').value.trim();
@@ -174,11 +176,9 @@ async function joinRoom() {
     updateControlsUI();
   }
 
-  // 部屋名をベースにした固定IDルール
   const hostId = `room-${roomName}-host`;
   const guestId = `room-${roomName}-guest-${Math.floor(Math.random() * 1000)}`;
 
-  // まずホストとして初期化を試みる
   peer = new Peer(hostId);
 
   peer.on('open', () => {
@@ -188,7 +188,6 @@ async function joinRoom() {
   });
 
   peer.on('error', (err) => {
-    // 既にホストが存在する場合はゲストとして入室
     if (err.type === 'unavailable-id') {
       peer = new Peer(guestId);
       peer.on('open', () => {
@@ -196,7 +195,6 @@ async function joinRoom() {
         document.getElementById('joinScreen').style.display = 'none';
         setupPeerEvents();
 
-        // ホストへ接続
         activeDataConn = peer.connect(hostId);
         setupDataConnection();
         activeMediaCall = peer.call(hostId, getActiveStream());
@@ -241,6 +239,14 @@ function setupDataConnection() {
     } else if (data.type === 'CAM_STATE') {
       isPeerCamOn = data.isCamOn;
       updatePeerUI();
+    } else if (data.type === 'SPEAKING') {
+      // 相手の発話状態を受け取りエフェクトを更新
+      const avatarPeer = document.getElementById('avatarPeer');
+      if (data.isSpeaking) {
+        avatarPeer.classList.add('speaking');
+      } else {
+        avatarPeer.classList.remove('speaking');
+      }
     }
   });
 
@@ -262,7 +268,7 @@ function getActiveStream() {
   return isScreenSharing && screenStream ? screenStream : localStream;
 }
 
-// 音量解析（話者枠線ハイライト）
+// 自分のマイク入力から発声判定し、自分と相手両方のエフェクトを更新
 function setupAudioAnalysis(stream) {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   const analyser = ctx.createAnalyser();
@@ -276,9 +282,26 @@ function setupAudioAnalysis(stream) {
     if (isMicOn) {
       analyser.getByteFrequencyData(data);
       const avg = data.reduce((a, b) => a + b, 0) / data.length;
-      const avatar = document.getElementById('avatarSelf');
-      if (avg > 20) avatar.classList.add('speaking');
-      else avatar.classList.remove('speaking');
+      const speakingNow = avg > 20;
+
+      if (speakingNow !== isSelfSpeaking) {
+        isSelfSpeaking = speakingNow;
+        const avatarSelf = document.getElementById('avatarSelf');
+        
+        // 自分の画面のエフェクト更新
+        if (isSelfSpeaking) {
+          avatarSelf.classList.add('speaking');
+        } else {
+          avatarSelf.classList.remove('speaking');
+        }
+
+        // 相手に発話状態（ON/OFF）をリアルタイム通信
+        sendSignal({ type: 'SPEAKING', isSpeaking: isSelfSpeaking });
+      }
+    } else if (isSelfSpeaking) {
+      isSelfSpeaking = false;
+      document.getElementById('avatarSelf').classList.remove('speaking');
+      sendSignal({ type: 'SPEAKING', isSpeaking: false });
     }
     requestAnimationFrame(check);
   }
@@ -389,6 +412,7 @@ function resetPeerUI() {
   document.getElementById('avatarPeer').textContent = '対';
   document.getElementById('videoPeer').style.display = 'none';
   document.getElementById('avatarPeer').style.display = 'flex';
+  document.getElementById('avatarPeer').classList.remove('speaking');
   isPeerScreenSharing = false;
   isPeerCamOn = false;
   removeSpotlight();
