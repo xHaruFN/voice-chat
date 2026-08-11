@@ -594,21 +594,17 @@ id="partyCard"
 
 <h2>🎉 パーティー</h2>
 
+<input
+id="partyNameInput"
+maxlength="30"
+placeholder="部屋名を入力 (例: room123)"
+>
+
 <button
 class="green"
-onclick="createParty()"
+onclick="createOrJoinParty()"
 >
-＋ パーティー作成
-</button>
-
-<input
-id="partyCodeInput"
-maxlength="6"
-placeholder="パーティーコード"
->
-
-<button onclick="joinParty()">
-🚪 パーティー参加
+🚪 パーティー作成・参加
 </button>
 
 <div id="partyArea">
@@ -1654,7 +1650,7 @@ document.getElementById(
 "status"
 ).textContent =
 status.length
-? status.join("　")
+? status.join(" ")
 : "すべてOFF";
 
 }
@@ -2317,10 +2313,10 @@ document.getElementById(
 
 
 /* ==========================================
-   パーティー作成
+   パーティー作成・参加（部屋名ベース）
 ========================================== */
 
-function createParty() {
+function createOrJoinParty() {
 
 if (!currentUser) {
 
@@ -2331,104 +2327,56 @@ alert(
 return;
 }
 
-const code =
-Math.random()
-.toString(36)
-.substring(2,8)
-.toUpperCase();
-
-const party = {
-
-id: randomID("party"),
-
-ownerId:
-currentUser.id,
-
-code: code,
-
-members:
-[currentUser.id]
-
-};
-
-db.parties.push(party);
-
-saveDB();
-
-renderParty();
-
-alert(
-"パーティーを作成しました！\n\nコード: " +
-code
-);
-
-}
-
-
-/* ==========================================
-   パーティー参加
-========================================== */
-
-function joinParty() {
-
-if (!currentUser) {
-
-alert(
-"ログインしてください。"
-);
-
-return;
-}
-
-const code =
+const partyName =
 document.getElementById(
-"partyCodeInput"
-).value.trim()
-.toUpperCase();
+"partyNameInput"
+).value.trim();
 
-if (!code) {
+if (!partyName) {
 
 alert(
-"パーティーコードを入力してください。"
+"部屋名を入力してください。"
 );
 
 return;
 }
 
-const party =
-db.parties.find(
-p => p.code === code
+// 既に自分がどこかのパーティーに参加している場合は一度抜ける
+db.parties.forEach(p => {
+  p.members = p.members.filter(id => id !== currentUser.id);
+});
+db.parties = db.parties.filter(p => p.members.length > 0);
+
+// 該当する部屋名がすでに存在するか探す
+let party = db.parties.find(
+  p => p.partyName.toLowerCase() === partyName.toLowerCase()
 );
 
-if (!party) {
-
-alert(
-"パーティーが見つかりません。"
-);
-
-return;
-}
-
-if (!party.members.includes(
-currentUser.id
-)) {
-
-party.members.push(
-currentUser.id
-);
-
+if (party) {
+  // すでに存在する場合は参加
+  if (!party.members.includes(currentUser.id)) {
+    party.members.push(currentUser.id);
+  }
+} else {
+  // 存在しない場合は新しく作成して参加
+  party = {
+    id: randomID("party"),
+    ownerId: currentUser.id,
+    partyName: partyName,
+    members: [currentUser.id]
+  };
+  db.parties.push(party);
 }
 
 saveDB();
-
 renderParty();
 
 document.getElementById(
-"partyCodeInput"
+"partyNameInput"
 ).value = "";
 
 alert(
-"パーティーに参加しました！"
+"部屋「" + partyName + "」に参加しました！"
 );
 
 }
@@ -2487,14 +2435,14 @@ area.innerHTML = `
 </h3>
 
 <p>
-パーティーコード
+部屋名
 </p>
 
-<strong style="font-size:24px;">
-${escapeHTML(party.code)}
+<strong style="font-size:22px;">
+${escapeHTML(party.partyName)}
 </strong>
 
-<p>
+<p style="margin-top:8px;">
 👑 ホスト:
 ${escapeHTML(
 owner
