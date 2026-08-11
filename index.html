@@ -3,576 +3,2744 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CYBER-MATRIX // リアルタイム通信＆ボイス</title>
+<title>Voice Chat</title>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap');
+* {
+  box-sizing: border-box;
+}
 
-  :root {
-    --bg-base: #0a0b10;
-    --bg-panel: #121520;
-    --bg-element: #1a1e2e;
-    --accent-cyan: #00f0ff;
-    --accent-purple: #9d00ff;
-    --accent-pink: #ff007f;
-    --accent-yellow: #f3e600;
-    --text-main: #f0f3f6;
-    --text-muted: #8e9297;
-    --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.4);
-    --glow-pink: 0 0 15px rgba(255, 0, 127, 0.4);
-    --glow-yellow: 0 0 15px rgba(243, 230, 0, 0.5);
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111827;
+  color: white;
+}
+
+header {
+  height: 64px;
+  background: #1f2937;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+main {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.card {
+  background: #1f2937;
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+h3 {
+  margin-top: 25px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  margin: 6px 4px 6px 0;
+  font-size: 16px;
+  cursor: pointer;
+  background: #4f46e5;
+  color: white;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.logout,
+.red {
+  background: #dc2626;
+}
+
+.green {
+  background: #22c55e;
+}
+
+.gray {
+  background: #4b5563;
+}
+
+.yellow {
+  background: #eab308;
+  color: #111827;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #374151;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  background: #4f46e5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+#status {
+  margin-top: 15px;
+  color: #9ca3af;
+}
+
+#accountStatus,
+#settingsStatus {
+  color: #9ca3af;
+}
+
+#settingsCard,
+#friendCard,
+#partyCard {
+  display: none;
+}
+
+.friend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #374151;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+}
+
+.friendAvatar {
+  width: 45px;
+  height: 45px;
+  background: #4f46e5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.friendInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.online {
+  color: #22c55e;
+  font-size: 13px;
+}
+
+.away {
+  color: #eab308;
+  font-size: 13px;
+}
+
+.offline {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.friend button {
+  padding: 8px 14px;
+  margin: 0 0 0 5px;
+}
+
+.request {
+  background: #374151;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+}
+
+.partyBox {
+  background: #374151;
+  padding: 15px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.empty {
+  color: #9ca3af;
+  padding: 15px 0;
+}
+
+.mediaArea {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.videoBox {
+  background: #111827;
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 220px;
+}
+
+.videoBox h3 {
+  margin: 5px 0 10px;
+}
+
+video {
+  width: 100%;
+  max-height: 400px;
+  background: #000;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.noVideo {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  background: #030712;
+  border-radius: 10px;
+}
+
+.dmBox {
+  background: #111827;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.dmMessages {
+  height: 250px;
+  overflow-y: auto;
+  background: #030712;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.message {
+  background: #374151;
+  padding: 9px 12px;
+  border-radius: 10px;
+  margin: 6px 0;
+  max-width: 80%;
+}
+
+.message.mine {
+  margin-left: auto;
+  background: #4f46e5;
+}
+
+.messageName {
+  font-size: 12px;
+  color: #d1d5db;
+  margin-bottom: 3px;
+}
+
+@media (max-width: 700px) {
+  .mediaArea {
+    grid-template-columns: 1fr;
   }
 
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    background: var(--bg-base);
-    color: var(--text-main);
-    font-family: 'Noto Sans JP', 'Rajdhani', sans-serif;
-    font-size: 15px;
-    height: 100vh;
-    display: flex;
-    overflow: hidden;
-    background-image: 
-      radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%);
+  .friend {
+    flex-wrap: wrap;
   }
-
-  .sidebar {
-    width: 340px;
-    background: var(--bg-panel);
-    border-right: 1px solid rgba(0, 240, 255, 0.15);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    overflow-y: auto;
-    box-shadow: 5px 0 25px rgba(0,0,0,0.5);
-  }
-
-  .brand {
-    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
-    font-weight: 900;
-    font-size: 18px;
-    color: var(--accent-cyan);
-    text-shadow: var(--glow-cyan);
-    letter-spacing: 1.5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-  }
-
-  h3 {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 1px;
-    margin: 10px 0 5px;
-  }
-
-  select, input[type="text"], button {
-    width: 100%;
-    padding: 12px;
-    background: var(--bg-element);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: var(--text-main);
-    border-radius: 6px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    outline: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  select:hover, input[type="text"]:focus, button:hover {
-    border-color: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-  }
-
-  select {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-    padding-right: 35px;
-  }
-
-  .effect-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .effect-btn {
-    background: var(--bg-element);
-    border: 1px solid rgba(255,255,255,0.05);
-    padding: 10px 6px;
-    text-align: center;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: 0.2s;
-  }
-
-  .effect-btn:hover {
-    color: var(--text-main);
-    border-color: rgba(0, 240, 255, 0.4);
-  }
-
-  .effect-btn.active {
-    background: rgba(0, 240, 255, 0.1);
-    color: var(--accent-cyan);
-    border-color: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-  }
-
-  .effect-btn.glitch-active {
-    background: rgba(243, 230, 0, 0.15) !important;
-    color: var(--accent-yellow) !important;
-    border-color: var(--accent-yellow) !important;
-    box-shadow: var(--glow-yellow) !important;
-  }
-
-  .main {
-    flex: 1;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    overflow-y: auto;
-  }
-
-  .card {
-    background: var(--bg-panel);
-    border: 1px solid rgba(255,255,255,0.06);
-    padding: 20px;
-    border-radius: 12px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    background: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-  }
-
-  .card h2 {
-    font-size: 16px;
-    font-weight: 900;
-    margin-top: 0;
-    color: var(--text-main);
-    letter-spacing: 1px;
-  }
-
-  /* チャットボックスエリア */
-  .chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-panel);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  }
-
-  .chat-container::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    background: var(--accent-purple);
-    box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
-  }
-
-  .chat-box {
-    flex: 1;
-    background: var(--bg-element);
-    border-radius: 6px;
-    padding: 12px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
-    max-height: 250px;
-    border: 1px solid rgba(255,255,255,0.04);
-  }
-
-  .message {
-    background: var(--bg-panel);
-    padding: 8px 12px;
-    border-radius: 6px;
-    border-left: 3px solid var(--accent-cyan);
-    font-size: 13px;
-    word-break: break-all;
-  }
-
-  .message.system {
-    border-left-color: var(--accent-yellow);
-    color: var(--accent-yellow);
-    font-size: 12px;
-  }
-
-  .chat-input-row {
-    display: flex;
-    gap: 10px;
-  }
-
-  /* 起動ボタン */
-  #powerBtn {
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-    color: #fff;
-    font-family: 'Noto Sans JP', sans-serif;
-    letter-spacing: 1px;
-    font-weight: 900;
-    font-size: 15px;
-    border: none;
-    box-shadow: var(--glow-cyan);
-    margin-top: auto;
-    cursor: pointer;
-  }
-
-  #powerBtn.active {
-    background: linear-gradient(135deg, var(--accent-pink), #ff3333);
-    box-shadow: var(--glow-pink);
-  }
-
-  .cyber-badge {
-    font-size: 11px;
-    font-family: 'Orbitron', sans-serif;
-    background: rgba(0, 240, 255, 0.1);
-    color: var(--accent-cyan);
-    padding: 3px 8px;
-    border-radius: 4px;
-    border: 1px solid rgba(0, 240, 255, 0.3);
-  }
+}
 </style>
 </head>
+
 <body>
 
-  <!-- サイドバー：コントロール＆エフェクト -->
-  <div class="sidebar">
-    <div class="brand">
-      <span>⚡</span> サイバーマトリクス
-    </div>
+<header>
+🎙️ Voice Chat
+</header>
 
-    <h3>🌐 接続ルーム（合言葉）</h3>
-    <input type="text" id="roomIdInput" placeholder="ルーム名を入力" value="cyber-room-1">
+<main>
 
-    <h3>🎙️ 音声入力 // マイク選択</h3>
-    <select id="micInputSelect"></select>
+<!-- =========================
+     アカウント
+========================= -->
 
-    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:2px 0;">
+<div class="card">
 
-    <h3>🎛️ ボイスエフェクト種類</h3>
-    <div class="effect-grid">
-      <button class="effect-btn active" onclick="setEffect('normal')">ノーマル</button>
-      <button class="effect-btn" onclick="setEffect('female')">👩 女声風</button>
-      <button class="effect-btn" onclick="setEffect('male')">👨 男声風</button>
-      <button class="effect-btn" onclick="setEffect('chipmunk')">🐿️ シマリス</button>
-      <button class="effect-btn" onclick="setEffect('demon')">😈 悪魔・低音</button>
-      <button class="effect-btn" onclick="setEffect('robot')">🤖 サイボーグ</button>
-      <button class="effect-btn" onclick="setEffect('radio')">📻 無線機</button>
-      <button class="effect-btn" onclick="setEffect('megaphone')">📢 拡声器</button>
-      <button class="effect-btn" onclick="setEffect('cave')">🦇 洞窟・エコー</button>
-      <button class="effect-btn" onclick="setEffect('crush')" style="color: var(--accent-yellow); border-color: rgba(243,230,0,0.3);">💥 音割れ(爆音)</button>
-    </div>
+<h2>👤 アカウント</h2>
 
-    <button id="powerBtn" onclick="toggleSystem()">システム起動</button>
-  </div>
+<input
+  id="usernameInput"
+  maxlength="30"
+  placeholder="ユーザー名"
+>
 
-  <!-- メイン画面：ステータス＆チャット -->
-  <div class="main">
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-        <h2>システムステータス</h2>
-        <span class="cyber-badge" id="netBadge">OFFLINE</span>
-      </div>
-      <p id="vcStatus" style="color: var(--accent-pink); font-size:14px; font-weight:700; margin:0;">【 システム停止中 】 起動ボタンを押してください</p>
-    </div>
+<input
+  id="password"
+  type="password"
+  placeholder="パスワード"
+>
 
-    <div class="card" style="border-left-color: var(--accent-purple);">
-      <h2>周波数マトリクス・微調整</h2>
-      <div style="margin-top:10px;">
-        <label style="font-size: 13px; color: var(--text-muted);">カットオフ周波数: <span id="freqVal" style="color: var(--accent-cyan); font-weight:700;">1000</span> Hz</label>
-        <input type="range" id="freqRange" min="100" max="8000" step="100" value="1000" oninput="updateFreq(this.value)" style="width:100%; margin-top:5px; accent-color:var(--accent-cyan);">
-      </div>
-    </div>
-    
-    <!-- チャットエリア -->
-    <div class="chat-container">
-      <h2 style="margin-bottom: 10px;">リアルタイムテキストチャット</h2>
-      <div class="chat-box" id="chatBox">
-        <div class="message system">※システム起動後、同じルーム名の相手とテキスト＆音声通話ができます。</div>
-      </div>
-      <div class="chat-input-row">
-        <input type="text" id="msgInput" placeholder="メッセージを入力..." onkeypress="if(event.key==='Enter') sendMsg()">
-        <button onclick="sendMsg()" style="width: 100px;">送信</button>
-      </div>
-    </div>
-  </div>
+<button onclick="signUp()">
+アカウント作成
+</button>
 
-  <!-- 通話用音声再生用オーディオ要素 -->
-  <audio id="remoteAudio" autoplay></audio>
+<button onclick="signIn()">
+ログイン
+</button>
 
-  <!-- ピアツーピア通信用ライブラリ -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <script>
-    let audioCtx;
-    let mediaStream;
-    let sourceNode;
-    let filterNode;
-    let distortionNode;
-    let gainNode;
-    let currentEffect = 'normal';
+<button
+  class="gray"
+  onclick="createGuest()"
+>
+👻 仮アカウント
+</button>
 
-    let peer;
-    let currentCall;
-    let dataConn;
+<button
+  id="logoutButton"
+  class="red"
+  onclick="signOut()"
+  style="display:none"
+>
+ログアウト
+</button>
 
-    async function getDevices() {
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const micSelect = document.getElementById("micInputSelect");
-        micSelect.innerHTML = "";
+<button
+  id="deleteAccountButton"
+  class="red"
+  onclick="deleteAccount()"
+  style="display:none"
+>
+🗑️ アカウント削除
+</button>
 
-        devices.forEach(device => {
-          if (device.kind === 'audioinput') {
-            const opt = document.createElement('option');
-            opt.value = device.deviceId;
-            opt.text = device.label || `マイク (${device.deviceId.slice(0,5)})`;
-            micSelect.appendChild(opt);
-          }
-        });
-      } catch (e) {
-        console.error("デバイス取得エラー:", e);
-      }
-    }
+<p id="accountStatus">
+ログインしていません
+</p>
 
-    function makeDistortionCurve(amount) {
-      const k = typeof amount === 'number' ? amount : 50;
-      const n_samples = 44100;
-      const curve = new Float32Array(n_samples);
-      const deg = Math.PI / 180;
-      for (let i = 0; i < n_samples; ++i) {
-        const x = (i * 2) / n_samples - 1;
-        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-      }
-      return curve;
-    }
+</div>
 
-    async function toggleSystem() {
-      const statusElem = document.getElementById("vcStatus");
-      const powerBtn = document.getElementById("powerBtn");
-      const netBadge = document.getElementById("netBadge");
-      const roomName = document.getElementById("roomIdInput").value.trim();
 
-      if (audioCtx) {
-        // 停止処理
-        if (currentCall) currentCall.close();
-        if (dataConn) dataConn.close();
-        if (peer) peer.destroy();
-        audioCtx.close();
-        audioCtx = null;
-        if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+<!-- =========================
+     アカウント設定
+========================= -->
 
-        statusElem.textContent = "【 システム停止中 】 起動ボタンを押してください";
-        statusElem.style.color = "var(--accent-pink)";
-        powerBtn.classList.remove('active');
-        powerBtn.textContent = "システム起動";
-        netBadge.textContent = "OFFLINE";
-        netBadge.style.color = "var(--text-muted)";
-        addSystemMsg("システムを切断しました。");
-        return;
-      }
+<div
+  class="card"
+  id="settingsCard"
+>
 
-      if (!roomName) {
-        alert("ルーム名を入力してください");
-        return;
-      }
+<h2>⚙️ アカウント設定</h2>
 
-      try {
-        const micId = document.getElementById("micInputSelect").value;
+<h3>👤 ユーザー名変更</h3>
 
-        // 1. マイク取得
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: { deviceId: micId ? { exact: micId } : undefined, echoCancellation: true, noiseSuppression: true }
-        });
+<input
+  id="newUsername"
+  maxlength="30"
+  placeholder="新しいユーザー名"
+>
 
-        // 2. 音声エフェクト・Web Audio構築
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        sourceNode = audioCtx.createMediaStreamSource(mediaStream);
-        
-        filterNode = audioCtx.createBiquadFilter();
-        distortionNode = audioCtx.createWaveShaper();
-        gainNode = audioCtx.createGain();
+<button onclick="changeUsername()">
+ユーザー名変更
+</button>
 
-        sourceNode.connect(filterNode);
-        filterNode.connect(distortionNode);
-        distortionNode.connect(gainNode);
+<h3>🔑 パスワード変更</h3>
 
-        applyEffectParameters(currentEffect);
+<input
+  id="newPassword"
+  type="password"
+  placeholder="新しいパスワード"
+>
 
-        // 3. 変換後の音声ストリームを作成
-        const dest = audioCtx.createMediaStreamDestination();
-        gainNode.connect(dest);
+<button onclick="changePassword()">
+パスワード変更
+</button>
 
-        // 4. PeerJSによるオンライン通話・チャット接続
-        peer = new Peer(roomName + "-" + Math.random().toString(36).substring(2, 7));
+<p id="settingsStatus"></p>
 
-        peer.on('open', (id) => {
-          netBadge.textContent = "ONLINE (ROOM: " + roomName + ")";
-          netBadge.style.color = "var(--accent-cyan)";
-          statusElem.textContent = "【 稼働中 】 音声変換＆オンライン接続中";
-          statusElem.style.color = "var(--accent-cyan)";
-          powerBtn.classList.add('active');
-          powerBtn.textContent = "システム停止";
-          addSystemMsg("ルーム「" + roomName + "」に接続しました！相手の参加を待っています。");
+</div>
 
-          // 自分からルーム内の別ユーザーへ発信＆データ接続を試みる
-          // （簡易的にお互いを認識するため、同じルーム内の他のIDを探して接続）
-        });
 
-        // 相手からの着信（音声）
-        peer.on('call', (call) => {
-          call.answer(dest.stream); // 加工された音声を相手に送る
-          call.on('stream', (remoteStream) => {
-            document.getElementById('remoteAudio').srcObject = remoteStream;
-          });
-          currentCall = call;
-          addSystemMsg("通話が接続されました！");
-        });
+<!-- =========================
+     自分
+========================= -->
 
-        // 相手からのデータ接続（チャット）
-        peer.on('connection', (conn) => {
-          dataConn = conn;
-          setupChatConnection();
-          addSystemMsg("チャットが接続されました！");
-        });
+<div class="card">
 
-        // 自分から接続要求を送るための定期チェック（ルーム内のPeerに接続を試みる）
-        setupPeerDiscovery(roomName, dest.stream);
+<h2>自分</h2>
 
-      } catch (err) {
-        alert("初期化エラー: " + err.message + "\n※マイクの権限やHTTPS接続を確認してください。");
-      }
-    }
+<div class="user">
 
-    // 簡易的なピア探索（同じルーム名の別端末と繋がる）
-    function setupPeerDiscovery(roomName, myOutputStream) {
-      // ユーザーがボタンを押した後に相手へコールを飛ばすサンプル挙動
-      // 実運用ではPeerサーバー経由でIDを共有します
-    }
+<div class="avatar">
+👤
+</div>
 
-    function setupChatConnection() {
-      dataConn.on('data', (data) => {
-        addChatMsg("相手", data);
-      });
-    }
+<div>
 
-    function sendMsg() {
-      const input = document.getElementById('msgInput');
-      const text = input.value.trim();
-      if (!text) return;
+<strong id="username">
+未ログイン
+</strong>
 
-      addChatMsg("自分", text);
-      if (dataConn && dataConn.open) {
-        dataConn.send(text);
-      }
-      input.value = "";
-    }
+<div id="onlineStatus">
+⚪ オフライン
+</div>
 
-    function addChatMsg(sender, text) {
-      const chatBox = document.getElementById('chatBox');
-      const div = document.createElement('div');
-      div.className = 'message';
-      div.innerHTML = `<strong>${sender}:</strong> ${escapeHTML(text)}`;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+</div>
 
-    function addSystemMsg(text) {
-      const chatBox = document.getElementById('chatBox');
-      const div = document.createElement('div');
-      div.className = 'message system';
-      div.textContent = text;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+</div>
 
-    function setEffect(type) {
-      currentEffect = type;
-      document.querySelectorAll('.effect-btn').forEach(b => {
-        b.classList.remove('active');
-        b.classList.remove('glitch-active');
-      });
-      
-      const clickedBtn = event.currentTarget;
-      if (type === 'crush') {
-        clickedBtn.classList.add('glitch-active');
-      } else {
-        clickedBtn.classList.add('active');
-      }
-      
-      applyEffectParameters(type);
-    }
+<br>
 
-    function applyEffectParameters(type) {
-      if (!filterNode || !distortionNode || !audioCtx) return;
-      
-      filterNode.type = 'allpass';
-      distortionNode.curve = null;
-      gainNode.gain.value = 1.0;
+<button
+id="awayButton"
+class="yellow"
+onclick="toggleAway()"
+style="display:none"
+>
+🟡 離席
+</button>
 
-      switch(type) {
-        case 'normal': break;
-        case 'female':
-          filterNode.type = 'highpass'; filterNode.frequency.value = 450; gainNode.gain.value = 1.2; break;
-        case 'male':
-          filterNode.type = 'lowpass'; filterNode.frequency.value = 550; gainNode.gain.value = 1.1; break;
-        case 'chipmunk':
-          filterNode.type = 'highpass'; filterNode.frequency.value = 800; break;
-        case 'demon':
-          filterNode.type = 'lowpass'; filterNode.frequency.value = 350; break;
-        case 'robot':
-          filterNode.type = 'bandpass'; filterNode.frequency.value = 1000; filterNode.Q.value = 5; break;
-        case 'radio':
-          filterNode.type = 'bandpass'; filterNode.frequency.value = 1800; filterNode.Q.value = 3; break;
-        case 'megaphone':
-          filterNode.type = 'bandpass'; filterNode.frequency.value = 1500; filterNode.Q.value = 2; gainNode.gain.value = 1.5; break;
-        case 'cave':
-          filterNode.type = 'lowpass'; filterNode.frequency.value = 600; break;
-        case 'crush':
-          filterNode.type = 'bandpass'; filterNode.frequency.value = 1200;
-          distortionNode.curve = makeDistortionCurve(800);
-          gainNode.gain.value = 2.5;
-          break;
-      }
-      document.getElementById('freqRange').value = filterNode.frequency.value || 1000;
-      document.getElementById('freqVal').textContent = filterNode.frequency.value || 1000;
-    }
+<button
+id="micButton"
+onclick="toggleMic()"
+>
+🎤 マイクON
+</button>
 
-    function updateFreq(val) {
-      document.getElementById('freqVal').textContent = val;
-      if (filterNode) filterNode.frequency.value = parseFloat(val);
-    }
+<button
+id="cameraButton"
+class="green"
+onclick="toggleCamera()"
+>
+📷 カメラON
+</button>
 
-    function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
-    }
+<button
+id="screenButton"
+class="gray"
+onclick="toggleScreenShare()"
+>
+🖥️ 画面共有
+</button>
 
-    getDevices();
-  </script>
+<div id="status">
+マイク・カメラ・画面共有を操作できます。
+</div>
+
+
+<div class="mediaArea">
+
+<div class="videoBox">
+
+<h3>
+📷 カメラ
+</h3>
+
+<video
+id="cameraVideo"
+autoplay
+muted
+playsinline
+></video>
+
+<div
+id="cameraEmpty"
+class="noVideo"
+>
+カメラOFF
+</div>
+
+</div>
+
+
+<div class="videoBox">
+
+<h3>
+🖥️ 画面共有
+</h3>
+
+<video
+id="screenVideo"
+autoplay
+muted
+playsinline
+></video>
+
+<div
+id="screenEmpty"
+class="noVideo"
+>
+画面共有OFF
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     フレンド
+========================= -->
+
+<div
+class="card"
+id="friendCard"
+>
+
+<h2>👥 フレンド</h2>
+
+<input
+id="friendSearch"
+placeholder="🔍 プレイヤーを検索"
+>
+
+<button onclick="searchFriend()">
+🔍 検索
+</button>
+
+<div id="searchResult"></div>
+
+<h3>フレンドリスト</h3>
+
+<div id="friendList">
+<div class="empty">
+フレンドはいません。
+</div>
+</div>
+
+<h3>📨 フレンド申請</h3>
+
+<div id="requestList">
+<div class="empty">
+フレンド申請はありません。
+</div>
+</div>
+
+
+<!-- =========================
+     DM
+========================= -->
+
+<div
+id="dmArea"
+class="dmBox"
+style="display:none"
+>
+
+<h3 id="dmTitle">
+💬 DM
+</h3>
+
+<div
+id="dmMessages"
+class="dmMessages"
+></div>
+
+<input
+id="dmInput"
+placeholder="メッセージを入力"
+onkeydown="if(event.key==='Enter')sendDM()"
+>
+
+<button onclick="sendDM()">
+送信
+</button>
+
+<button
+class="gray"
+onclick="closeDM()"
+>
+DMを閉じる
+</button>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     パーティー
+========================= -->
+
+<div
+class="card"
+id="partyCard"
+>
+
+<h2>🎉 パーティー</h2>
+
+<button
+class="green"
+onclick="createParty()"
+>
+＋ パーティー作成
+</button>
+
+<input
+id="partyCodeInput"
+maxlength="6"
+placeholder="パーティーコード"
+>
+
+<button onclick="joinParty()">
+🚪 パーティー参加
+</button>
+
+<div id="partyArea">
+
+<div class="empty">
+パーティーに参加していません。
+</div>
+
+</div>
+
+</div>
+
+</main>
+
+
+<script>
+
+/* ==========================================
+   ローカルデータ
+========================================== */
+
+const DB_KEY = "voice_chat_database_v1";
+const SESSION_KEY = "voice_chat_session_v1";
+
+let db =
+JSON.parse(
+localStorage.getItem(DB_KEY) ||
+'{"users":[],"friendRequests":[],"friendships":[],"messages":[],"parties":[]}'
+);
+
+let currentUser = null;
+let guestMode = false;
+let currentDMUser = null;
+
+let microphone = null;
+let micEnabled = false;
+
+let cameraStream = null;
+let cameraEnabled = false;
+
+let screenStream = null;
+let screenEnabled = false;
+
+let away = false;
+
+
+/* ==========================================
+   DB保存
+========================================== */
+
+function saveDB() {
+
+localStorage.setItem(
+DB_KEY,
+JSON.stringify(db)
+);
+
+}
+
+
+/* ==========================================
+   ID
+========================================== */
+
+function randomID(prefix="id") {
+
+return prefix +
+"_" +
+Date.now() +
+"_" +
+Math.random()
+.toString(36)
+.substring(2,8);
+
+}
+
+
+/* ==========================================
+   ログインUI
+========================================== */
+
+function setLoggedInUI(name) {
+
+document.getElementById(
+"username"
+).textContent = name;
+
+document.getElementById(
+"accountStatus"
+).textContent =
+guestMode
+? "👻 仮アカウント: " + name
+: "✅ ログイン中";
+
+document.getElementById(
+"logoutButton"
+).style.display =
+"inline-block";
+
+document.getElementById(
+"deleteAccountButton"
+).style.display =
+"inline-block";
+
+document.getElementById(
+"settingsCard"
+).style.display =
+"block";
+
+document.getElementById(
+"friendCard"
+).style.display =
+"block";
+
+document.getElementById(
+"partyCard"
+).style.display =
+"block";
+
+document.getElementById(
+"awayButton"
+).style.display =
+"inline-block";
+
+setStatus("online");
+
+}
+
+
+function setLoggedOutUI() {
+
+document.getElementById(
+"username"
+).textContent =
+"未ログイン";
+
+document.getElementById(
+"onlineStatus"
+).textContent =
+"⚪ オフライン";
+
+document.getElementById(
+"accountStatus"
+).textContent =
+"ログインしていません";
+
+document.getElementById(
+"logoutButton"
+).style.display =
+"none";
+
+document.getElementById(
+"deleteAccountButton"
+).style.display =
+"none";
+
+document.getElementById(
+"settingsCard"
+).style.display =
+"none";
+
+document.getElementById(
+"friendCard"
+).style.display =
+"none";
+
+document.getElementById(
+"partyCard"
+).style.display =
+"none";
+
+document.getElementById(
+"awayButton"
+).style.display =
+"none";
+
+}
+
+
+/* ==========================================
+   アカウント作成
+========================================== */
+
+function signUp() {
+
+const username =
+document.getElementById(
+"usernameInput"
+).value.trim();
+
+const password =
+document.getElementById(
+"password"
+).value;
+
+if (!username || !password) {
+
+alert(
+"ユーザー名とパスワードを入力してください。"
+);
+
+return;
+}
+
+if (username.length < 2) {
+
+alert(
+"ユーザー名は2文字以上にしてください。"
+);
+
+return;
+}
+
+if (password.length < 6) {
+
+alert(
+"パスワードは6文字以上にしてください。"
+);
+
+return;
+}
+
+const exists =
+db.users.find(
+u =>
+u.username.toLowerCase() ===
+username.toLowerCase()
+);
+
+if (exists) {
+
+alert(
+"そのユーザー名はすでに使用されています。"
+);
+
+return;
+}
+
+const user = {
+
+id: randomID("user"),
+
+username: username,
+
+password: password,
+
+status: "offline",
+
+createdAt: Date.now()
+
+};
+
+db.users.push(user);
+
+saveDB();
+
+alert(
+"アカウントを作成しました！"
+);
+
+document.getElementById(
+"usernameInput"
+).value = "";
+
+document.getElementById(
+"password"
+).value = "";
+
+}
+
+
+/* ==========================================
+   ログイン
+========================================== */
+
+function signIn() {
+
+const username =
+document.getElementById(
+"usernameInput"
+).value.trim();
+
+const password =
+document.getElementById(
+"password"
+).value;
+
+const user =
+db.users.find(
+u =>
+u.username.toLowerCase() ===
+username.toLowerCase() &&
+u.password === password
+);
+
+if (!user) {
+
+alert(
+"ユーザー名またはパスワードが違います。"
+);
+
+return;
+}
+
+currentUser = user;
+guestMode = false;
+away = false;
+
+localStorage.setItem(
+SESSION_KEY,
+user.id
+);
+
+user.status = "online";
+
+saveDB();
+
+setLoggedInUI(
+user.username
+);
+
+loadFriends();
+loadFriendRequests();
+renderParty();
+
+alert(
+"ログインしました！"
+);
+
+}
+
+
+/* ==========================================
+   仮アカウント
+========================================== */
+
+function createGuest() {
+
+if (currentUser) {
+
+alert(
+"すでにログインしています。"
+);
+
+return;
+}
+
+const guestName =
+"Guest_" +
+Math.floor(
+100000 +
+Math.random() * 900000
+);
+
+currentUser = {
+
+id: randomID("guest"),
+
+username: guestName,
+
+password: "",
+
+status: "online",
+
+guest: true
+
+};
+
+guestMode = true;
+away = false;
+
+setLoggedInUI(
+guestName
+);
+
+loadFriends();
+loadFriendRequests();
+renderParty();
+
+alert(
+"仮アカウントを作成しました！\n\n" +
+guestName
+);
+
+}
+
+
+/* ==========================================
+   ログアウト
+========================================== */
+
+function signOut() {
+
+stopMicrophone();
+stopCamera();
+stopScreenShare();
+
+if (!guestMode) {
+
+const user =
+db.users.find(
+u => u.id === currentUser.id
+);
+
+if (user) {
+
+user.status = "offline";
+
+}
+
+saveDB();
+
+}
+
+currentUser = null;
+guestMode = false;
+away = false;
+currentDMUser = null;
+
+localStorage.removeItem(
+SESSION_KEY
+);
+
+document.getElementById(
+"dmArea"
+).style.display =
+"none";
+
+setLoggedOutUI();
+
+}
+
+
+/* ==========================================
+   アカウント削除
+========================================== */
+
+function deleteAccount() {
+
+if (!currentUser) {
+return;
+}
+
+if (!confirm(
+"本当にアカウントを削除しますか？"
+)) {
+return;
+}
+
+if (guestMode) {
+
+signOut();
+
+alert(
+"仮アカウントを終了しました。"
+);
+
+return;
+}
+
+const id =
+currentUser.id;
+
+db.users =
+db.users.filter(
+u => u.id !== id
+);
+
+db.friendRequests =
+db.friendRequests.filter(
+r =>
+r.senderId !== id &&
+r.receiverId !== id
+);
+
+db.friendships =
+db.friendships.filter(
+f =>
+f.userId !== id &&
+f.friendId !== id
+);
+
+db.messages =
+db.messages.filter(
+m =>
+m.senderId !== id &&
+m.receiverId !== id
+);
+
+db.parties =
+db.parties.filter(
+p => p.ownerId !== id
+);
+
+saveDB();
+
+currentUser = null;
+
+localStorage.removeItem(
+SESSION_KEY
+);
+
+setLoggedOutUI();
+
+alert(
+"アカウントを削除しました。"
+);
+
+}
+
+
+/* ==========================================
+   ユーザー名変更
+========================================== */
+
+function changeUsername() {
+
+if (!currentUser) {
+return;
+}
+
+if (guestMode) {
+
+alert(
+"仮アカウントではユーザー名を変更できません。"
+);
+
+return;
+}
+
+const name =
+document.getElementById(
+"newUsername"
+).value.trim();
+
+if (!name) {
+
+alert(
+"新しいユーザー名を入力してください。"
+);
+
+return;
+}
+
+const exists =
+db.users.find(
+u =>
+u.username.toLowerCase() ===
+name.toLowerCase() &&
+u.id !== currentUser.id
+);
+
+if (exists) {
+
+alert(
+"そのユーザー名はすでに使用されています。"
+);
+
+return;
+}
+
+const user =
+db.users.find(
+u => u.id === currentUser.id
+);
+
+user.username = name;
+
+currentUser = user;
+
+saveDB();
+
+document.getElementById(
+"username"
+).textContent =
+name;
+
+document.getElementById(
+"settingsStatus"
+).textContent =
+"✅ ユーザー名を変更しました。";
+
+document.getElementById(
+"newUsername"
+).value = "";
+
+}
+
+
+/* ==========================================
+   パスワード変更
+========================================== */
+
+function changePassword() {
+
+if (!currentUser) {
+return;
+}
+
+if (guestMode) {
+
+alert(
+"仮アカウントではパスワードを変更できません。"
+);
+
+return;
+}
+
+const password =
+document.getElementById(
+"newPassword"
+).value;
+
+if (password.length < 6) {
+
+alert(
+"パスワードは6文字以上にしてください。"
+);
+
+return;
+}
+
+const user =
+db.users.find(
+u => u.id === currentUser.id
+);
+
+user.password = password;
+
+saveDB();
+
+document.getElementById(
+"settingsStatus"
+).textContent =
+"✅ パスワードを変更しました。";
+
+document.getElementById(
+"newPassword"
+).value = "";
+
+}
+
+
+/* ==========================================
+   離席
+========================================== */
+
+function toggleAway() {
+
+if (!currentUser) {
+return;
+}
+
+away = !away;
+
+setStatus(
+away
+? "away"
+: "online"
+);
+
+}
+
+
+function setStatus(status) {
+
+if (!currentUser) {
+return;
+}
+
+away =
+status === "away";
+
+const statusText =
+status === "online"
+? "🟢 オンライン"
+: status === "away"
+? "🟡 離席"
+: "⚪ オフライン";
+
+document.getElementById(
+"onlineStatus"
+).textContent =
+statusText;
+
+const button =
+document.getElementById(
+"awayButton"
+);
+
+button.textContent =
+away
+? "🟢 オンラインに戻る"
+: "🟡 離席";
+
+if (!guestMode) {
+
+const user =
+db.users.find(
+u => u.id === currentUser.id
+);
+
+if (user) {
+
+user.status = status;
+
+saveDB();
+
+}
+
+}
+
+loadFriends();
+
+}
+
+
+/* ==========================================
+   マイク
+========================================== */
+
+async function toggleMic() {
+
+if (!currentUser) {
+
+alert(
+"ログインしてください。"
+);
+
+return;
+}
+
+if (!micEnabled) {
+
+try {
+
+microphone =
+await navigator.mediaDevices.getUserMedia({
+audio: true
+});
+
+micEnabled = true;
+
+document.getElementById(
+"micButton"
+).textContent =
+"🔇 マイクOFF";
+
+updateMediaStatus();
+
+} catch (error) {
+
+alert(
+"マイクへのアクセスが許可されませんでした。"
+);
+
+}
+
+} else {
+
+stopMicrophone();
+
+updateMediaStatus();
+
+}
+
+}
+
+
+function stopMicrophone() {
+
+if (microphone) {
+
+microphone
+.getTracks()
+.forEach(
+track => track.stop()
+);
+
+}
+
+microphone = null;
+micEnabled = false;
+
+const button =
+document.getElementById(
+"micButton"
+);
+
+if (button) {
+
+button.textContent =
+"🎤 マイクON";
+
+}
+
+}
+
+
+/* ==========================================
+   カメラ
+========================================== */
+
+async function toggleCamera() {
+
+if (!currentUser) {
+
+alert(
+"ログインしてください。"
+);
+
+return;
+}
+
+if (!cameraEnabled) {
+
+try {
+
+cameraStream =
+await navigator.mediaDevices.getUserMedia({
+video: true,
+audio: false
+});
+
+cameraEnabled = true;
+
+document.getElementById(
+"cameraVideo"
+).srcObject =
+cameraStream;
+
+document.getElementById(
+"cameraEmpty"
+).style.display =
+"none";
+
+document.getElementById(
+"cameraButton"
+).textContent =
+"📷 カメラOFF";
+
+updateMediaStatus();
+
+} catch (error) {
+
+alert(
+"カメラへのアクセスが許可されませんでした。"
+);
+
+}
+
+} else {
+
+stopCamera();
+
+updateMediaStatus();
+
+}
+
+}
+
+
+function stopCamera() {
+
+if (cameraStream) {
+
+cameraStream
+.getTracks()
+.forEach(
+track => track.stop()
+);
+
+}
+
+cameraStream = null;
+cameraEnabled = false;
+
+document.getElementById(
+"cameraVideo"
+).srcObject =
+null;
+
+document.getElementById(
+"cameraEmpty"
+).style.display =
+"flex";
+
+document.getElementById(
+"cameraButton"
+).textContent =
+"📷 カメラON";
+
+}
+
+
+/* ==========================================
+   画面共有
+========================================== */
+
+async function toggleScreenShare() {
+
+if (!currentUser) {
+
+alert(
+"ログインしてください。"
+);
+
+return;
+}
+
+if (!screenEnabled) {
+
+try {
+
+if (!navigator.mediaDevices.getDisplayMedia) {
+
+alert(
+"このブラウザでは画面共有に対応していません。"
+);
+
+return;
+
+}
+
+screenStream =
+await navigator.mediaDevices.getDisplayMedia({
+video: true,
+audio: true
+});
+
+screenEnabled = true;
+
+document.getElementById(
+"screenVideo"
+).srcObject =
+screenStream;
+
+document.getElementById(
+"screenEmpty"
+).style.display =
+"none";
+
+document.getElementById(
+"screenButton"
+).textContent =
+"🛑 画面共有OFF";
+
+updateMediaStatus();
+
+const track =
+screenStream.getVideoTracks()[0];
+
+if (track) {
+
+track.addEventListener(
+"ended",
+() => {
+
+stopScreenShare();
+updateMediaStatus();
+
+}
+);
+
+}
+
+} catch (error) {
+
+if (
+error.name !== "AbortError"
+) {
+
+alert(
+"画面共有を開始できませんでした。"
+);
+
+}
+
+}
+
+} else {
+
+stopScreenShare();
+
+updateMediaStatus();
+
+}
+
+}
+
+
+function stopScreenShare() {
+
+if (screenStream) {
+
+screenStream
+.getTracks()
+.forEach(
+track => track.stop()
+);
+
+}
+
+screenStream = null;
+screenEnabled = false;
+
+document.getElementById(
+"screenVideo"
+).srcObject =
+null;
+
+document.getElementById(
+"screenEmpty"
+).style.display =
+"flex";
+
+document.getElementById(
+"screenButton"
+).textContent =
+"🖥️ 画面共有";
+
+}
+
+
+/* ==========================================
+   メディア状態
+========================================== */
+
+function updateMediaStatus() {
+
+const status = [];
+
+if (micEnabled)
+status.push("🎤 マイクON");
+
+if (cameraEnabled)
+status.push("📷 カメラON");
+
+if (screenEnabled)
+status.push("🖥️ 画面共有ON");
+
+document.getElementById(
+"status"
+).textContent =
+status.length
+? status.join("　")
+: "すべてOFF";
+
+}
+
+
+/* ==========================================
+   フレンド検索
+========================================== */
+
+function searchFriend() {
+
+if (!currentUser) {
+
+alert(
+"ログインしてください。"
+);
+
+return;
+}
+
+const text =
+document.getElementById(
+"friendSearch"
+).value.trim()
+.toLowerCase();
+
+if (!text) {
+
+alert(
+"検索する名前を入力してください。"
+);
+
+return;
+}
+
+const users =
+db.users.filter(
+u =>
+u.username.toLowerCase()
+.includes(text) &&
+u.id !== currentUser.id
+);
+
+const result =
+document.getElementById(
+"searchResult"
+);
+
+result.innerHTML = "";
+
+if (!users.length) {
+
+result.innerHTML =
+'<div class="empty">プレイヤーが見つかりません。</div>';
+
+return;
+}
+
+users.forEach(
+user => {
+
+const div =
+document.createElement("div");
+
+div.className =
+"friend";
+
+div.innerHTML = `
+
+<div class="friendAvatar">
+👤
+</div>
+
+<div class="friendInfo">
+
+<strong>
+${escapeHTML(user.username)}
+</strong>
+
+<span class="${
+user.status === "online"
+? "online"
+: user.status === "away"
+? "away"
+: "offline"
+}">
+● ${
+user.status === "online"
+? "オンライン"
+: user.status === "away"
+? "離席"
+: "オフライン"
+}
+</span>
+
+</div>
+
+<button
+class="green"
+onclick="sendFriendRequest('${user.id}')"
+>
+＋ 追加
+</button>
+
+`;
+
+result.appendChild(div);
+
+});
+
+}
+
+
+/* ==========================================
+   フレンド申請
+========================================== */
+
+function sendFriendRequest(userId) {
+
+if (!currentUser) {
+return;
+}
+
+if (userId === currentUser.id) {
+return;
+}
+
+const already =
+db.friendships.some(
+f =>
+f.userId === currentUser.id &&
+f.friendId === userId
+);
+
+if (already) {
+
+alert(
+"すでにフレンドです。"
+);
+
+return;
+}
+
+const pending =
+db.friendRequests.some(
+r =>
+r.senderId === currentUser.id &&
+r.receiverId === userId &&
+r.status === "pending"
+);
+
+if (pending) {
+
+alert(
+"すでに申請しています。"
+);
+
+return;
+}
+
+db.friendRequests.push({
+
+id: randomID("request"),
+
+senderId:
+currentUser.id,
+
+receiverId:
+userId,
+
+status: "pending"
+
+});
+
+saveDB();
+
+alert(
+"フレンド申請を送りました！"
+);
+
+loadFriendRequests();
+
+}
+
+
+/* ==========================================
+   フレンド一覧
+========================================== */
+
+function loadFriends() {
+
+if (!currentUser)
+return;
+
+const list =
+document.getElementById(
+"friendList"
+);
+
+list.innerHTML = "";
+
+const friends =
+db.friendships.filter(
+f =>
+f.userId === currentUser.id
+);
+
+if (!friends.length) {
+
+list.innerHTML =
+'<div class="empty">フレンドはいません。</div>';
+
+return;
+}
+
+friends.forEach(
+relation => {
+
+const friend =
+db.users.find(
+u => u.id === relation.friendId
+);
+
+if (!friend)
+return;
+
+const div =
+document.createElement("div");
+
+div.className =
+"friend";
+
+const status =
+friend.status || "offline";
+
+div.innerHTML = `
+
+<div class="friendAvatar">
+👤
+</div>
+
+<div class="friendInfo">
+
+<strong>
+${escapeHTML(friend.username)}
+</strong>
+
+<span class="${
+status === "online"
+? "online"
+: status === "away"
+? "away"
+: "offline"
+}">
+● ${
+status === "online"
+? "オンライン"
+: status === "away"
+? "離席"
+: "オフライン"
+}
+</span>
+
+</div>
+
+<button
+onclick="openDM('${friend.id}')"
+>
+💬 DM
+</button>
+
+<button
+class="red"
+onclick="removeFriend('${friend.id}')"
+>
+🗑️ 削除
+</button>
+
+`;
+
+list.appendChild(div);
+
+});
+
+}
+
+
+/* ==========================================
+   フレンド削除
+========================================== */
+
+function removeFriend(friendId) {
+
+if (!currentUser)
+return;
+
+if (!confirm(
+"このフレンドを削除しますか？"
+)) {
+return;
+}
+
+db.friendships =
+db.friendships.filter(
+f =>
+!(
+(
+f.userId === currentUser.id &&
+f.friendId === friendId
+) ||
+(
+f.userId === friendId &&
+f.friendId === currentUser.id
+)
+)
+);
+
+saveDB();
+
+loadFriends();
+
+alert(
+"フレンドを削除しました。"
+);
+
+}
+
+
+/* ==========================================
+   申請一覧
+========================================== */
+
+function loadFriendRequests() {
+
+if (!currentUser)
+return;
+
+const list =
+document.getElementById(
+"requestList"
+);
+
+list.innerHTML = "";
+
+const requests =
+db.friendRequests.filter(
+r =>
+r.receiverId === currentUser.id &&
+r.status === "pending"
+);
+
+if (!requests.length) {
+
+list.innerHTML =
+'<div class="empty">フレンド申請はありません。</div>';
+
+return;
+}
+
+requests.forEach(
+request => {
+
+const sender =
+db.users.find(
+u => u.id === request.senderId
+);
+
+if (!sender)
+return;
+
+const div =
+document.createElement("div");
+
+div.className =
+"request";
+
+div.innerHTML = `
+
+<strong>
+${escapeHTML(sender.username)}
+</strong>
+
+<p>
+フレンド申請が届いています。
+</p>
+
+<button
+class="green"
+onclick="acceptFriend('${request.id}')"
+>
+✓ 承認
+</button>
+
+<button
+class="red"
+onclick="rejectFriend('${request.id}')"
+>
+✕ 拒否
+</button>
+
+`;
+
+list.appendChild(div);
+
+});
+
+}
+
+
+/* ==========================================
+   承認
+========================================== */
+
+function acceptFriend(requestId) {
+
+const request =
+db.friendRequests.find(
+r => r.id === requestId
+);
+
+if (!request)
+return;
+
+request.status =
+"accepted";
+
+db.friendships.push({
+
+userId:
+request.receiverId,
+
+friendId:
+request.senderId
+
+});
+
+db.friendships.push({
+
+userId:
+request.senderId,
+
+friendId:
+request.receiverId
+
+});
+
+saveDB();
+
+loadFriends();
+loadFriendRequests();
+
+alert(
+"フレンドになりました！"
+);
+
+}
+
+
+/* ==========================================
+   拒否
+========================================== */
+
+function rejectFriend(requestId) {
+
+const request =
+db.friendRequests.find(
+r => r.id === requestId
+);
+
+if (!request)
+return;
+
+request.status =
+"rejected";
+
+saveDB();
+
+loadFriendRequests();
+
+}
+
+
+/* ==========================================
+   DMを開く
+========================================== */
+
+function openDM(friendId) {
+
+if (!currentUser)
+return;
+
+currentDMUser =
+db.users.find(
+u => u.id === friendId
+);
+
+if (!currentDMUser)
+return;
+
+document.getElementById(
+"dmArea"
+).style.display =
+"block";
+
+document.getElementById(
+"dmTitle"
+).textContent =
+"💬 " +
+currentDMUser.username +
+" とのDM";
+
+loadDM();
+
+}
+
+
+/* ==========================================
+   DM表示
+========================================== */
+
+function loadDM() {
+
+if (!currentDMUser)
+return;
+
+const box =
+document.getElementById(
+"dmMessages"
+);
+
+const messages =
+db.messages.filter(
+m =>
+(
+m.senderId === currentUser.id &&
+m.receiverId === currentDMUser.id
+) ||
+(
+m.senderId === currentDMUser.id &&
+m.receiverId === currentUser.id
+)
+);
+
+box.innerHTML = "";
+
+messages.forEach(
+message => {
+
+const mine =
+message.senderId ===
+currentUser.id;
+
+const div =
+document.createElement("div");
+
+div.className =
+"message" +
+(
+mine
+? " mine"
+: ""
+);
+
+div.innerHTML = `
+
+<div class="messageName">
+${escapeHTML(
+mine
+? "自分"
+: currentDMUser.username
+)}
+</div>
+
+<div>
+${escapeHTML(message.text)}
+</div>
+
+`;
+
+box.appendChild(div);
+
+});
+
+box.scrollTop =
+box.scrollHeight;
+
+}
+
+
+/* ==========================================
+   DM送信
+========================================== */
+
+function sendDM() {
+
+if (!currentUser) {
+return;
+}
+
+if (!currentDMUser) {
+
+alert(
+"DMするフレンドを選択してください。"
+);
+
+return;
+}
+
+const input =
+document.getElementById(
+"dmInput"
+);
+
+const text =
+input.value.trim();
+
+if (!text)
+return;
+
+db.messages.push({
+
+id: randomID("message"),
+
+senderId:
+currentUser.id,
+
+receiverId:
+currentDMUser.id,
+
+text: text,
+
+createdAt: Date.now()
+
+});
+
+saveDB();
+
+input.value = "";
+
+loadDM();
+
+}
+
+
+/* ==========================================
+   DM閉じる
+========================================== */
+
+function closeDM() {
+
+currentDMUser =
+null;
+
+document.getElementById(
+"dmArea"
+).style.display =
+"none";
+
+}
+
+
+/* ==========================================
+   パーティー作成
+========================================== */
+
+function createParty() {
+
+if (!currentUser) {
+
+alert(
+"ログインしてください。"
+);
+
+return;
+}
+
+const code =
+Math.random()
+.toString(36)
+.substring(2,8)
+.toUpperCase();
+
+const party = {
+
+id: randomID("party"),
+
+ownerId:
+currentUser.id,
+
+code: code,
+
+members:
+[currentUser.id]
+
+};
+
+db.parties.push(party);
+
+saveDB();
+
+renderParty();
+
+alert(
+"パーティーを作成しました！\n\nコード: " +
+code
+);
+
+}
+
+
+/* ==========================================
+   パーティー参加
+========================================== */
+
+function joinParty() {
+
+if (!currentUser) {
+
+alert(
+"ログインしてください。"
+);
+
+return;
+}
+
+const code =
+document.getElementById(
+"partyCodeInput"
+).value.trim()
+.toUpperCase();
+
+if (!code) {
+
+alert(
+"パーティーコードを入力してください。"
+);
+
+return;
+}
+
+const party =
+db.parties.find(
+p => p.code === code
+);
+
+if (!party) {
+
+alert(
+"パーティーが見つかりません。"
+);
+
+return;
+}
+
+if (!party.members.includes(
+currentUser.id
+)) {
+
+party.members.push(
+currentUser.id
+);
+
+}
+
+saveDB();
+
+renderParty();
+
+document.getElementById(
+"partyCodeInput"
+).value = "";
+
+alert(
+"パーティーに参加しました！"
+);
+
+}
+
+
+/* ==========================================
+   パーティー表示
+========================================== */
+
+function renderParty() {
+
+if (!currentUser)
+return;
+
+const area =
+document.getElementById(
+"partyArea"
+);
+
+const party =
+db.parties.find(
+p =>
+p.members.includes(
+currentUser.id
+)
+);
+
+if (!party) {
+
+area.innerHTML =
+'<div class="empty">パーティーに参加していません。</div>';
+
+return;
+
+}
+
+const owner =
+db.users.find(
+u => u.id === party.ownerId
+);
+
+const members =
+party.members.map(
+id =>
+db.users.find(
+u => u.id === id
+)
+).filter(Boolean);
+
+area.innerHTML = `
+
+<div class="partyBox">
+
+<h3>
+🎉 パーティー参加中
+</h3>
+
+<p>
+パーティーコード
+</p>
+
+<strong style="font-size:24px;">
+${escapeHTML(party.code)}
+</strong>
+
+<p>
+👑 ホスト:
+${escapeHTML(
+owner
+? owner.username
+: "Unknown"
+)}
+</p>
+
+<p>
+👥 メンバー: ${members.length}人
+</p>
+
+${members.map(
+member =>
+`
+<div>
+👤 ${escapeHTML(member.username)}
+</div>
+`
+).join("")}
+
+<br>
+
+<button
+class="red"
+onclick="leaveParty('${party.id}')"
+>
+🚪 パーティー退出
+</button>
+
+${
+party.ownerId === currentUser.id
+?
+`
+<button
+class="red"
+onclick="deleteParty('${party.id}')"
+>
+🗑️ パーティー解散
+</button>
+`
+:
+""
+}
+
+</div>
+
+`;
+
+}
+
+
+/* ==========================================
+   パーティー退出
+========================================== */
+
+function leaveParty(partyId) {
+
+const party =
+db.parties.find(
+p => p.id === partyId
+);
+
+if (!party)
+return;
+
+party.members =
+party.members.filter(
+id =>
+id !== currentUser.id
+);
+
+if (
+party.members.length === 0
+) {
+
+db.parties =
+db.parties.filter(
+p => p.id !== partyId
+);
+
+}
+
+saveDB();
+
+renderParty();
+
+}
+
+
+/* ==========================================
+   パーティー解散
+========================================== */
+
+function deleteParty(partyId) {
+
+const party =
+db.parties.find(
+p => p.id === partyId
+);
+
+if (!party)
+return;
+
+if (
+party.ownerId !==
+currentUser.id
+) {
+
+return;
+
+}
+
+if (!confirm(
+"パーティーを解散しますか？"
+)) {
+
+return;
+
+}
+
+db.parties =
+db.parties.filter(
+p => p.id !== partyId
+);
+
+saveDB();
+
+renderParty();
+
+}
+
+
+/* ==========================================
+   HTMLエスケープ
+========================================== */
+
+function escapeHTML(value) {
+
+return String(value)
+.replaceAll("&","&amp;")
+.replaceAll("<","&lt;")
+.replaceAll(">","&gt;")
+.replaceAll('"',"&quot;")
+.replaceAll("'","&#039;");
+
+}
+
+
+/* ==========================================
+   セッション復元
+========================================== */
+
+function checkSession() {
+
+const id =
+localStorage.getItem(
+SESSION_KEY
+);
+
+if (!id) {
+
+setLoggedOutUI();
+
+return;
+
+}
+
+const user =
+db.users.find(
+u => u.id === id
+);
+
+if (!user) {
+
+localStorage.removeItem(
+SESSION_KEY
+);
+
+setLoggedOutUI();
+
+return;
+
+}
+
+currentUser =
+user;
+
+guestMode = false;
+
+user.status =
+"online";
+
+saveDB();
+
+setLoggedInUI(
+user.username
+);
+
+loadFriends();
+loadFriendRequests();
+renderParty();
+
+}
+
+
+/* ==========================================
+   ページを閉じたとき
+========================================== */
+
+window.addEventListener(
+"beforeunload",
+() => {
+
+if (
+currentUser &&
+!guestMode
+) {
+
+const user =
+db.users.find(
+u => u.id === currentUser.id
+);
+
+if (user) {
+
+user.status =
+"offline";
+
+saveDB();
+
+}
+
+}
+
+}
+);
+
+
+/* ==========================================
+   初期化
+========================================== */
+
+checkSession();
+
+</script>
+
 </body>
 </html>
