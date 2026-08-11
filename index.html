@@ -2,49 +2,180 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<title>Discord Style Voice Changer for Fortnite</title>
 <style>
-  body { background: #2f3136; color: #dcddde; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
-  .box { background: #36393f; padding: 20px; border-radius: 8px; width: 300px; text-align: center; }
-  input[type=range] { width: 100%; margin: 20px 0; }
-  button { background: #5865f2; color: white; border: none; padding: 15px 30px; border-radius: 4px; cursor: pointer; font-size: 16px; }
-  button:hover { background: #4752c4; }
+  :root {
+    --bg-dark: #36393f;
+    --bg-darker: #2f3136;
+    --bg-deep: #202225;
+    --accent: #5865f2;
+    --text-main: #dcddde;
+    --green: #3ba55d;
+  }
+  body { margin: 0; background: var(--bg-darker); color: var(--text-main); font-family: sans-serif; display: flex; height: 100vh; }
+  
+  /* Discord風サイドバー */
+  .sidebar { width: 240px; background: var(--bg-dark); padding: 15px; display: flex; flex-direction: column; gap: 10px; border-right: 1px solid var(--bg-deep); }
+  h3 { font-size: 14px; color: #8e9297; margin-bottom: 5px; }
+  select, button { width: 100%; padding: 10px; background: var(--bg-deep); border: 1px solid #202225; color: white; border-radius: 4px; cursor: pointer; margin-bottom: 10px; }
+  button.active { background: var(--green); }
+  
+  /* メイン画面 */
+  .main { flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 20px; }
+  .card { background: var(--bg-dark); padding: 20px; border-radius: 8px; }
+  .slider-group { margin: 15px 0; }
+  input[type=range] { width: 100%; }
 </style>
 </head>
 <body>
 
-<div class="box">
-  <h2>Voice Changer</h2>
-  <button id="startBtn">マイクを起動</button>
-  <p>Pitch: <span id="val">1.0</span></p>
-  <input type="range" id="pitchRange" min="0.5" max="2.0" step="0.1" value="1.0">
-</div>
+  <!-- 左側：デバイス・エフェクト設定（Discord風） -->
+  <div class="sidebar">
+    <h3>🎙️ 入力マイク (自分の声)</h3>
+    <select id="micInputSelect"></select>
+
+    <h3>🎧 出力先 (仮想マイクを指定)</h3>
+    <select id="audioOutputSelect"></select>
+    <p style="font-size:11px; color:#8e9297;">※ここに「VB-Cable」等の仮想デバイスを指定するとフォートナイトに流れます</p>
+
+    <hr style="border:0; border-top:1px solid #4f545c; margin:10px 0;">
+
+    <h3>🎛️ ボイスチェンジャー</h3>
+    <button id="effectNormal" class="active" onclick="setEffect('normal')">ノーマル</button>
+    <button id="effectHigh" onclick="setEffect('high')">高音ボイス</button>
+    <button id="effectLow" onclick="setEffect('low')">低音ボイス</button>
+
+    <button style="background:var(--accent); margin-top:auto;" onclick="toggleVoiceChanger()">VC起動 / 停止</button>
+  </div>
+
+  <!-- 右側：メインモニター -->
+  <div class="main">
+    <div class="card">
+      <h2>🎮 フォートナイト連携ステータス</h2>
+      <p id="vcStatus" style="color: #ed4245;">🔴 停止中 (「VC起動」を押してください)</p>
+    </div>
+    
+    <div class="card">
+      <h3>ピッチ（声の高さ）微調整</h3>
+      <div class="slider-group">
+        <label>倍率: <span id="pitchVal">1.0</span>x</label>
+        <input type="range" id="pitchRange" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updatePitch(this.value)">
+      </div>
+    </div>
+  </div>
 
 <script>
 let audioCtx;
-let source;
+let mediaStream;
+let sourceNode;
+let biquadFilter;
+let gainNode;
+let currentEffect = 'normal';
 let playbackRate = 1.0;
 
-document.getElementById('startBtn').addEventListener('click', async () => {
-  // AudioContextの作成
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// デバイス一覧の取得（入力と出力）
+async function getDevices() {
+  await navigator.mediaDevices.getUserMedia({ audio: true }); // 権限取得
+  const devices = await navigator.mediaDevices.enumerateDevices();
   
-  // マイクの取得
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  source = audioCtx.createMediaStreamSource(stream);
-
-  // HTML5のAudioエレメント経由でピッチを変えるテクニック
-  // ブラウザ標準のMediaStream単体ではリアルタイムピッチシフトが難しいため、
-  // Blob経由でストリームを再生成する手法が一般的です。
-  // ここでは簡易的に「再生速度」を調整するデモを構築します。
+  const micSelect = document.getElementById("micInputSelect");
+  const outSelect = document.getElementById("audioOutputSelect");
   
-  alert("マイクがONになりました。本来はWorkerで信号処理を行いますが、まずはこのUIでマイク入力を制御できます。");
-});
+  micSelect.innerHTML = "";
+  outSelect.innerHTML = "";
 
-document.getElementById('pitchRange').addEventListener('input', (e) => {
-  playbackRate = e.target.value;
-  document.getElementById('val').textContent = playbackRate;
-  // ここに実際のピッチシフト処理（Web Audio APIのDelayNodeやWASM）を接続します
-});
+  devices.forEach(device => {
+    const opt = document.createElement('option');
+    opt.value = device.deviceId;
+    opt.text = device.label || `${device.kind} (${device.deviceId.slice(0,5)})`;
+    
+    if (device.kind === 'audioinput') {
+      micSelect.appendChild(opt);
+    } else if (device.kind === 'audiooutput') {
+      outSelect.appendChild(opt); // ここに「CABLE Input (VB-Audio...)」などが出る
+    }
+  });
+}
+
+// ボイスチェンジャーの有効化・処理ループ
+async function toggleVoiceChanger() {
+  const statusElem = document.getElementById("vcStatus");
+  
+  if (audioCtx) {
+    // 停止処理
+    audioCtx.close();
+    audioCtx = null;
+    if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+    statusElem.textContent = "🔴 停止中";
+    statusElem.style.color = "#ed4245";
+    return;
+  }
+
+  try {
+    const micId = document.getElementById("micInputSelect").value;
+    const outputId = document.getElementById("audioOutputSelect").value;
+
+    // 1. 選択したマイクから音声を取得
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: { deviceId: { exact: micId }, echoCancellation: true, noiseSuppression: true }
+    });
+
+    // 2. Web Audio コンテキストの作成
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+    
+    // エフェクト用ノード（フィルターなど）
+    biquadFilter = audioCtx.createBiquadFilter();
+    gainNode = audioCtx.createGain();
+
+    // ノードの接続: マイク → フィルター → ボリューム → 出力
+    sourceNode.connect(biquadFilter);
+    biquadFilter.connect(gainNode);
+
+    // ★重要: 出力先（仮想マイク）を指定する仕組み
+    // ブラウザ標準機能では直接スピーカー以外の出力先を指定できない場合があるため、
+    // デスクトップアプリ（Electron）環境や、setSinkIdに対応したブラウザで動作させます。
+    const dummyAudioElement = new Audio();
+    const dest = audioCtx.createMediaStreamDestination();
+    gainNode.connect(dest);
+    dummyAudioElement.srcObject = dest.stream;
+    
+    if (typeof dummyAudioElement.setSinkId === 'function' && outputId) {
+      await dummyAudioElement.setSinkId(outputId);
+    }
+    dummyAudioElement.play();
+
+    statusElem.textContent = "🟢 稼働中 (フォートナイトの仮想マイクへ出力中)";
+    statusElem.style.color = "#3ba55d";
+
+  } catch (err) {
+    console.error(err);
+    alert("エラーが発生しました: " + err.message);
+  }
+}
+
+function setEffect(type) {
+  currentEffect = type;
+  document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+  if(type==='normal') document.getElementById('effectNormal').classList.add('active');
+  if(type==='high') document.getElementById('effectHigh').classList.add('active');
+  if(type==='low') document.getElementById('effectLow').classList.add('active');
+  
+  // エフェクトごとのパラメータ調整
+  if(biquadFilter) {
+    if(type === 'high') { biquadFilter.type = 'highpass'; biquadFilter.frequency.value = 300; }
+    else if(type === 'low') { biquadFilter.type = 'lowpass'; biquadFilter.frequency.value = 800; }
+    else { biquadFilter.type = 'allpass'; }
+  }
+}
+
+function updatePitch(val) {
+  document.getElementById('pitchVal').textContent = val;
+  playbackRate = parseFloat(val);
+  // ※本格的なピッチシフトを行う場合はWASM（RubberBand等）をここに組み込みます
+}
+
+getDevices();
 </script>
 </body>
 </html>
