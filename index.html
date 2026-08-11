@@ -4,246 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LINE Style Chat</title>
-<!-- Firebase Web SDK (v10) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { 
-    getAuth, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    signOut, 
-    onAuthStateChanged,
-    updateProfile 
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  import { 
-    getFirestore, 
-    collection, 
-    addDoc, 
-    query, 
-    orderBy, 
-    onSnapshot, 
-    serverTimestamp 
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-  // ★★★ Firebase コンソールから取得した設定情報をここに貼り付けてください ★★★
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
-
-  // UI 要素の取得
-  const authScreen = document.getElementById('auth-screen');
-  const chatScreen = document.getElementById('chat-screen');
-  const authTitle = document.getElementById('auth-title');
-  const nameField = document.getElementById('name-field');
-  const nameInput = document.getElementById('name-input');
-  const emailInput = document.getElementById('email-input');
-  const passwordInput = document.getElementById('password-input');
-  const authSubmitBtn = document.getElementById('auth-submit-btn');
-  const toggleAuthBtn = document.getElementById('toggle-auth-btn');
-  const authError = document.getElementById('auth-error');
-  const messageList = document.getElementById('message-list');
-  const messageInput = document.getElementById('message-input');
-  const sendBtn = document.getElementById('send-btn');
-  const logoutBtn = document.getElementById('logout-btn');
-
-  let isSignUpMode = false;
-  let auth = null;
-  let db = null;
-  let currentUser = null;
-
-  // Firebaseの初期化チェック
-  try {
-    if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-      authError.textContent = "※ Firebaseの設定情報が初期状態です。コード内の firebaseConfig をご自身のキーに書き換えてください。";
-    }
-    const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-
-    // 認証状態の監視
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-        authScreen.style.display = 'none';
-        chatScreen.style.display = 'flex';
-        loadMessages();
-      } else {
-        currentUser = null;
-        chatScreen.style.display = 'none';
-        authScreen.style.display = 'flex';
-        messageList.innerHTML = '';
-      }
-    });
-  } catch (e) {
-    console.error("Firebase Initialization Error:", e);
-    authError.textContent = "Firebaseの接続設定エラー: キーを確認してください。";
-  }
-
-  // 画面切り替え（新規登録 / ログイン）
-  toggleAuthBtn.addEventListener('click', () => {
-    isSignUpMode = !isSignUpMode;
-    authError.textContent = firebaseConfig.apiKey === "YOUR_API_KEY" ? "※ Firebaseの設定情報を書き換えてください。" : '';
-    if (isSignUpMode) {
-      authTitle.textContent = 'アカウント新規登録';
-      nameField.style.display = 'block';
-      authSubmitBtn.textContent = '登録する';
-      toggleAuthBtn.textContent = 'すでにアカウントをお持ちの方（ログイン）';
-    } else {
-      authTitle.textContent = 'ログイン';
-      nameField.style.display = 'none';
-      authSubmitBtn.textContent = 'ログイン';
-      toggleAuthBtn.textContent = '新規登録はこちら';
-    }
-  });
-
-  // アカウント作成 / ログイン 処理
-  authSubmitBtn.addEventListener('click', async () => {
-    if (!auth) {
-      authError.textContent = "Firebaseの設定（firebaseConfig）を入力してください。";
-      return;
-    }
-
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    const displayName = nameInput.value.trim();
-    authError.textContent = '';
-
-    if (!email || !password) {
-      authError.textContent = 'メールアドレスとパスワードを入力してください。';
-      return;
-    }
-
-    try {
-      if (isSignUpMode) {
-        if (!displayName) {
-          authError.textContent = '表示名を入力してください。';
-          return;
-        }
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: displayName });
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-    } catch (error) {
-      authError.textContent = 'エラー: ' + error.message;
-    }
-  });
-
-  // ログアウト処理
-  logoutBtn.addEventListener('click', () => {
-    if (auth) signOut(auth);
-  });
-
-  // メッセージ送信
-  async function sendMessage() {
-    const text = messageInput.value.trim();
-    if (!text || !currentUser || !db) return;
-
-    try {
-      await addDoc(collection(db, "messages"), {
-        text: text,
-        uid: currentUser.uid,
-        userName: currentUser.displayName || "名無し",
-        createdAt: serverTimestamp()
-      });
-      messageInput.value = '';
-    } catch (error) {
-      console.error("メッセージ送信エラー:", error);
-    }
-  }
-
-  sendBtn.addEventListener('click', sendMessage);
-  messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-  });
-
-  // メッセージ受信・同期
-  function loadMessages() {
-    if (!db) return;
-    const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
-    onSnapshot(q, (snapshot) => {
-      messageList.innerHTML = '';
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const isMine = currentUser && data.uid === currentUser.uid;
-        appendMessageUI(data.userName, data.text, isMine, data.createdAt);
-      });
-      messageList.scrollTop = messageList.scrollHeight;
-    });
-  }
-
-  // LINE風吹き出しの描画
-  function appendMessageUI(userName, text, isMine, timestamp) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message-group ${isMine ? 'mine' : 'other'}`;
-
-    let timeStr = '';
-    if (timestamp && timestamp.toDate) {
-      const date = timestamp.toDate();
-      timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-    }
-
-    if (isMine) {
-      msgDiv.innerHTML = `
-        <div class="message-meta">
-          <span class="time">${timeStr}</span>
-        </div>
-        <div class="bubble">${escapeHTML(text)}</div>
-      `;
-    } else {
-      msgDiv.innerHTML = `
-        <div class="avatar">${userName ? escapeHTML(userName.charAt(0)) : 'ユ'}</div>
-        <div class="content">
-          <div class="user-name">${escapeHTML(userName)}</div>
-          <div class="bubble-row">
-            <div class="bubble">${escapeHTML(text)}</div>
-            <span class="time">${timeStr}</span>
-          </div>
-        </div>
-      `;
-    }
-    messageList.appendChild(msgDiv);
-  }
-
-  function escapeHTML(str) {
-    return (str || '').replace(/[&<>'"]/g, 
-      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-    );
-  }
-</script>
-
 <style>
 :root {
   --line-green: #06C755;
   --bg-chat: #8cabd9;
   --bubble-mine: #85e249;
-  --bg-card: #ffffff;
   --border-color: #e2e8f0;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
-body, html { height: 100%; background: #222; display: flex; justify-content: center; align-items: center; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body, html { height: 100%; background: #1e1e1e; display: flex; justify-content: center; align-items: center; }
 
-/* スマホ枠風コンテナ */
+/* スマホ風コンテナ */
 .app-container {
   width: 100%;
-  max-width: 440px;
+  max-width: 420px;
   height: 100%;
-  max-height: 850px;
+  max-height: 800px;
   background: white;
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
-/* ログイン / 新規登録画面 */
+/* 認証画面 */
 .auth-screen {
   position: absolute;
   inset: 0;
@@ -262,9 +48,9 @@ body, html { height: 100%; background: #222; display: flex; justify-content: cen
 .btn-primary { width: 100%; padding: 12px; background: var(--line-green); border: none; color: white; font-weight: bold; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
 .btn-primary:hover { opacity: 0.9; }
 .btn-link { background: none; border: none; color: #64748b; text-decoration: underline; font-size: 0.85rem; margin-top: 16px; cursor: pointer; width: 100%; text-align: center; }
-.error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 12px; text-align: center; line-height: 1.4; }
+.error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 12px; text-align: center; }
 
-/* メインチャット画面 */
+/* チャット画面 */
 .chat-screen {
   display: none;
   flex-direction: column;
@@ -272,9 +58,8 @@ body, html { height: 100%; background: #222; display: flex; justify-content: cen
   background: var(--bg-chat);
 }
 
-/* ヘッダー */
 header {
-  height: 60px;
+  height: 56px;
   background: rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
   display: flex;
@@ -283,10 +68,12 @@ header {
   padding: 0 16px;
   color: white;
 }
-header h3 { font-size: 1.1rem; }
-.logout-btn { background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; }
+header h3 { font-size: 1.05rem; }
+.user-info { font-size: 0.8rem; opacity: 0.9; margin-right: 8px; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.btn-small { background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 6px 10px; border-radius: 14px; font-size: 0.75rem; cursor: pointer; }
 
-/* メッセージエリア */
+/* メッセージリスト */
 .message-list {
   flex: 1;
   padding: 16px;
@@ -296,23 +83,21 @@ header h3 { font-size: 1.1rem; }
   gap: 12px;
 }
 
-/* メッセージ（共通） */
 .message-group { display: flex; gap: 8px; max-width: 80%; }
-.message-group.mine { align-self: flex-end; flex-direction: row; }
+.message-group.mine { align-self: flex-end; flex-direction: row-reverse; }
 .message-group.other { align-self: flex-start; }
 
-/* アバター */
 .avatar {
-  width: 36px; height: 36px; border-radius: 14px; background: #cbd5e1;
+  width: 36px; height: 36px; border-radius: 14px; background: #94a3b8;
   display: flex; align-items: center; justify-content: center;
-  font-weight: bold; color: white; font-size: 0.9rem; flex-shrink: 0;
+  font-weight: bold; color: white; font-size: 0.85rem; flex-shrink: 0;
 }
 
 .content { display: flex; flex-direction: column; gap: 4px; }
 .user-name { font-size: 0.75rem; color: rgba(255, 255, 255, 0.9); }
 .bubble-row { display: flex; align-items: flex-end; gap: 6px; }
+.mine .bubble-row { flex-direction: row-reverse; }
 
-/* 吹き出し */
 .bubble {
   padding: 8px 12px;
   border-radius: 16px;
@@ -324,8 +109,7 @@ header h3 { font-size: 1.1rem; }
 .mine .bubble { background: var(--bubble-mine); color: #000; border-top-right-radius: 2px; }
 .other .bubble { background: white; color: #000; border-top-left-radius: 2px; }
 
-.message-meta { display: flex; align-items: flex-end; }
-.time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.8); flex-shrink: 0; }
+.time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.85); flex-shrink: 0; }
 
 /* 入力エリア */
 .input-area {
@@ -348,21 +132,17 @@ header h3 { font-size: 1.1rem; }
   background: var(--line-green);
   border: none;
   color: white;
-  width: 36px;
-  height: 36px;
+  width: 36px; height: 36px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1rem; font-weight: bold;
 }
 </style>
 </head>
 <body>
 
 <div class="app-container">
-  <!-- 認証画面（デフォルトで表示） -->
+  <!-- 認証画面 -->
   <div id="auth-screen" class="auth-screen">
     <h2 id="auth-title">ログイン</h2>
     
@@ -372,13 +152,13 @@ header h3 { font-size: 1.1rem; }
     </div>
 
     <div class="input-group">
-      <label>メールアドレス</label>
-      <input type="email" id="email-input" placeholder="example@mail.com">
+      <label>ユーザーID</label>
+      <input type="text" id="userid-input" placeholder="ユーザーIDを入力">
     </div>
 
     <div class="input-group">
       <label>パスワード</label>
-      <input type="password" id="password-input" placeholder="6文字以上">
+      <input type="password" id="password-input" placeholder="パスワードを入力">
     </div>
 
     <button id="auth-submit-btn" class="btn-primary">ログイン</button>
@@ -390,8 +170,11 @@ header h3 { font-size: 1.1rem; }
   <!-- チャット画面 -->
   <div id="chat-screen" class="chat-screen">
     <header>
-      <h3>トーク</h3>
-      <button id="logout-btn" class="logout-btn">ログアウト</button>
+      <h3>グループトーク</h3>
+      <div class="header-actions">
+        <span id="current-user-display" class="user-info"></span>
+        <button id="logout-btn" class="btn-small">ログアウト</button>
+      </div>
     </header>
 
     <div id="message-list" class="message-list"></div>
@@ -402,6 +185,215 @@ header h3 { font-size: 1.1rem; }
     </div>
   </div>
 </div>
+
+<script>
+  // ローカルストレージ管理
+  const STORAGE_USERS = 'chat_app_users';
+  const STORAGE_MESSAGES = 'chat_app_messages';
+  const STORAGE_CURRENT_USER = 'chat_app_current_user';
+
+  function getUsers() {
+    return JSON.parse(localStorage.getItem(STORAGE_USERS) || '{}');
+  }
+  function saveUsers(users) {
+    localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+  }
+  function getMessages() {
+    return JSON.parse(localStorage.getItem(STORAGE_MESSAGES) || '[]');
+  }
+  function saveMessages(msgs) {
+    localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(msgs));
+  }
+
+  // UI 要素
+  const authScreen = document.getElementById('auth-screen');
+  const chatScreen = document.getElementById('chat-screen');
+  const authTitle = document.getElementById('auth-title');
+  const nameField = document.getElementById('name-field');
+  const nameInput = document.getElementById('name-input');
+  const useridInput = document.getElementById('userid-input');
+  const passwordInput = document.getElementById('password-input');
+  const authSubmitBtn = document.getElementById('auth-submit-btn');
+  const toggleAuthBtn = document.getElementById('toggle-auth-btn');
+  const authError = document.getElementById('auth-error');
+  const currentUserDisplay = document.getElementById('current-user-display');
+  const messageList = document.getElementById('message-list');
+  const messageInput = document.getElementById('message-input');
+  const sendBtn = document.getElementById('send-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  let isSignUpMode = false;
+  let currentUser = null;
+
+  // 初期読み込み時の認証チェック
+  function initAuth() {
+    const savedUser = localStorage.getItem(STORAGE_CURRENT_USER);
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      showChatScreen();
+    } else {
+      showAuthScreen();
+    }
+  }
+
+  function showAuthScreen() {
+    authScreen.style.display = 'flex';
+    chatScreen.style.display = 'none';
+  }
+
+  function showChatScreen() {
+    authScreen.style.display = 'none';
+    chatScreen.style.display = 'flex';
+    currentUserDisplay.textContent = currentUser.name;
+    loadMessages();
+  }
+
+  // 画面切り替え（ログイン / 新規登録）
+  toggleAuthBtn.addEventListener('click', () => {
+    isSignUpMode = !isSignUpMode;
+    authError.textContent = '';
+    if (isSignUpMode) {
+      authTitle.textContent = '新規登録';
+      nameField.style.display = 'block';
+      authSubmitBtn.textContent = '登録して始める';
+      toggleAuthBtn.textContent = 'すでにアカウントをお持ちの方（ログイン）';
+    } else {
+      authTitle.textContent = 'ログイン';
+      nameField.style.display = 'none';
+      authSubmitBtn.textContent = 'ログイン';
+      toggleAuthBtn.textContent = '新規登録はこちら';
+    }
+  });
+
+  // ログイン / アカウント作成 処理
+  authSubmitBtn.addEventListener('click', () => {
+    const userid = useridInput.value.trim();
+    const password = passwordInput.value.trim();
+    const name = nameInput.value.trim();
+    authError.textContent = '';
+
+    if (!userid || !password) {
+      authError.textContent = 'IDとパスワードを入力してください。';
+      return;
+    }
+
+    const users = getUsers();
+
+    if (isSignUpMode) {
+      if (!name) {
+        authError.textContent = '表示名を入力してください。';
+        return;
+      }
+      if (users[userid]) {
+        authError.textContent = 'このユーザーIDは既に使用されています。';
+        return;
+      }
+      users[userid] = { password: password, name: name };
+      saveUsers(users);
+
+      currentUser = { id: userid, name: name };
+      localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
+      showChatScreen();
+    } else {
+      if (!users[userid] || users[userid].password !== password) {
+        authError.textContent = 'ユーザーIDまたはパスワードが正しくありません。';
+        return;
+      }
+      currentUser = { id: userid, name: users[userid].name };
+      localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
+      showChatScreen();
+    }
+  });
+
+  // ログアウト
+  logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_CURRENT_USER);
+    currentUser = null;
+    useridInput.value = '';
+    passwordInput.value = '';
+    nameInput.value = '';
+    showAuthScreen();
+  });
+
+  // メッセージ送信
+  function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text || !currentUser) return;
+
+    const messages = getMessages();
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+    const newMsg = {
+      id: Date.now(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      text: text,
+      time: timeStr
+    };
+
+    messages.push(newMsg);
+    saveMessages(messages);
+    messageInput.value = '';
+    loadMessages();
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  // メッセージ読み込み・描画
+  function loadMessages() {
+    const messages = getMessages();
+    messageList.innerHTML = '';
+
+    messages.forEach(msg => {
+      const isMine = currentUser && msg.userId === currentUser.id;
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message-group ${isMine ? 'mine' : 'other'}`;
+
+      if (isMine) {
+        msgDiv.innerHTML = `
+          <div class="bubble-row">
+            <div class="bubble">${escapeHTML(msg.text)}</div>
+            <span class="time">${msg.time}</span>
+          </div>
+        `;
+      } else {
+        msgDiv.innerHTML = `
+          <div class="avatar">${escapeHTML(msg.userName.charAt(0))}</div>
+          <div class="content">
+            <div class="user-name">${escapeHTML(msg.userName)}</div>
+            <div class="bubble-row">
+              <div class="bubble">${escapeHTML(msg.text)}</div>
+              <span class="time">${msg.time}</span>
+            </div>
+          </div>
+        `;
+      }
+      messageList.appendChild(msgDiv);
+    });
+
+    messageList.scrollTop = messageList.scrollHeight;
+  }
+
+  // 他のタブでの変更をリアルタイム同期
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_MESSAGES && currentUser) {
+      loadMessages();
+    }
+  });
+
+  function escapeHTML(str) {
+    return (str || '').replace(/[&<>'"]/g, 
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+  }
+
+  // 起動
+  initAuth();
+</script>
 
 </body>
 </html>
