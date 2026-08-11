@@ -3,209 +3,458 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Real-time Voice & Video Chat</title>
-<!-- PeerJS CDN (WebRTC通信用) -->
+<title>Perfect WebRTC Party Room</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
 <style>
-* { box-sizing: border-box; }
-body { margin: 0; font-family: Arial, sans-serif; background: #111827; color: white; }
-header { height: 64px; background: #1f2937; display: flex; align-items: center; padding: 0 24px; font-size: 22px; font-weight: bold; }
-main { max-width: 900px; margin: 40px auto; padding: 20px; }
-.card { background: #1f2937; border-radius: 16px; padding: 25px; margin-bottom: 20px; }
-h2 { margin-top: 0; }
-input { width: 100%; padding: 12px; margin: 6px 0; border: none; border-radius: 10px; font-size: 16px; background: #374151; color: white; }
-button { border: none; border-radius: 10px; padding: 12px 20px; margin: 6px 4px 6px 0; font-size: 16px; cursor: pointer; background: #4f46e5; color: white; }
-button:hover { opacity: 0.9; }
-.red { background: #dc2626; }
-.green { background: #22c55e; }
-.mediaArea { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-.videoBox { background: #111827; border-radius: 12px; padding: 10px; min-height: 220px; }
-video { width: 100%; max-height: 300px; background: #000; border-radius: 10px; object-fit: cover; }
-.dmMessages { height: 200px; overflow-y: auto; background: #030712; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
-.message { background: #374151; padding: 8px 12px; border-radius: 8px; margin: 6px 0; max-width: 80%; }
-.message.mine { margin-left: auto; background: #4f46e5; }
-.status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 14px; background: #374151; }
+:root {
+  --bg-dark: #0b0f19;
+  --bg-card: #151d30;
+  --bg-input: #1e293b;
+  --border: #334155;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --danger: #ef4444;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ヘッダー */
+header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.logo { font-weight: 800; font-size: 1.2rem; background: linear-gradient(135deg, #a855f7, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.room-badge { display: flex; align-items: center; gap: 12px; background: var(--bg-dark); border: 1px solid var(--border); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; }
+.copy-btn { background: var(--primary); border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.75rem; transition: 0.2s; }
+.copy-btn:hover { background: var(--primary-hover); }
+
+/* メインレイアウト */
+.app-container { flex: 1; display: grid; grid-template-columns: 1fr 350px; height: calc(100vh - 60px - 72px); }
+.stage-container { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+
+/* スポットライト（画面共有） */
+.spotlight-area { width: 100%; max-width: 1200px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 2px solid var(--primary); display: none; box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
+.spotlight-area.active { display: block; }
+.spotlight-area video { width: 100%; max-height: 540px; object-fit: contain; display: block; }
+.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #60a5fa; border: 1px solid rgba(255,255,255,0.1); }
+
+/* ビデオ・アイコン グリッド */
+.video-grid { width: 100%; max-width: 1200px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.user-tile { background: var(--bg-card); border-radius: 14px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.user-tile video { width: 100%; height: 100%; object-fit: cover; }
+.avatar-placeholder { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #a855f7, var(--primary)); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; text-transform: uppercase; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.tile-overlay { position: absolute; bottom: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; border: 1px solid rgba(255,255,255,0.05); }
+
+/* サイドバー */
+.sidebar { background: var(--bg-card); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+.sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+.join-box { display: flex; flex-direction: column; gap: 10px; }
+input[type="text"] { background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 10px 12px; border-radius: 8px; outline: none; font-size: 0.9rem; }
+input[type="text"]:focus { border-color: var(--primary); }
+.btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+.btn:hover { background: var(--primary-hover); }
+
+/* チャット */
+.chat-container { flex: 1; display: flex; flex-direction: column; padding: 16px; overflow: hidden; }
+.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; padding-right: 4px; }
+.msg { background: var(--bg-input); padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; max-width: 85%; word-break: break-word; line-height: 1.4; border: 1px solid rgba(255,255,255,0.05); }
+.msg.mine { align-self: flex-end; background: var(--primary); border: none; }
+.msg .author { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; font-weight: 600; }
+.sys-msg { font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 4px 0; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 12px; }
+
+/* コントロールバー */
+.controls-bar { height: 72px; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 16px; }
+.control-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--bg-input); color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
+.control-btn.active { background: var(--primary); border-color: transparent; }
+.control-btn.off { background: var(--danger); border-color: transparent; }
+.control-btn:hover { transform: scale(1.08); }
+
+#remoteAudioContainer { display: none; }
 </style>
 </head>
-
 <body>
 
-<header>🎙️ Real-time Voice Chat</header>
+<header>
+  <div class="logo">🎙️ VoiceParty</div>
+  <div class="room-badge">
+    <span>ルームID: <strong id="currentRoomDisplay">未参加</strong></span>
+    <button class="copy-btn" onclick="copyRoomId()">コピー</button>
+  </div>
+</header>
 
-<main>
-  <!-- 接続設定 -->
-  <div class="card">
-    <h2>1. 自分のID（通話待機）</h2>
-    <p>あなたの接続ID: <strong id="myPeerId" style="color: #6366f1;">発行中...</strong></p>
-    
-    <button id="micBtn" onclick="toggleMedia('audio')">🎤 マイク OFF</button>
-    <button id="camBtn" onclick="toggleMedia('video')">📷 カメラ OFF</button>
+<div class="app-container">
+  <div class="stage-container">
+    <div id="spotlightArea" class="spotlight-area">
+      <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
+      <video id="spotlightVideo" autoplay playsinline muted></video>
+    </div>
+    <div id="videoGrid" class="video-grid"></div>
   </div>
 
-  <!-- 通話相手への接続 -->
-  <div class="card">
-    <h2>2. 相手に接続する（通話開始）</h2>
-    <input id="remotePeerIdInput" placeholder="相手の接続IDを入力">
-    <button class="green" onclick="connectToPeer()">📞 通話開始</button>
-    <button class="red" onclick="hangUp()">🛑 切断</button>
-    <p id="connectionStatus" class="status-badge">未接続</p>
-  </div>
-
-  <!-- 映像エリア -->
-  <div class="card">
-    <h2>📹 通話画面</h2>
-    <div class="mediaArea">
-      <div class="videoBox">
-        <h3>自分</h3>
-        <video id="localVideo" autoplay muted playsinline></video>
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3 style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">接続設定</h3>
+      <div class="join-box">
+        <input type="text" id="usernameInput" placeholder="表示名" value="ユーザー">
+        <input type="text" id="roomIdInput" placeholder="ルームID">
+        <button id="joinBtn" class="btn" onclick="startJoinProcess()">🚪 ルームに参加</button>
       </div>
-      <div class="videoBox">
-        <h3>相手</h3>
-        <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+
+    <div class="chat-container">
+      <h3 style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">チャット & ログ</h3>
+      <div id="chatMessages" class="chat-messages"></div>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="chatInput" placeholder="メッセージ..." style="flex:1;" onkeydown="if(event.key==='Enter')sendChatMessage()">
+        <button class="btn" onclick="sendChatMessage()">送信</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- リアルタイムDM -->
-  <div class="card">
-    <h2>💬 リアルタイムテキストチャット</h2>
-    <div id="chatMessages" class="dmMessages"></div>
-    <input id="chatInput" placeholder="メッセージを入力" onkeydown="if(event.key==='Enter')sendMessage()">
-    <button onclick="sendMessage()">送信</button>
-  </div>
-</main>
+<div class="controls-bar">
+  <button id="micBtn" class="control-btn active" onclick="toggleMic()" title="マイクON/OFF">🎤</button>
+  <button id="camBtn" class="control-btn off" onclick="toggleCamera()" title="カメラON/OFF">📷</button>
+  <button id="screenBtn" class="control-btn off" onclick="toggleScreenShare()" title="画面共有ON/OFF">🖥️</button>
+  <button class="control-btn off" style="background:#dc2626;" onclick="leaveRoom()" title="退出">🚪</button>
+</div>
+
+<div id="remoteAudioContainer"></div>
 
 <script>
-let peer = null;
-let currentCall = null;
-let dataConnection = null;
+let myPeer = null;
+let myPeerId = '';
+let currentRoomId = '';
+let myName = 'ユーザー';
 let localStream = null;
+let screenStream = null;
 
-const localVideo = document.getElementById('localVideo');
-const remoteVideo = document.getElementById('remoteVideo');
-const myPeerIdEl = document.getElementById('myPeerId');
-const statusEl = document.getElementById('connectionStatus');
+let isMicOn = true;
+let isCamOn = false;
+let isScreenSharing = false;
 
-// 1. PeerJSの初期化（ブラウザ間直接通信シグナリング）
-function initPeer() {
-  peer = new Peer();
+const peers = {}; // peerId -> { conn, call, stream, name, isCamOn }
 
-  peer.on('open', (id) => {
-    myPeerIdEl.textContent = id;
+const videoGrid = document.getElementById('videoGrid');
+const spotlightArea = document.getElementById('spotlightArea');
+const spotlightVideo = document.getElementById('spotlightVideo');
+const spotlightTitle = document.getElementById('spotlightTitle');
+const remoteAudioContainer = document.getElementById('remoteAudioContainer');
+
+async function initLocalStream() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch (e) {
+    addSystemMessage("⚠️ マイクを取得できませんでした（無音モードで待機）");
+    localStream = new MediaStream();
+    isMicOn = false;
+    updateControlsUI();
+  }
+}
+
+function startJoinProcess() {
+  myName = document.getElementById('usernameInput').value.trim() || 'ユーザー';
+  currentRoomId = document.getElementById('roomIdInput').value.trim();
+
+  if (!currentRoomId) return alert("ルームIDを入力してください。");
+
+  if (myPeer) myPeer.destroy();
+
+  myPeer = new Peer();
+  addSystemMessage("📡 ネットワークへ接続中...");
+
+  myPeer.on('open', (id) => {
+    myPeerId = id;
+    document.getElementById('currentRoomDisplay').textContent = currentRoomId;
+    renderUserTile(myPeerId, myName, getActiveStream(), true, isCamOn);
+
+    const hubId = `room-${currentRoomId}-hub`;
+    addSystemMessage(`🔍 ルーム [${currentRoomId}] を検索中...`);
+    tryConnectHub(hubId);
   });
 
-  // 着信処理
-  peer.on('call', async (call) => {
-    if (!localStream) await setupMedia();
-    call.answer(localStream);
+  myPeer.on('connection', (conn) => setupDataConnection(conn));
+  myPeer.on('call', (call) => {
+    call.answer(getActiveStream());
     setupCallEvents(call);
   });
 
-  // データ通信（チャット）着信処理
-  peer.on('connection', (conn) => {
-    dataConnection = conn;
-    setupDataEvents();
+  myPeer.on('error', (err) => {
+    addSystemMessage(`❌ 接続エラー: ${err.type}`);
   });
 }
 
-// 2. メディア（マイク・カメラ）の準備
-async function setupMedia() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-    localVideo.srcObject = localStream;
-  } catch (e) {
-    alert("マイク/カメラの取得に失敗しました。");
-  }
+function tryConnectHub(hubId) {
+  const conn = myPeer.connect(hubId);
+  let connected = false;
+
+  const timer = setTimeout(() => {
+    if (!connected) {
+      conn.close();
+      becomeHub(hubId);
+    }
+  }, 2000);
+
+  conn.on('open', () => {
+    connected = true;
+    clearTimeout(timer);
+    addSystemMessage("✅ ルームに参加しました");
+    setupDataConnection(conn);
+  });
 }
 
-async function toggleMedia(type) {
-  if (!localStream) await setupMedia();
+function becomeHub(hubId) {
+  addSystemMessage("👑 ルームを作成しました（ホスト）");
+  const hubPeer = new Peer(hubId);
   
-  if (type === 'audio') {
-    const track = localStream.getAudioTracks()[0];
-    if (track) {
-      track.enabled = !track.enabled;
-      document.getElementById('micBtn').textContent = track.enabled ? "🎤 マイク ON" : "🔇 マイク OFF";
-    }
-  } else if (type === 'video') {
-    const track = localStream.getVideoTracks()[0];
-    if (track) {
-      track.enabled = !track.enabled;
-      document.getElementById('camBtn').textContent = track.enabled ? "📷 カメラ ON" : "📷 カメラ OFF";
-    }
-  }
+  hubPeer.on('open', () => {
+    hubPeer.on('connection', (conn) => {
+      conn.on('data', (data) => {
+        if (data.type === 'REQ_PEERS') {
+          const memberList = Object.keys(peers).concat([myPeerId]);
+          conn.send({ type: 'RES_PEERS', members: memberList });
+        }
+      });
+    });
+  });
+
+  hubPeer.on('error', () => {
+    setTimeout(() => tryConnectHub(hubId), 1000);
+  });
 }
 
-// 3. 発信処理
-async function connectToPeer() {
-  const remoteId = document.getElementById('remotePeerIdInput').value.trim();
-  if (!remoteId) return alert("相手のIDを入力してください");
+function connectToPeer(targetPeerId) {
+  if (peers[targetPeerId] || targetPeerId === myPeerId) return;
 
-  if (!localStream) await setupMedia();
+  const conn = myPeer.connect(targetPeerId);
+  setupDataConnection(conn);
 
-  // 音声・映像の通話開始
-  const call = peer.call(remoteId, localStream);
+  const call = myPeer.call(targetPeerId, getActiveStream());
   setupCallEvents(call);
-
-  // チャットデータ通信の開始
-  dataConnection = peer.connect(remoteId);
-  setupDataEvents();
 }
 
-// 通話ストリームイベント
+function setupDataConnection(conn) {
+  const targetId = conn.peer;
+
+  conn.on('open', () => {
+    if (!peers[targetId]) peers[targetId] = {};
+    peers[targetId].conn = conn;
+
+    conn.send({ type: 'HANDSHAKE', name: myName, peerId: myPeerId, isCamOn: isCamOn });
+    conn.send({ type: 'REQ_PEERS' });
+  });
+
+  conn.on('data', (data) => {
+    if (data.type === 'HANDSHAKE') {
+      if (!peers[data.peerId]) peers[data.peerId] = {};
+      peers[data.peerId].name = data.name;
+      peers[data.peerId].isCamOn = data.isCamOn;
+      renderUserTile(data.peerId, data.name, peers[data.peerId]?.stream, false, data.isCamOn);
+    } else if (data.type === 'RES_PEERS') {
+      data.members.forEach(id => {
+        if (id !== myPeerId) connectToPeer(id);
+      });
+    } else if (data.type === 'CHAT') {
+      appendChatMessage(data.name, data.text, false);
+    } else if (data.type === 'SCREEN') {
+      if (data.isSharing) {
+        setSpotlight(data.peerId, `${data.name} の画面`, peers[data.peerId]?.stream);
+      } else {
+        removeSpotlight();
+      }
+    } else if (data.type === 'CAM_STATE') {
+      if (peers[data.peerId]) peers[data.peerId].isCamOn = data.isCamOn;
+      renderUserTile(data.peerId, peers[data.peerId]?.name || '参加者', peers[data.peerId]?.stream, false, data.isCamOn);
+    }
+  });
+
+  conn.on('close', () => cleanupPeer(targetId));
+}
+
 function setupCallEvents(call) {
-  currentCall = call;
-  statusEl.textContent = "通話中";
-  statusEl.style.background = "#22c55e";
+  const targetId = call.peer;
+  if (!peers[targetId]) peers[targetId] = {};
+  peers[targetId].call = call;
 
   call.on('stream', (remoteStream) => {
-    remoteVideo.srcObject = remoteStream;
+    peers[targetId].stream = remoteStream;
+
+    let audioEl = document.getElementById(`audio-${targetId}`);
+    if (!audioEl) {
+      audioEl = document.createElement('audio');
+      audioEl.id = `audio-${targetId}`;
+      audioEl.autoplay = true;
+      remoteAudioContainer.appendChild(audioEl);
+    }
+    audioEl.srcObject = remoteStream;
+
+    renderUserTile(targetId, peers[targetId].name || '参加者', remoteStream, false, peers[targetId].isCamOn);
   });
 
-  call.on('close', () => {
-    remoteVideo.srcObject = null;
-    statusEl.textContent = "切断されました";
-    statusEl.style.background = "#374151";
+  call.on('close', () => cleanupPeer(targetId));
+}
+
+function cleanupPeer(id) {
+  const tile = document.getElementById(`tile-${id}`);
+  if (tile) tile.remove();
+  const audio = document.getElementById(`audio-${id}`);
+  if (audio) audio.remove();
+  delete peers[id];
+}
+
+function getActiveStream() {
+  return isScreenSharing && screenStream ? screenStream : localStream;
+}
+
+function toggleMic() {
+  if (!localStream) return;
+  const t = localStream.getAudioTracks()[0];
+  if (t) {
+    isMicOn = !isMicOn;
+    t.enabled = isMicOn;
+    updateControlsUI();
+  }
+}
+
+async function toggleCamera() {
+  if (!isCamOn) {
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: true });
+      const vt = s.getVideoTracks()[0];
+      localStream.addTrack(vt);
+      isCamOn = true;
+      replaceTracks(vt);
+    } catch { alert("カメラを起動できません"); return; }
+  } else {
+    const vt = localStream.getVideoTracks()[0];
+    if (vt) { vt.stop(); localStream.removeTrack(vt); }
+    isCamOn = false;
+    replaceTracks(null);
+  }
+  updateControlsUI();
+  broadcast({ type: 'CAM_STATE', peerId: myPeerId, isCamOn });
+  renderUserTile(myPeerId, myName, getActiveStream(), true, isCamOn);
+}
+
+async function toggleScreenShare() {
+  if (!isScreenSharing) {
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const st = screenStream.getVideoTracks()[0];
+      st.onended = () => stopScreenShare();
+      isScreenSharing = true;
+      replaceTracks(st);
+      setSpotlight(myPeerId, `${myName} の画面`, screenStream);
+      broadcast({ type: 'SCREEN', isSharing: true, name: myName });
+    } catch { return; }
+  } else stopScreenShare();
+  updateControlsUI();
+}
+
+function stopScreenShare() {
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  isScreenSharing = false;
+  replaceTracks(isCamOn ? localStream.getVideoTracks()[0] : null);
+  removeSpotlight();
+  broadcast({ type: 'SCREEN', isSharing: false, name: myName });
+  renderUserTile(myPeerId, myName, getActiveStream(), true, isCamOn);
+  updateControlsUI();
+}
+
+function replaceTracks(track) {
+  Object.values(peers).forEach(p => {
+    if (p.call && p.call.peerConnection) {
+      const senders = p.call.peerConnection.getSenders();
+      const s = senders.find(sender => sender.track && sender.track.kind === 'video');
+      if (s) {
+        s.replaceTrack(track);
+      } else if (track) {
+        p.call.peerConnection.addTrack(track, getActiveStream());
+      }
+    }
   });
 }
 
-// チャットイベント
-function setupDataEvents() {
-  dataConnection.on('data', (data) => {
-    appendMessage(data.sender, data.text, false);
-  });
+function setSpotlight(id, title, stream) {
+  spotlightTitle.textContent = `🖥️ ${title}`;
+  spotlightVideo.srcObject = stream;
+  spotlightArea.classList.add('active');
 }
 
-function sendMessage() {
+function removeSpotlight() {
+  spotlightArea.classList.remove('active');
+  spotlightVideo.srcObject = null;
+}
+
+function broadcast(data) {
+  Object.values(peers).forEach(p => p.conn && p.conn.open && p.conn.send(data));
+}
+
+function updateControlsUI() {
+  document.getElementById('micBtn').className = `control-btn ${isMicOn ? 'active' : 'off'}`;
+  document.getElementById('camBtn').className = `control-btn ${isCamOn ? 'active' : 'off'}`;
+  document.getElementById('screenBtn').className = `control-btn ${isScreenSharing ? 'active' : 'off'}`;
+}
+
+function renderUserTile(id, name, stream, isSelf, isCamActive) {
+  let tile = document.getElementById(`tile-${id}`);
+  if (!tile) {
+    tile = document.createElement('div');
+    tile.id = `tile-${id}`;
+    tile.className = 'user-tile';
+    videoGrid.appendChild(tile);
+  }
+
+  const hasVideo = isCamActive || (isSelf && isScreenSharing);
+
+  tile.innerHTML = `
+    ${hasVideo ? `<video id="v-${id}" autoplay playsinline ${isSelf ? 'muted' : ''}></video>` : `<div class="avatar-placeholder">${name.charAt(0)}</div>`}
+    <div class="tile-overlay">
+      <span>${name} ${isSelf ? '(自分)' : ''}</span>
+    </div>
+  `;
+
+  if (hasVideo && stream) {
+    const videoEl = tile.querySelector(`#v-${id}`);
+    if (videoEl) videoEl.srcObject = stream;
+  }
+}
+
+function sendChatMessage() {
   const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text || !dataConnection) return;
-
-  dataConnection.send({ sender: '相手', text: text });
-  appendMessage('自分', text, true);
+  if (!input.value.trim()) return;
+  broadcast({ type: 'CHAT', name: myName, text: input.value.trim() });
+  appendChatMessage(myName, input.value.trim(), true);
   input.value = '';
 }
 
-function appendMessage(sender, text, isMine) {
+function appendChatMessage(name, text, isMine) {
   const box = document.getElementById('chatMessages');
   const div = document.createElement('div');
-  div.className = `message ${isMine ? 'mine' : ''}`;
-  div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+  div.className = `msg ${isMine ? 'mine' : ''}`;
+  div.innerHTML = `<div class="author">${name}</div><div>${text}</div>`;
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
 
-function hangUp() {
-  if (currentCall) currentCall.close();
-  if (dataConnection) dataConnection.close();
-  remoteVideo.srcObject = null;
-  statusEl.textContent = "未接続";
-  statusEl.style.background = "#374151";
+function addSystemMessage(text) {
+  const box = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'sys-msg';
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 }
 
-// 初期化実行
-initPeer();
+function copyRoomId() {
+  if (!currentRoomId) return alert("ルームに参加していません");
+  navigator.clipboard.writeText(currentRoomId);
+  alert("ルームIDをコピーしました: " + currentRoomId);
+}
+
+function leaveRoom() { location.reload(); }
+
+initLocalStream();
 </script>
 </body>
 </html>
