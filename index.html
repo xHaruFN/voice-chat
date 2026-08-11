@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1on1 Direct Voice & Video Browser</title>
+<title>1on1 Voice & Video Browser</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 :root {
@@ -37,7 +37,7 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 .spotlight-area { width: 100%; max-width: 1000px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 2px solid var(--primary); display: none; box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
 .spotlight-area.active { display: block; }
 .spotlight-area video { width: 100%; max-height: 480px; object-fit: contain; display: block; }
-.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #60a5fa; border: 1px solid rgba(255,255,255,0.1); }
+.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #60a5fa; border: 1px solid rgba(255,255,255,0.1); z-index: 10; }
 
 /* ビデオエリア (2分割) */
 .video-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -85,6 +85,7 @@ input[type="text"]:focus { border-color: var(--primary); }
 
 <div class="app-container">
   <div class="stage-container">
+    <!-- 画面共有表示エリア -->
     <div id="spotlightArea" class="spotlight-area">
       <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
       <video id="spotlightVideo" autoplay playsinline muted></video>
@@ -158,6 +159,8 @@ let remoteStream = null;
 let isMicOn = true;
 let isCamOn = false;
 let isScreenSharing = false;
+let isPeerScreenSharing = false;
+let isPeerCamOn = false;
 
 async function initLocalStream() {
   try {
@@ -179,13 +182,11 @@ function initPeer() {
     addSystemMessage("✅ 接続準備完了（自分のIDを相手に教えてください）");
   });
 
-  // データ接続（チャット・制御信号）の着信
   peer.on('connection', (conn) => {
     activeDataConn = conn;
     setupDataConnection();
   });
 
-  // 音声・映像通話の着信
   peer.on('call', (call) => {
     activeMediaCall = call;
     call.answer(getActiveStream());
@@ -207,11 +208,9 @@ function connectToPeer() {
 
   addSystemMessage("📞 通話を呼び出しています...");
 
-  // データ接続確立
   activeDataConn = peer.connect(targetId);
   setupDataConnection();
 
-  // メディア接続（通話）発信
   activeMediaCall = peer.call(targetId, getActiveStream());
   setupMediaCall();
 }
@@ -219,23 +218,23 @@ function connectToPeer() {
 function setupDataConnection() {
   activeDataConn.on('open', () => {
     addSystemMessage("🎉 相手と接続しました！");
-    activeDataConn.send({ type: 'HANDSHAKE', name: myName, isCamOn: isCamOn });
+    activeDataConn.send({ type: 'HANDSHAKE', name: myName, isCamOn: isCamOn, isSharing: isScreenSharing });
   });
 
   activeDataConn.on('data', (data) => {
     if (data.type === 'HANDSHAKE') {
       peerName = data.name;
-      updatePeerUI(peerName, data.isCamOn, remoteStream);
+      isPeerCamOn = data.isCamOn;
+      isPeerScreenSharing = data.isSharing;
+      updatePeerUI();
     } else if (data.type === 'CHAT') {
       appendChatMessage(peerName, data.text, false);
     } else if (data.type === 'SCREEN') {
-      if (data.isSharing) {
-        setSpotlight(`${peerName} の画面`, remoteStream);
-      } else {
-        removeSpotlight();
-      }
+      isPeerScreenSharing = data.isSharing;
+      updatePeerUI();
     } else if (data.type === 'CAM_STATE') {
-      updatePeerUI(peerName, data.isCamOn, remoteStream);
+      isPeerCamOn = data.isCamOn;
+      updatePeerUI();
     }
   });
 
@@ -249,7 +248,7 @@ function setupMediaCall() {
   activeMediaCall.on('stream', (stream) => {
     remoteStream = stream;
     document.getElementById('remoteAudio').srcObject = stream;
-    updatePeerUI(peerName, false, stream);
+    updatePeerUI();
   });
 
   activeMediaCall.on('close', () => {
@@ -278,13 +277,13 @@ async function toggleCamera() {
       const vt = s.getVideoTracks()[0];
       localStream.addTrack(vt);
       isCamOn = true;
-      replaceTracks(vt);
+      if (!isScreenSharing) replaceTracks(vt);
     } catch { alert("カメラを起動できません"); return; }
   } else {
     const vt = localStream.getVideoTracks()[0];
     if (vt) { vt.stop(); localStream.removeTrack(vt); }
     isCamOn = false;
-    replaceTracks(null);
+    if (!isScreenSharing) replaceTracks(null);
   }
   updateControlsUI();
   updateSelfUI();
@@ -340,18 +339,29 @@ function updateSelfUI() {
   }
 }
 
-function updatePeerUI(name, isCamActive, stream) {
-  document.getElementById('labelPeer').textContent = name;
-  document.getElementById('avatarPeer').textContent = name.charAt(0);
+function updatePeerUI() {
+  document.getElementById('labelPeer').textContent = peerName;
+  document.getElementById('avatarPeer').textContent = peerName.charAt(0);
 
   const v = document.getElementById('videoPeer');
   const a = document.getElementById('avatarPeer');
 
-  if (isCamActive && stream) {
-    v.srcObject = stream;
+  // 相手が画面共有中の場合：スポットライトエリアに画面映像を表示
+  if (isPeerScreenSharing && remoteStream) {
+    setSpotlight(`${peerName} の画面`, remoteStream);
+    v.style.display = 'none';
+    a.style.display = 'flex';
+  } 
+  // 相手がカメラONの場合：通常タイルにカメラ映像を表示
+  else if (isPeerCamOn && remoteStream) {
+    if (!isScreenSharing) removeSpotlight();
+    v.srcObject = remoteStream;
     v.style.display = 'block';
     a.style.display = 'none';
-  } else {
+  } 
+  // 映像なし
+  else {
+    if (!isScreenSharing) removeSpotlight();
     v.style.display = 'none';
     a.style.display = 'flex';
   }
@@ -362,13 +372,18 @@ function resetPeerUI() {
   document.getElementById('avatarPeer').textContent = '相手';
   document.getElementById('videoPeer').style.display = 'none';
   document.getElementById('avatarPeer').style.display = 'flex';
+  isPeerScreenSharing = false;
+  isPeerCamOn = false;
   removeSpotlight();
 }
 
 function setSpotlight(title, stream) {
   const area = document.getElementById('spotlightArea');
+  const video = document.getElementById('spotlightVideo');
   document.getElementById('spotlightTitle').textContent = `🖥️ ${title}`;
-  document.getElementById('spotlightVideo').srcObject = stream;
+  if (video.srcObject !== stream) {
+    video.srcObject = stream;
+  }
   area.classList.add('active');
 }
 
