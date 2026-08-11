@@ -740,7 +740,6 @@ document.getElementById(
 ).style.display =
 "inline-block";
 
-// 仮アカウントの場合のみ専用の変更フォームを表示
 if (guestMode) {
   document.getElementById("guestUsernameBox").style.display = "block";
 } else {
@@ -1021,7 +1020,7 @@ stopMicrophone();
 stopCamera();
 stopScreenShare();
 
-if (!guestMode) {
+if (!guestMode && currentUser) {
 
 const user =
 db.users.find(
@@ -2408,20 +2407,35 @@ alert(
 return;
 }
 
+// データベースのpartiesが未初期化の場合は初期化
+if (!Array.isArray(db.parties)) {
+  db.parties = [];
+}
+
+// 自分がすでに含まれているパーティーから自分のIDを削除する
 db.parties.forEach(p => {
-  p.members = p.members.filter(id => id !== currentUser.id);
+  if (Array.isArray(p.members)) {
+    p.members = p.members.filter(id => id !== currentUser.id);
+  } else {
+    p.members = [];
+  }
 });
+
+// メンバーが0人になったパーティーは削除
 db.parties = db.parties.filter(p => p.members.length > 0);
 
+// 指定した部屋名（大文字小文字を区別しない）のパーティーを探す
 let party = db.parties.find(
-  p => p.partyName.toLowerCase() === partyName.toLowerCase()
+  p => p.partyName && p.partyName.toLowerCase() === partyName.toLowerCase()
 );
 
 if (party) {
+  // すでに存在する場合はメンバーに追加
   if (!party.members.includes(currentUser.id)) {
     party.members.push(currentUser.id);
   }
 } else {
+  // 存在しない場合は新しく作成して参加
   party = {
     id: randomID("party"),
     ownerId: currentUser.id,
@@ -2459,9 +2473,14 @@ document.getElementById(
 "partyArea"
 );
 
+if (!Array.isArray(db.parties)) {
+  db.parties = [];
+}
+
 const party =
 db.parties.find(
 p =>
+Array.isArray(p.members) &&
 p.members.includes(
 currentUser.id
 )
