@@ -392,7 +392,6 @@ input[type="text"]:focus {
 ========================================== */
 let myPeer = null;
 let myPeerId = '';
-let hostPeerId = '';
 let currentRoomId = '';
 let myName = 'ユーザー';
 
@@ -403,7 +402,9 @@ let isMicOn = true;
 let isCamOn = false;
 let isScreenSharing = false;
 
-const peers = {}; // peerId -> { call, dataConn, name, stream }
+// 接続中Peer管理マップ
+// key: peerId -> value: { dataConn, call, name, stream }
+const peers = {};
 
 /* DOM要素 */
 const videoGrid = document.getElementById('videoGrid');
@@ -434,7 +435,7 @@ async function initLocalStream() {
 }
 
 /* ==========================================
-   ルーム参加・作成処理（修正版）
+   ルーム参加・接続調停ロジック
 ========================================== */
 function joinOrCreateRoom() {
   myName = document.getElementById('usernameInput').value.trim() || 'ユーザー';
@@ -445,33 +446,34 @@ function joinOrCreateRoom() {
   }
 
   currentRoomId = inputRoomId;
-  hostPeerId = `room-host-${currentRoomId}`; // ホスト専用ID形式
+  const hostPeerId = `room-host-${currentRoomId}`;
 
-  // 既に初期化済みの場合は既存接続を破棄
   if (myPeer) {
     myPeer.destroy();
   }
 
-  // まず自身が「ホスト（親）」になれるか試す
+  // 1. まず自身が固定ホストIDでPeerを作成できるか判定
   myPeer = new Peer(hostPeerId);
 
   myPeer.on('open', (id) => {
-    // 自分がホストになれた場合
+    // 自分がこの部屋の最初のホストになれた場合
     myPeerId = id;
     onJoinedRoom(true);
   });
 
   myPeer.on('error', (err) => {
-    // ホストIDが既に使用されていた場合（＝自分が参加者になる）
+    // ホストIDが既に使用済み（=既に部屋が存在する）場合
     if (err.type === 'unavailable-id') {
-      // ランダムIDで自分のPeerを作成
+      // ランダムIDを発行して自分をゲストとして作成
       myPeer = new Peer();
+      
       myPeer.on('open', (id) => {
         myPeerId = id;
         onJoinedRoom(false);
-        // ホストに接続を試みる
-        connectToPeer(hostPeerId, true);
+        // 既存ホストに接続リクエストを送信
+        connectToTarget(hostPeerId);
       });
+
       setupPeerEvents(myPeer);
     } else {
       console.error("PeerJS Error:", err);
@@ -482,13 +484,13 @@ function joinOrCreateRoom() {
 }
 
 function setupPeerEvents(peer) {
-  // メディアストリーム着信
+  // メディア着信
   peer.on('call', (call) => {
     call.answer(getActiveVideoStream());
     setupCallEvents(call);
   });
 
-  // データチャネル着信
+  // データ通信着信
   peer.on('connection', (conn) => {
     setupDataConnection(conn);
   });
@@ -500,22 +502,29 @@ function onJoinedRoom(isHost) {
   renderUserTile(myPeerId, myName, getActiveVideoStream(), true);
 }
 
-/* 他ユーザーへの接続処理 */
-function connectToPeer(targetPeerId, isHost = false) {
+/* 指定相手との相互接続を開始（Data ＋ Call 双方を同時に確立） */
+function connectToTarget(targetPeerId) {
   if (peers[targetPeerId] || targetPeerId === myPeerId) return;
 
+  // データ接続の開始
   const conn = myPeer.connect(targetPeerId, { metadata: { name: myName } });
   setupDataConnection(conn);
 
+  // 通話接続の開始
   const call = myPeer.call(targetPeerId, getActiveVideoStream(), { metadata: { name: myName } });
   setupCallEvents(call);
 }
 
 function setupDataConnection(conn) {
+  const targetPeerId = conn.peer;
+
   conn.on('open', () => {
-    // 自身の情報を相手に送る
+    if (!peers[targetPeerId]) peers[targetPeerId] = {};
+    peers[targetPeerId].dataConn = conn;
+
+    // ハンドシェイク（名前とPeerID通知）
     conn.send({ type: 'HANDSHAKE', name: myName, peerId: myPeerId });
-    
+
     if (isScreenSharing) {
       conn.send({ type: 'SCREEN_STATE', isSharing: true, name: myName });
     }
@@ -524,28 +533,22 @@ function setupDataConnection(conn) {
   conn.on('data', (data) => {
     switch (data.type) {
       case 'HANDSHAKE':
-        if (!peers[data.peerId]) {
-          peers[data.peerId] = { dataConn: conn, name: data.name };
-          // まだ通話がつながっていなければコールを発信
-          const call = myPeer.call(data.peerId, getActiveVideoStream(), { metadata: { name: myName } });
-          setupCallEvents(call);
-        } else {
-          peers[data.peerId].dataConn = conn;
-          peers[data.peerId].name = data.name;
-        }
+        if (!peers[data.peerId]) peers[data.peerId] = {};
+        peers[data.peerId].dataConn = conn;
+        peers[data.peerId].name = data.name;
 
-        // ホストの場合、他の全員のPeerIDを新規参加者に教える（フルメッシュ構築）
-        if (myPeerId === hostPeerId) {
-          const allMemberIds = Object.keys(peers).concat(myPeerId);
-          broadcastData({ type: 'MEMBER_LIST', members: allMemberIds });
+        // ホストの場合、新参加者に部屋の「既存参加者一覧」を同期送信する
+        if (myPeerId === `room-host-${currentRoomId}`) {
+          const currentMembers = Object.keys(peers).concat(myPeerId);
+          broadcastData({ type: 'MEMBER_SYNC', members: currentMembers });
         }
         break;
 
-      case 'MEMBER_LIST':
-        // 全メンバーの情報を元に、未接続のメンバーへ相互接続
+      case 'MEMBER_SYNC':
+        // ホストから届いた参加者一覧に基づき、まだ未接続の参加者全員へ個別にメッシュ接続を張る
         data.members.forEach(memberId => {
           if (memberId !== myPeerId && !peers[memberId]) {
-            connectToPeer(memberId);
+            connectToTarget(memberId);
           }
         });
         break;
@@ -563,22 +566,24 @@ function setupDataConnection(conn) {
         break;
     }
   });
+
+  conn.on('close', () => {
+    cleanupPeer(targetPeerId);
+  });
 }
 
 function setupCallEvents(call) {
   const remotePeerId = call.peer;
   const remoteName = call.metadata?.name || 'ゲスト';
 
-  if (!peers[remotePeerId]) {
-    peers[remotePeerId] = {};
-  }
+  if (!peers[remotePeerId]) peers[remotePeerId] = {};
   peers[remotePeerId].call = call;
   peers[remotePeerId].name = remoteName;
 
   call.on('stream', (remoteStream) => {
     peers[remotePeerId].stream = remoteStream;
 
-    // 音声再生エレメントの準備
+    // 音声タグ生成・再生
     let audioEl = document.getElementById(`audio-${remotePeerId}`);
     if (!audioEl) {
       audioEl = document.createElement('audio');
@@ -588,19 +593,23 @@ function setupCallEvents(call) {
       remoteAudioContainer.appendChild(audioEl);
     }
     audioEl.srcObject = remoteStream;
-    audioEl.play().catch(e => console.log("Audio Play Event:", e));
+    audioEl.play().catch(() => {});
 
     renderUserTile(remotePeerId, peers[remotePeerId].name || remoteName, remoteStream, false);
   });
 
   call.on('close', () => {
-    removeUserTile(remotePeerId);
-    const audioEl = document.getElementById(`audio-${remotePeerId}`);
-    if (audioEl) audioEl.remove();
-
-    delete peers[remotePeerId];
-    removeSpotlight();
+    cleanupPeer(remotePeerId);
   });
+}
+
+function cleanupPeer(peerId) {
+  removeUserTile(peerId);
+  const audioEl = document.getElementById(`audio-${peerId}`);
+  if (audioEl) audioEl.remove();
+
+  delete peers[peerId];
+  removeSpotlight();
 }
 
 /* ==========================================
@@ -625,7 +634,7 @@ function toggleMic() {
 }
 
 async function toggleCamera() {
-  if (isScreenSharing) return alert("画面共有を終了してからカメラをオンにしてください。");
+  if (isScreenSharing) return alert("画面共有をオフにしてからカメラを切り替えてください。");
 
   if (!isCamOn) {
     try {
@@ -672,7 +681,6 @@ async function toggleScreenShare() {
       broadcastData({ type: 'SCREEN_STATE', isSharing: true, name: myName });
 
     } catch (err) {
-      console.warn("画面共有キャンセル", err);
       return;
     }
   } else {
@@ -738,12 +746,11 @@ function updateControlsUI() {
   micBtn.textContent = isMicOn ? '🎤' : '🔇';
 
   camBtn.className = `control-btn ${isCamOn ? 'active' : 'off'}`;
-
   screenBtn.className = `control-btn ${isScreenSharing ? 'active' : 'off'}`;
 }
 
 /* ==========================================
-   UIレンダリング
+   UI描画ロジック
 ========================================== */
 function renderUserTile(peerId, name, stream, isSelf = false) {
   if (!peerId) return;
