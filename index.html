@@ -13,15 +13,15 @@
     --accent-cyan: #00f0ff;
     --accent-purple: #9d00ff;
     --accent-pink: #ff007f;
+    --accent-yellow: #f3e600;
     --text-main: #f0f3f6;
     --text-muted: #8e9297;
     --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.4);
     --glow-pink: 0 0 15px rgba(255, 0, 127, 0.4);
+    --glow-yellow: 0 0 15px rgba(243, 230, 0, 0.5);
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     margin: 0;
@@ -37,7 +37,6 @@
       radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%);
   }
 
-  /* 左側コントロールパネル */
   .sidebar {
     width: 320px;
     background: var(--bg-panel);
@@ -99,7 +98,6 @@
     padding-right: 35px;
   }
 
-  /* エフェクト選択グリッド */
   .effect-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -130,7 +128,14 @@
     box-shadow: var(--glow-cyan);
   }
 
-  /* メインモニター画面 */
+  /* 音割れボタン専用の特別スタイル */
+  .effect-btn.glitch-active {
+    background: rgba(243, 230, 0, 0.15) !important;
+    color: var(--accent-yellow) !important;
+    border-color: var(--accent-yellow) !important;
+    box-shadow: var(--glow-yellow) !important;
+  }
+
   .main {
     flex: 1;
     padding: 40px;
@@ -172,10 +177,7 @@
     letter-spacing: 0.5px;
   }
 
-  /* スライダー */
-  .slider-group {
-    margin-top: 15px;
-  }
+  .slider-group { margin-top: 15px; }
 
   input[type=range] {
     width: 100%;
@@ -197,7 +199,6 @@
     cursor: pointer;
   }
 
-  /* 起動ボタン */
   #powerBtn {
     background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
     color: #fff;
@@ -228,7 +229,6 @@
 </head>
 <body>
 
-  <!-- サイドバー -->
   <div class="sidebar">
     <div class="brand">
       <span>⚡</span> サイバーマトリクス
@@ -256,13 +256,12 @@
       <button class="effect-btn" onclick="setEffect('radio')">📻 無線機</button>
       <button class="effect-btn" onclick="setEffect('megaphone')">📢 拡声器</button>
       <button class="effect-btn" onclick="setEffect('cave')">🦇 洞窟・エコー</button>
-      <button class="effect-btn" onclick="setEffect('telephone')">☎️ 電話機</button>
+      <button class="effect-btn" onclick="setEffect('crush')" style="color: var(--accent-yellow); border-color: rgba(243,230,0,0.3);">💥 音割れ(爆音)</button>
     </div>
 
     <button id="powerBtn" onclick="toggleVoiceChanger()">システム起動</button>
   </div>
 
-  <!-- メイン画面 -->
   <div class="main">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
@@ -286,6 +285,7 @@ let audioCtx;
 let mediaStream;
 let sourceNode;
 let filterNode;
+let distortionNode;
 let gainNode;
 let currentEffect = 'normal';
 
@@ -310,6 +310,19 @@ async function getDevices() {
   } catch (e) {
     console.error("デバイス取得エラー:", e);
   }
+}
+
+// 歪み（音割れ）用のカーブを生成する関数
+function makeDistortionCurve(amount) {
+  const k = typeof amount === 'number' ? amount : 50;
+  const n_samples = 44100;
+  const curve = new Float32Array(n_samples);
+  const deg = Math.PI / 180;
+  for (let i = 0; i < n_samples; ++i) {
+    const x = (i * 2) / n_samples - 1;
+    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
 }
 
 async function toggleVoiceChanger() {
@@ -339,10 +352,13 @@ async function toggleVoiceChanger() {
     sourceNode = audioCtx.createMediaStreamSource(mediaStream);
     
     filterNode = audioCtx.createBiquadFilter();
+    distortionNode = audioCtx.createWaveShaper();
     gainNode = audioCtx.createGain();
 
+    // 接続ルート: マイク -> フィルター -> ディストーション(音割れ) -> ゲイン -> 出力
     sourceNode.connect(filterNode);
-    filterNode.connect(gainNode);
+    filterNode.connect(distortionNode);
+    distortionNode.connect(gainNode);
 
     const dummyAudio = new Audio();
     const dest = audioCtx.createMediaStreamDestination();
@@ -368,21 +384,30 @@ async function toggleVoiceChanger() {
 
 function setEffect(type) {
   currentEffect = type;
-  document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.effect-btn').forEach(b => {
+    b.classList.remove('active');
+    b.classList.remove('glitch-active');
+  });
+  
+  const clickedBtn = event.currentTarget;
+  if (type === 'crush') {
+    clickedBtn.classList.add('glitch-active');
+  } else {
+    clickedBtn.classList.add('active');
+  }
   
   applyEffectParameters(type);
 }
 
 function applyEffectParameters(type) {
-  if (!filterNode || !audioCtx) return;
+  if (!filterNode || !distortionNode || !audioCtx) return;
   
   filterNode.type = 'allpass';
+  distortionNode.curve = null; // デフォルトは歪みなし
   gainNode.gain.value = 1.0;
 
   switch(type) {
     case 'normal':
-      filterNode.type = 'allpass';
       break;
     case 'female':
       filterNode.type = 'highpass';
@@ -422,10 +447,11 @@ function applyEffectParameters(type) {
       filterNode.type = 'lowpass';
       filterNode.frequency.value = 600;
       break;
-    case 'telephone':
+    case 'crush': // 💥 音割れ演出モード
       filterNode.type = 'bandpass';
       filterNode.frequency.value = 1200;
-      filterNode.Q.value = 4;
+      distortionNode.curve = makeDistortionCurve(800); // 激しく波形を潰して音割れさせる
+      gainNode.gain.value = 2.5; // 爆音化
       break;
   }
   document.getElementById('freqRange').value = filterNode.frequency.value || 1000;
