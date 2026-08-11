@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>CYBER-X // Voice Matrix UI</title>
+<title>CYBER-MATRIX // ボイスチェンジャー</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap');
 
   :root {
     --bg-base: #0a0b10;
@@ -14,7 +14,7 @@
     --accent-purple: #9d00ff;
     --accent-pink: #ff007f;
     --text-main: #f0f3f6;
-    --text-muted: #6b7280;
+    --text-muted: #8e9297;
     --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.4);
     --glow-pink: 0 0 15px rgba(255, 0, 127, 0.4);
   }
@@ -27,14 +27,14 @@
     margin: 0;
     background: var(--bg-base);
     color: var(--text-main);
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 16px;
+    font-family: 'Noto Sans JP', 'Rajdhani', sans-serif;
+    font-size: 15px;
     height: 100vh;
     display: flex;
     overflow: hidden;
     background-image: 
-      radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.05) 0%, transparent 40%);
+      radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%);
   }
 
   /* 左側コントロールパネル */
@@ -51,12 +51,12 @@
   }
 
   .brand {
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
     font-weight: 900;
-    font-size: 20px;
+    font-size: 18px;
     color: var(--accent-cyan);
     text-shadow: var(--glow-cyan);
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -64,12 +64,11 @@
   }
 
   h3 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 700;
     color: var(--text-muted);
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     margin: 10px 0 5px;
-    text-transform: uppercase;
   }
 
   select, button {
@@ -79,9 +78,9 @@
     border: 1px solid rgba(255,255,255,0.08);
     color: var(--text-main);
     border-radius: 6px;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -110,10 +109,10 @@
   .effect-btn {
     background: var(--bg-element);
     border: 1px solid rgba(255,255,255,0.05);
-    padding: 10px;
+    padding: 10px 6px;
     text-align: center;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--text-muted);
     transition: 0.2s;
@@ -160,18 +159,17 @@
   }
 
   .card h2 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 18px;
+    font-size: 17px;
+    font-weight: 900;
     margin-top: 0;
     color: var(--text-main);
     letter-spacing: 1px;
   }
 
   #vcStatus {
-    font-family: 'Orbitron', sans-serif;
     font-size: 14px;
-    letter-spacing: 1px;
     font-weight: 700;
+    letter-spacing: 0.5px;
   }
 
   /* スライダー */
@@ -203,9 +201,10 @@
   #powerBtn {
     background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
     color: #fff;
-    font-family: 'Orbitron', sans-serif;
-    letter-spacing: 2px;
+    font-family: 'Noto Sans JP', sans-serif;
+    letter-spacing: 1px;
     font-weight: 900;
+    font-size: 15px;
     border: none;
     box-shadow: var(--glow-cyan);
     margin-top: auto;
@@ -217,11 +216,11 @@
   }
 
   .cyber-badge {
-    font-size: 10px;
+    font-size: 11px;
     font-family: 'Orbitron', sans-serif;
     background: rgba(0, 240, 255, 0.1);
     color: var(--accent-cyan);
-    padding: 2px 6px;
+    padding: 3px 8px;
     border-radius: 4px;
     border: 1px solid rgba(0, 240, 255, 0.3);
   }
@@ -232,13 +231,13 @@
   <!-- サイドバー -->
   <div class="sidebar">
     <div class="brand">
-      <span>⚡</span> CYBER-MATRIX
+      <span>⚡</span> サイバーマトリクス
     </div>
 
-    <h3>AUDIO INPUT // マイク</h3>
+    <h3>🎙️ 音声入力 // マイク選択</h3>
     <select id="micInputSelect"></select>
 
-    <h3>VIRTUAL ROUTE // 仮想出力</h3>
+    <h3>🎧 仮想出力 // 仮想マイク</h3>
     <select id="audioOutputSelect"></select>
     <div style="font-size:11px; color:var(--text-muted); line-height: 1.4;">
       ※VB-Cable等を指定してフォートナイトへ接続
@@ -246,37 +245,37 @@
 
     <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:5px 0;">
 
-    <h3>MODULATION // ボイスエフェクト</h3>
+    <h3>🎛️ ボイスエフェクト種類</h3>
     <div class="effect-grid">
-      <button class="effect-btn active" onclick="setEffect('normal')">NORMAL</button>
-      <button class="effect-btn" onclick="setEffect('female')">FEMALE</button>
-      <button class="effect-btn" onclick="setEffect('male')">MALE</button>
-      <button class="effect-btn" onclick="setEffect('chipmunk')">CHIPMUNK</button>
-      <button class="effect-btn" onclick="setEffect('demon')">DEMON</button>
-      <button class="effect-btn" onclick="setEffect('robot')">CYBORG</button>
-      <button class="effect-btn" onclick="setEffect('radio')">RADIO</button>
-      <button class="effect-btn" onclick="setEffect('megaphone')">MEGAPHONE</button>
-      <button class="effect-btn" onclick="setEffect('cave')">CAVE</button>
-      <button class="effect-btn" onclick="setEffect('telephone')">TELECOM</button>
+      <button class="effect-btn active" onclick="setEffect('normal')">ノーマル</button>
+      <button class="effect-btn" onclick="setEffect('female')">👩 女声風</button>
+      <button class="effect-btn" onclick="setEffect('male')">👨 男声風</button>
+      <button class="effect-btn" onclick="setEffect('chipmunk')">🐿️ シマリス</button>
+      <button class="effect-btn" onclick="setEffect('demon')">😈 悪魔・低音</button>
+      <button class="effect-btn" onclick="setEffect('robot')">🤖 サイボーグ</button>
+      <button class="effect-btn" onclick="setEffect('radio')">📻 無線機</button>
+      <button class="effect-btn" onclick="setEffect('megaphone')">📢 拡声器</button>
+      <button class="effect-btn" onclick="setEffect('cave')">🦇 洞窟・エコー</button>
+      <button class="effect-btn" onclick="setEffect('telephone')">☎️ 電話機</button>
     </div>
 
-    <button id="powerBtn" onclick="toggleVoiceChanger()">SYSTEM START</button>
+    <button id="powerBtn" onclick="toggleVoiceChanger()">システム起動</button>
   </div>
 
   <!-- メイン画面 -->
   <div class="main">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-        <h2>STATUS MONITOR</h2>
+        <h2>システムステータス</h2>
         <span class="cyber-badge">ONLINE SYNC</span>
       </div>
-      <p id="vcStatus" style="color: var(--accent-pink);">[ SYSTEM OFFLINE ] // 起動ボタンを押してください</p>
+      <p id="vcStatus" style="color: var(--accent-pink);">【 システム停止中 】 起動ボタンを押してください</p>
     </div>
     
     <div class="card" style="border-left-color: var(--accent-purple);">
-      <h2>FREQUENCY MATRIX</h2>
+      <h2>周波数マトリクス・微調整</h2>
       <div class="slider-group">
-        <label style="font-size: 13px; color: var(--text-muted);">CUTOFF FREQUENCY: <span id="freqVal" style="color: var(--accent-cyan); font-weight:700;">1000</span> Hz</label>
+        <label style="font-size: 13px; color: var(--text-muted);">カットオフ周波数: <span id="freqVal" style="color: var(--accent-cyan); font-weight:700;">1000</span> Hz</label>
         <input type="range" id="freqRange" min="100" max="8000" step="100" value="1000" oninput="updateFreq(this.value)">
       </div>
     </div>
@@ -321,10 +320,10 @@ async function toggleVoiceChanger() {
     audioCtx.close();
     audioCtx = null;
     if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-    statusElem.textContent = "[ SYSTEM OFFLINE ] // 停止中";
+    statusElem.textContent = "【 システム停止中 】 起動ボタンを押してください";
     statusElem.style.color = "var(--accent-pink)";
     powerBtn.classList.remove('active');
-    powerBtn.textContent = "SYSTEM START";
+    powerBtn.textContent = "システム起動";
     return;
   }
 
@@ -357,10 +356,10 @@ async function toggleVoiceChanger() {
 
     applyEffectParameters(currentEffect);
 
-    statusElem.textContent = "[ MATRIX ACTIVE ] // 音声ストリーム転送中 (Fortnite連携対応)";
+    statusElem.textContent = "【 稼働中 】 音声変換・仮想マイクへ出力中 (フォートナイト対応)";
     statusElem.style.color = "var(--accent-cyan)";
     powerBtn.classList.add('active');
-    powerBtn.textContent = "SYSTEM SHUTDOWN";
+    powerBtn.textContent = "システム停止";
 
   } catch (err) {
     alert("初期化エラー: " + err.message);
