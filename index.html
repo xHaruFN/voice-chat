@@ -39,18 +39,18 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 .app-container { flex: 1; display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px - 72px); }
 .stage-container { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; align-items: center; justify-content: center; }
 
-/* 画面共有領域 */
+/* 画面共有領域（大きめ表示） */
 .spotlight-area { width: 100%; max-width: 1000px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 1px solid var(--primary); display: none; }
 .spotlight-area.active { display: block; }
-.spotlight-area video { width: 100%; max-height: 480px; object-fit: contain; display: block; }
-.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; color: #818cf8; }
+.spotlight-area video { width: 100%; max-height: 520px; object-fit: contain; display: block; }
+.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; color: #818cf8; z-index: 10; }
 
 /* ユーザーグリッド */
 .video-grid { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .user-tile { background: var(--bg-card); border-radius: 16px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
 .user-tile video { width: 100%; height: 100%; object-fit: cover; }
 
-/* アバターと喋っている時のエフェクト */
+/* アバターと話者エフェクト */
 .avatar { width: 85px; height: 85px; border-radius: 50%; background: #334155; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; border: 4px solid transparent; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
 .avatar.speaking { border-color: var(--speaking); box-shadow: 0 0 25px rgba(16, 185, 129, 0.7); transform: scale(1.05); }
 
@@ -92,9 +92,10 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 
 <div class="app-container">
   <div class="stage-container">
+    <!-- スポットライト（画面共有表示用） -->
     <div id="spotlightArea" class="spotlight-area">
       <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
-      <video id="spotlightVideo" autoplay playsinline muted></video>
+      <video id="spotlightVideo" autoplay playsinline></video>
     </div>
 
     <div class="video-grid">
@@ -234,19 +235,16 @@ function setupDataConnection() {
     } else if (data.type === 'CHAT') {
       appendChatMessage(peerName, data.text, false);
     } else if (data.type === 'SCREEN') {
+      // 相手の画面共有状態の変更を受信
       isPeerScreenSharing = data.isSharing;
       updatePeerUI();
     } else if (data.type === 'CAM_STATE') {
       isPeerCamOn = data.isCamOn;
       updatePeerUI();
     } else if (data.type === 'SPEAKING') {
-      // 相手の発話状態を受け取りエフェクトを更新
       const avatarPeer = document.getElementById('avatarPeer');
-      if (data.isSpeaking) {
-        avatarPeer.classList.add('speaking');
-      } else {
-        avatarPeer.classList.remove('speaking');
-      }
+      if (data.isSpeaking) avatarPeer.classList.add('speaking');
+      else avatarPeer.classList.remove('speaking');
     }
   });
 
@@ -268,7 +266,7 @@ function getActiveStream() {
   return isScreenSharing && screenStream ? screenStream : localStream;
 }
 
-// 自分のマイク入力から発声判定し、自分と相手両方のエフェクトを更新
+// マイク入力から発声判定（お互いにリングを光らせる）
 function setupAudioAnalysis(stream) {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   const analyser = ctx.createAnalyser();
@@ -287,15 +285,9 @@ function setupAudioAnalysis(stream) {
       if (speakingNow !== isSelfSpeaking) {
         isSelfSpeaking = speakingNow;
         const avatarSelf = document.getElementById('avatarSelf');
-        
-        // 自分の画面のエフェクト更新
-        if (isSelfSpeaking) {
-          avatarSelf.classList.add('speaking');
-        } else {
-          avatarSelf.classList.remove('speaking');
-        }
+        if (isSelfSpeaking) avatarSelf.classList.add('speaking');
+        else avatarSelf.classList.remove('speaking');
 
-        // 相手に発話状態（ON/OFF）をリアルタイム通信
         sendSignal({ type: 'SPEAKING', isSpeaking: isSelfSpeaking });
       }
     } else if (isSelfSpeaking) {
@@ -338,36 +330,68 @@ async function toggleCamera() {
   sendSignal({ type: 'CAM_STATE', isCamOn });
 }
 
+// 画面共有の開始／停止処理
 async function toggleScreenShare() {
   if (!isScreenSharing) {
     try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      // 画面のキャプチャを取得
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
       const st = screenStream.getVideoTracks()[0];
+      
+      // ブラウザ標準の「共有停止」ボタンを押した時のハンドリング
       st.onended = () => stopScreenShare();
+      
       isScreenSharing = true;
+      
+      // 相手へ送信している映像トラックを画面映像に即座に差し替え
       replaceTracks(st);
-      setSpotlight(`${myName} の画面`, screenStream);
+      
+      // 自分の画面にもスポットライト表示
+      setSpotlight(`${myName} の画面（自分）`, screenStream, true);
+      
+      // 相手に画面共有開始を通知
       sendSignal({ type: 'SCREEN', isSharing: true });
-    } catch { return; }
-  } else stopScreenShare();
+    } catch (e) { 
+      return; 
+    }
+  } else {
+    stopScreenShare();
+  }
   updateControlsUI();
 }
 
 function stopScreenShare() {
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  if (screenStream) { 
+    screenStream.getTracks().forEach(t => t.stop()); 
+    screenStream = null; 
+  }
   isScreenSharing = false;
+  
+  // 送信トラックをカメラ（または無映像）に戻す
   replaceTracks(isCamOn ? localStream.getVideoTracks()[0] : null);
+  
+  // スポットライト表示の解除
   removeSpotlight();
+  
+  // 相手に画面共有終了を通知
   sendSignal({ type: 'SCREEN', isSharing: false });
   updateControlsUI();
+  
+  // 相手側で画面共有中であればそれを再描画
+  if (isPeerScreenSharing) updatePeerUI();
 }
 
+// 通信中の映像トラックをリアルタイム差し替えするWebRTC処理
 function replaceTracks(track) {
   if (activeMediaCall && activeMediaCall.peerConnection) {
     const senders = activeMediaCall.peerConnection.getSenders();
-    const s = senders.find(sender => sender.track && sender.track.kind === 'video');
-    if (s) s.replaceTrack(track);
-    else if (track) activeMediaCall.peerConnection.addTrack(track, getActiveStream());
+    const videoSender = senders.find(sender => sender.track && sender.track.kind === 'video');
+    
+    if (videoSender) {
+      videoSender.replaceTrack(track);
+    } else if (track) {
+      activeMediaCall.peerConnection.addTrack(track, getActiveStream());
+    }
   }
 }
 
@@ -384,6 +408,7 @@ function updateSelfUI() {
   }
 }
 
+// 相手の状態変化・映像受信時の画面更新
 function updatePeerUI() {
   document.getElementById('labelPeer').textContent = peerName;
   document.getElementById('avatarPeer').textContent = peerName.charAt(0);
@@ -391,19 +416,35 @@ function updatePeerUI() {
   const v = document.getElementById('videoPeer');
   const a = document.getElementById('avatarPeer');
 
+  // 1. 相手が画面共有している場合（スポットライトに表示）
   if (isPeerScreenSharing && remoteStream) {
-    setSpotlight(`${peerName} の画面`, remoteStream);
+    setSpotlight(`${peerName} の画面`, remoteStream, false);
     v.style.display = 'none';
     a.style.display = 'flex';
-  } else if (isPeerCamOn && remoteStream) {
-    if (!isScreenSharing) removeSpotlight();
-    v.srcObject = remoteStream;
-    v.style.display = 'block';
-    a.style.display = 'none';
-  } else {
-    if (!isScreenSharing) removeSpotlight();
-    v.style.display = 'none';
-    a.style.display = 'flex';
+  } 
+  // 2. 自分が画面共有中の場合（自分の画面共有をスポットライトにキープ）
+  else if (isScreenSharing && screenStream) {
+    setSpotlight(`${myName} の画面（自分）`, screenStream, true);
+    if (isPeerCamOn && remoteStream) {
+      v.srcObject = remoteStream;
+      v.style.display = 'block';
+      a.style.display = 'none';
+    } else {
+      v.style.display = 'none';
+      a.style.display = 'flex';
+    }
+  }
+  // 3. どちらも画面共有していない場合（通常のカメラ表示/アバター表示）
+  else {
+    removeSpotlight();
+    if (isPeerCamOn && remoteStream) {
+      v.srcObject = remoteStream;
+      v.style.display = 'block';
+      a.style.display = 'none';
+    } else {
+      v.style.display = 'none';
+      a.style.display = 'flex';
+    }
   }
 }
 
@@ -415,20 +456,25 @@ function resetPeerUI() {
   document.getElementById('avatarPeer').classList.remove('speaking');
   isPeerScreenSharing = false;
   isPeerCamOn = false;
-  removeSpotlight();
+  if (!isScreenSharing) removeSpotlight();
 }
 
-function setSpotlight(title, stream) {
+function setSpotlight(title, stream, isMuted) {
   const area = document.getElementById('spotlightArea');
   const video = document.getElementById('spotlightVideo');
   document.getElementById('spotlightTitle').textContent = `🖥️ ${title}`;
-  if (video.srcObject !== stream) video.srcObject = stream;
+  video.muted = isMuted; // 自分の共有画面の場合はハウリング防止でミュート
+  if (video.srcObject !== stream) {
+    video.srcObject = stream;
+  }
   area.classList.add('active');
 }
 
 function removeSpotlight() {
-  document.getElementById('spotlightArea').classList.remove('active');
-  document.getElementById('spotlightVideo').srcObject = null;
+  const area = document.getElementById('spotlightArea');
+  const video = document.getElementById('spotlightVideo');
+  area.classList.remove('active');
+  video.srcObject = null;
 }
 
 function sendSignal(data) {
