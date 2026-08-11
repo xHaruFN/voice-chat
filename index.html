@@ -72,6 +72,10 @@
       opacity: 0.9;
     }
 
+    .logout {
+      background: #dc2626;
+    }
+
     .user {
       display: flex;
       align-items: center;
@@ -97,8 +101,8 @@
       color: #9ca3af;
     }
 
-    .hidden {
-      display: none;
+    #accountStatus {
+      color: #9ca3af;
     }
   </style>
 </head>
@@ -115,74 +119,136 @@
   <div class="card" id="accountCard">
     <h2>👤 アカウント</h2>
 
-    <input id="email" type="email" placeholder="メールアドレス">
-    <input id="password" type="password" placeholder="パスワード">
+    <input
+      id="email"
+      type="email"
+      placeholder="メールアドレス"
+    >
 
-    <button onclick="signUp()">アカウント作成</button>
-    <button onclick="signIn()">ログイン</button>
-    <button onclick="createGuest()">仮アカウント</button>
+    <input
+      id="password"
+      type="password"
+      placeholder="パスワード"
+    >
 
-    <p id="accountStatus"></p>
+    <button onclick="signUp()">
+      アカウント作成
+    </button>
+
+    <button onclick="signIn()">
+      ログイン
+    </button>
+
+    <button onclick="createGuest()">
+      👻 仮アカウント
+    </button>
+
+    <button
+      class="logout"
+      onclick="signOut()"
+    >
+      ログアウト
+    </button>
+
+    <p id="accountStatus">
+      ログインしていません
+    </p>
   </div>
+
 
   <!-- 自分 -->
   <div class="card">
+
     <h2>自分</h2>
 
     <div class="user">
-      <div class="avatar">👤</div>
+
+      <div class="avatar">
+        👤
+      </div>
 
       <div>
-        <strong id="username">未ログイン</strong>
-        <div id="onlineStatus">⚪ オフライン</div>
+
+        <strong id="username">
+          未ログイン
+        </strong>
+
+        <div id="onlineStatus">
+          ⚪ オフライン
+        </div>
+
       </div>
+
     </div>
 
     <br>
 
-    <button id="micButton" onclick="toggleMic()">
+    <button
+      id="micButton"
+      onclick="toggleMic()"
+    >
       🎤 マイクON
     </button>
 
     <div id="status">
       マイクをONにするとここに状態が表示されます。
     </div>
+
   </div>
+
 
   <!-- フレンド -->
   <div class="card">
+
     <h2>👥 フレンド</h2>
 
-    <p>フレンド機能は次の段階で追加します。</p>
+    <p>
+      フレンド機能は次の段階で追加します。
+    </p>
 
-    <button onclick="alert('フレンド機能を追加予定です！')">
+    <button onclick="addFriend()">
       ＋ フレンド追加
     </button>
+
   </div>
+
 
   <!-- パーティー -->
   <div class="card">
+
     <h2>🎉 パーティー</h2>
 
-    <button onclick="alert('パーティー機能を追加予定です！')">
+    <p>
+      パーティーを作成してフレンドと遊ぼう！
+    </p>
+
+    <button onclick="createParty()">
       ＋ パーティー作成
     </button>
+
   </div>
 
 </main>
 
+
 <script>
+
   // ==========================================
   // Supabase設定
   // ==========================================
 
-  const SUPABASE_URL = "https://znzwsbumfqderjoehrwd.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_HbZtKu-et14XUIGwIegw0g_ltLcrBhl";
+  const SUPABASE_URL =
+    "https://znzwsbumfqderjoehrwd.supabase.co";
 
-  const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+  const SUPABASE_KEY =
+    "sb_publishable_HbZtKu-et14XUIGwIegw0g_ltLcrBhl";
+
+
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
 
 
   // ==========================================
@@ -198,24 +264,40 @@
       document.getElementById("password").value;
 
     if (!email || !password) {
-      alert("メールアドレスとパスワードを入力してください。");
+
+      alert(
+        "メールアドレスとパスワードを入力してください。"
+      );
+
       return;
     }
 
-    const { data, error } =
+    const {
+      data,
+      error
+    } =
       await supabaseClient.auth.signUp({
         email: email,
         password: password
       });
 
     if (error) {
-      alert("アカウント作成エラー: " + error.message);
+
+      alert(
+        "アカウント作成エラー: " +
+        error.message
+      );
+
       return;
     }
 
+    document.getElementById(
+      "accountStatus"
+    ).textContent =
+      "✅ アカウントを作成しました";
+
     alert(
-      "アカウントを作成しました！\n" +
-      "メール確認が必要な設定の場合はメールを確認してください。"
+      "アカウントを作成しました！"
     );
   }
 
@@ -233,29 +315,72 @@
       document.getElementById("password").value;
 
     if (!email || !password) {
-      alert("メールアドレスとパスワードを入力してください。");
+
+      alert(
+        "メールアドレスとパスワードを入力してください。"
+      );
+
       return;
     }
 
-    const { data, error } =
+    const {
+      data,
+      error
+    } =
       await supabaseClient.auth.signInWithPassword({
         email: email,
         password: password
       });
 
     if (error) {
-      alert("ログインエラー: " + error.message);
+
+      alert(
+        "ログインエラー: " +
+        error.message
+      );
+
       return;
     }
 
-    document.getElementById("accountStatus").textContent =
-      "✅ ログインしました";
+    updateUserUI(data.user);
+  }
 
-    document.getElementById("username").textContent =
-      email;
 
-    document.getElementById("onlineStatus").textContent =
-      "🟢 オンライン";
+  // ==========================================
+  // ログアウト
+  // ==========================================
+
+  async function signOut() {
+
+    const {
+      error
+    } =
+      await supabaseClient.auth.signOut();
+
+    if (error) {
+
+      alert(
+        "ログアウトに失敗しました: " +
+        error.message
+      );
+
+      return;
+    }
+
+    document.getElementById(
+      "username"
+    ).textContent =
+      "未ログイン";
+
+    document.getElementById(
+      "onlineStatus"
+    ).textContent =
+      "⚪ オフライン";
+
+    document.getElementById(
+      "accountStatus"
+    ).textContent =
+      "ログアウトしました";
   }
 
 
@@ -263,20 +388,30 @@
   // 仮アカウント
   // ==========================================
 
-  async function createGuest() {
+  function createGuest() {
 
     const guestName =
       "Guest_" +
-      Math.floor(100000 + Math.random() * 900000);
+      Math.floor(
+        100000 +
+        Math.random() * 900000
+      );
 
-    document.getElementById("username").textContent =
+    document.getElementById(
+      "username"
+    ).textContent =
       guestName;
 
-    document.getElementById("onlineStatus").textContent =
+    document.getElementById(
+      "onlineStatus"
+    ).textContent =
       "🟢 オンライン";
 
-    document.getElementById("accountStatus").textContent =
-      "👻 仮アカウント: " + guestName;
+    document.getElementById(
+      "accountStatus"
+    ).textContent =
+      "👻 仮アカウント: " +
+      guestName;
 
     alert(
       "仮アカウントを作成しました！\n\n" +
@@ -286,11 +421,60 @@
 
 
   // ==========================================
+  // ユーザー表示
+  // ==========================================
+
+  function updateUserUI(user) {
+
+    if (!user) {
+      return;
+    }
+
+    document.getElementById(
+      "username"
+    ).textContent =
+      user.email;
+
+    document.getElementById(
+      "onlineStatus"
+    ).textContent =
+      "🟢 オンライン";
+
+    document.getElementById(
+      "accountStatus"
+    ).textContent =
+      "✅ ログイン中";
+  }
+
+
+  // ==========================================
+  // ログイン状態確認
+  // ==========================================
+
+  async function checkUser() {
+
+    const {
+      data: {
+        user
+      }
+    } =
+      await supabaseClient.auth.getUser();
+
+    if (user) {
+      updateUserUI(user);
+    }
+  }
+
+  checkUser();
+
+
+  // ==========================================
   // マイク
   // ==========================================
 
   let microphone = null;
   let micEnabled = false;
+
 
   async function toggleMic() {
 
@@ -299,16 +483,21 @@
       try {
 
         microphone =
-          await navigator.mediaDevices.getUserMedia({
-            audio: true
-          });
+          await navigator.mediaDevices
+            .getUserMedia({
+              audio: true
+            });
 
         micEnabled = true;
 
-        document.getElementById("micButton").textContent =
+        document.getElementById(
+          "micButton"
+        ).textContent =
           "🔇 マイクOFF";
 
-        document.getElementById("status").textContent =
+        document.getElementById(
+          "status"
+        ).textContent =
           "🎤 マイクON";
 
       } catch (error) {
@@ -321,47 +510,53 @@
 
     } else {
 
-      microphone.getTracks().forEach(track => {
-        track.stop();
-      });
+      microphone
+        .getTracks()
+        .forEach(track => {
+          track.stop();
+        });
 
       microphone = null;
       micEnabled = false;
 
-      document.getElementById("micButton").textContent =
+      document.getElementById(
+        "micButton"
+      ).textContent =
         "🎤 マイクON";
 
-      document.getElementById("status").textContent =
+      document.getElementById(
+        "status"
+      ).textContent =
         "🔇 マイクOFF";
     }
   }
 
 
   // ==========================================
-  // ログイン状態の確認
+  // フレンド
   // ==========================================
 
-  async function checkUser() {
+  function addFriend() {
 
-    const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
-
-    if (user) {
-
-      document.getElementById("username").textContent =
-        user.email;
-
-      document.getElementById("onlineStatus").textContent =
-        "🟢 オンライン";
-    }
+    alert(
+      "フレンド機能は次の段階で追加します！"
+    );
   }
 
-  checkUser();
+
+  // ==========================================
+  // パーティー
+  // ==========================================
+
+  function createParty() {
+
+    alert(
+      "パーティー作成機能は次の段階で追加します！"
+    );
+  }
 
 </script>
 
 </body>
 </html>
 ```
-
