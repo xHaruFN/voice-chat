@@ -367,6 +367,17 @@ video {
 ユーザー名変更
 </button>
 
+<div id="guestUsernameBox" style="display:none; margin-top:15px;">
+  <input
+    id="guestNewUsername"
+    maxlength="30"
+    placeholder="仮アカウントの新しい名前"
+  >
+  <button class="green" onclick="changeGuestUsername()">
+    仮アカウントの名前を変更
+  </button>
+</div>
+
 <h3>🔑 パスワード変更</h3>
 
 <input
@@ -729,6 +740,13 @@ document.getElementById(
 ).style.display =
 "inline-block";
 
+// 仮アカウントの場合のみ専用の変更フォームを表示
+if (guestMode) {
+  document.getElementById("guestUsernameBox").style.display = "block";
+} else {
+  document.getElementById("guestUsernameBox").style.display = "none";
+}
+
 setStatus("online");
 
 }
@@ -780,6 +798,8 @@ document.getElementById(
 "awayButton"
 ).style.display =
 "none";
+
+document.getElementById("guestUsernameBox").style.display = "none";
 
 }
 
@@ -985,8 +1005,7 @@ loadFriendRequests();
 renderParty();
 
 alert(
-"仮アカウントを作成しました！\n\n" +
-guestName
+"仮アカウントを作成しました！\n下の「アカウント設定」から名前を変更できます。"
 );
 
 }
@@ -1129,7 +1148,7 @@ return;
 if (guestMode) {
 
 alert(
-"仮アカウントではユーザー名を変更できません。"
+"仮アカウント専用の変更ボタンをご利用ください。"
 );
 
 return;
@@ -1189,6 +1208,54 @@ document.getElementById(
 
 document.getElementById(
 "newUsername"
+).value = "";
+
+}
+
+
+/* ==========================================
+   仮アカウントのユーザー名変更
+========================================== */
+
+function changeGuestUsername() {
+
+if (!currentUser || !guestMode) {
+return;
+}
+
+const name =
+document.getElementById(
+"guestNewUsername"
+).value.trim();
+
+if (!name) {
+
+alert(
+"新しい名前を入力してください。"
+);
+
+return;
+}
+
+currentUser.username = name;
+
+document.getElementById(
+"username"
+).textContent =
+name;
+
+document.getElementById(
+"accountStatus"
+).textContent =
+"👻 仮アカウント: " + name;
+
+document.getElementById(
+"settingsStatus"
+).textContent =
+"✅ 仮アカウントの名前を変更しました。";
+
+document.getElementById(
+"guestNewUsername"
 ).value = "";
 
 }
@@ -2341,24 +2408,20 @@ alert(
 return;
 }
 
-// 既に自分がどこかのパーティーに参加している場合は一度抜ける
 db.parties.forEach(p => {
   p.members = p.members.filter(id => id !== currentUser.id);
 });
 db.parties = db.parties.filter(p => p.members.length > 0);
 
-// 該当する部屋名がすでに存在するか探す
 let party = db.parties.find(
   p => p.partyName.toLowerCase() === partyName.toLowerCase()
 );
 
 if (party) {
-  // すでに存在する場合は参加
   if (!party.members.includes(currentUser.id)) {
     party.members.push(currentUser.id);
   }
 } else {
-  // 存在しない場合は新しく作成して参加
   party = {
     id: randomID("party"),
     ownerId: currentUser.id,
