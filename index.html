@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>P2P Mesh Voice & Chat Browser</title>
+<title>Perfect WebRTC Party Room</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 :root {
@@ -32,13 +32,13 @@ header { height: 60px; background: var(--bg-card); border-bottom: 1px solid var(
 .app-container { flex: 1; display: grid; grid-template-columns: 1fr 350px; height: calc(100vh - 60px - 72px); }
 .stage-container { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; align-items: center; }
 
-/* 画面共有スポットライト */
+/* スポットライト（画面共有） */
 .spotlight-area { width: 100%; max-width: 1200px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 2px solid var(--primary); display: none; box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
 .spotlight-area.active { display: block; }
 .spotlight-area video { width: 100%; max-height: 540px; object-fit: contain; display: block; }
 .spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #60a5fa; border: 1px solid rgba(255,255,255,0.1); }
 
-/* ビデオグリッド */
+/* ビデオ・アイコン グリッド */
 .video-grid { width: 100%; max-width: 1200px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .user-tile { background: var(--bg-card); border-radius: 14px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 .user-tile video { width: 100%; height: 100%; object-fit: cover; }
@@ -75,9 +75,9 @@ input[type="text"]:focus { border-color: var(--primary); }
 <body>
 
 <header>
-  <div class="logo">🎙️ Mesh Voice Chat</div>
+  <div class="logo">🎙️ VoiceParty</div>
   <div class="room-badge">
-    <span>ROOM: <strong id="currentRoomDisplay">未参加</strong></span>
+    <span>ルームID: <strong id="currentRoomDisplay">未参加</strong></span>
     <button class="copy-btn" onclick="copyRoomId()">コピー</button>
   </div>
 </header>
@@ -145,7 +145,7 @@ async function initLocalStream() {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   } catch (e) {
-    addSystemMessage("⚠️ マイクを取得できませんでした（無音モードで開始）");
+    addSystemMessage("⚠️ マイクを取得できませんでした（無音モードで待機）");
     localStream = new MediaStream();
     isMicOn = false;
     updateControlsUI();
