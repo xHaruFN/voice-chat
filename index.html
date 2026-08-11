@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voice & Screen Share Party Room</title>
-<!-- PeerJS CDN -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 :root {
@@ -14,320 +13,47 @@
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --danger: #ef4444;
-  --success: #22c55e;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+body { background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
+header { height: 60px; background: var(--bg-card); border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+.room-info { display: flex; align-items: center; gap: 12px; background: var(--bg-dark); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; }
+.copy-btn { background: var(--primary); border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
 
-body {
-  background-color: var(--bg-dark);
-  color: var(--text-main);
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+.app-container { flex: 1; display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px - 72px); }
+.stage-container { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; align-items: center; }
 
-/* ヘッダー */
-header {
-  height: 60px;
-  background-color: var(--bg-card);
-  border-bottom: 1px solid #334155;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-}
+.spotlight-area { width: 100%; max-width: 1100px; background: #000; border-radius: 12px; overflow: hidden; position: relative; border: 2px solid var(--primary); display: none; }
+.spotlight-area.active { display: block; }
+.spotlight-area video { width: 100%; max-height: 500px; object-fit: contain; }
+.spotlight-header { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.85); padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--primary); }
 
-.logo {
-  font-size: 1.25rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.video-grid { width: 100%; max-width: 1100px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.user-tile { background: var(--bg-card); border-radius: 12px; aspect-ratio: 16/9; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.user-tile video { width: 100%; height: 100%; object-fit: cover; }
+.avatar-placeholder { width: 60px; height: 60px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; }
+.tile-overlay { position: absolute; bottom: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; background: rgba(15, 23, 42, 0.75); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; }
 
-.room-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--bg-dark);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-}
+.sidebar { background: var(--bg-card); border-left: 1px solid #334155; display: flex; flex-direction: column; }
+.sidebar-section { padding: 16px; border-bottom: 1px solid #334155; }
+.join-box { display: flex; flex-direction: column; gap: 8px; }
+input[type="text"] { background: var(--bg-input); border: 1px solid #475569; color: white; padding: 10px; border-radius: 8px; outline: none; }
+.btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-.copy-btn {
-  background: var(--primary);
-  border: none;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: opacity 0.2s;
-}
+.chat-container { flex: 1; display: flex; flex-direction: column; padding: 16px; overflow: hidden; }
+.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.msg { background: var(--bg-input); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; max-width: 90%; word-break: break-word; }
+.msg.mine { align-self: flex-end; background: var(--primary); }
+.msg .author { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
 
-.copy-btn:hover { opacity: 0.85; }
-
-/* メインレイアウト */
-.app-container {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  height: calc(100vh - 60px - 72px);
-}
-
-/* ステージエリア */
-.stage-container {
-  padding: 16px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-}
-
-/* スポットライト（画面共有メイン表示） */
-.spotlight-area {
-  width: 100%;
-  max-width: 1100px;
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  border: 2px solid var(--primary);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  display: none;
-}
-
-.spotlight-area.active {
-  display: block;
-}
-
-.spotlight-area video {
-  width: 100%;
-  max-height: 550px;
-  object-fit: contain;
-  background: #000;
-}
-
-.spotlight-header {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(4px);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: var(--primary);
-}
-
-/* ビデオグリッド */
-.video-grid {
-  width: 100%;
-  max-width: 1100px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.user-tile {
-  background: var(--bg-card);
-  border-radius: 12px;
-  aspect-ratio: 16 / 9;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid transparent;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.user-tile video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: #000;
-}
-
-.avatar-placeholder {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.75rem;
-  font-weight: bold;
-  color: white;
-  text-transform: uppercase;
-}
-
-.tile-overlay {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(4px);
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-}
-
-/* サイドバー */
-.sidebar {
-  background: var(--bg-card);
-  border-left: 1px solid #334155;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar-section {
-  padding: 16px;
-  border-bottom: 1px solid #334155;
-}
-
-.sidebar-section h3 {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-.join-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-input[type="text"] {
-  background: var(--bg-input);
-  border: 1px solid #475569;
-  color: white;
-  padding: 10px 12px;
-  border-radius: 8px;
-  outline: none;
-  font-size: 0.9rem;
-}
-
-input[type="text"]:focus {
-  border-color: var(--primary);
-}
-
-.btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn:hover { background: var(--primary-hover); }
-
-/* チャットエリア */
-.chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  overflow: hidden;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.msg {
-  background: var(--bg-input);
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  max-width: 90%;
-  word-break: break-word;
-}
-
-.msg.mine {
-  align-self: flex-end;
-  background: var(--primary);
-}
-
-.msg .author {
-  font-weight: bold;
-  font-size: 0.75rem;
-  margin-bottom: 2px;
-  color: var(--text-muted);
-}
-
-.msg.mine .author { color: #e0e7ff; }
-
-/* コントロールバー */
-.controls-bar {
-  height: 72px;
-  background: var(--bg-card);
-  border-top: 1px solid #334155;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-.control-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: var(--bg-input);
-  color: white;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.control-btn:hover {
-  transform: scale(1.05);
-  filter: brightness(1.1);
-}
-
+.controls-bar { height: 72px; background: var(--bg-card); border-top: 1px solid #334155; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.control-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--bg-input); color: white; font-size: 1.2rem; cursor: pointer; }
 .control-btn.active { background: var(--primary); }
 .control-btn.off { background: var(--danger); }
-
-/* 非表示の音声エレメント格納場所 */
-#remoteAudioContainer {
-  display: none;
-}
-
-@media (max-width: 800px) {
-  .app-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 240px;
-  }
-}
+#remoteAudioContainer { display: none; }
 </style>
 </head>
 <body>
@@ -341,32 +67,26 @@ input[type="text"]:focus {
 </header>
 
 <div class="app-container">
-  <!-- ステージエリア -->
   <div class="stage-container">
-    <!-- 画面共有用スポットライト -->
     <div id="spotlightArea" class="spotlight-area">
       <div id="spotlightTitle" class="spotlight-header">🖥️ 画面共有中</div>
       <video id="spotlightVideo" autoplay playsinline muted></video>
     </div>
-
-    <!-- 参加者ビデオグリッド -->
     <div id="videoGrid" class="video-grid"></div>
   </div>
 
-  <!-- サイドバー -->
   <div class="sidebar">
     <div class="sidebar-section">
-      <h3>ルーム設定</h3>
+      <h3 style="font-size:0.9rem; color:var(--text-muted); margin-bottom:8px;">ルーム設定</h3>
       <div class="join-box">
         <input type="text" id="usernameInput" placeholder="表示名" value="ユーザー">
         <input type="text" id="roomIdInput" placeholder="ルームIDを入力">
-        <button id="joinBtn" class="btn" onclick="joinOrCreateRoom()">🚪 ルームに参加 / 作成</button>
+        <button id="joinBtn" class="btn" onclick="startJoinProcess()">🚪 ルームに参加</button>
       </div>
     </div>
 
-    <!-- チャット -->
     <div class="chat-container">
-      <h3>テキストチャット</h3>
+      <h3 style="font-size:0.9rem; color:var(--text-muted); margin-bottom:8px;">ログ & チャット</h3>
       <div id="chatMessages" class="chat-messages"></div>
       <div style="display: flex; gap: 6px;">
         <input type="text" id="chatInput" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter')sendChatMessage()">
@@ -376,25 +96,20 @@ input[type="text"]:focus {
   </div>
 </div>
 
-<!-- コントロールバー -->
 <div class="controls-bar">
-  <button id="micBtn" class="control-btn active" onclick="toggleMic()" title="マイク ON/OFF">🎤</button>
-  <button id="camBtn" class="control-btn off" onclick="toggleCamera()" title="カメラ ON/OFF">📷</button>
-  <button id="screenBtn" class="control-btn off" onclick="toggleScreenShare()" title="画面共有 ON/OFF">🖥️</button>
-  <button class="control-btn off" style="background:#dc2626;" onclick="leaveRoom()" title="退出">🚪</button>
+  <button id="micBtn" class="control-btn active" onclick="toggleMic()">🎤</button>
+  <button id="camBtn" class="control-btn off" onclick="toggleCamera()">📷</button>
+  <button id="screenBtn" class="control-btn off" onclick="toggleScreenShare()">🖥️</button>
+  <button class="control-btn off" style="background:#dc2626;" onclick="leaveRoom()">🚪</button>
 </div>
 
 <div id="remoteAudioContainer"></div>
 
 <script>
-/* ==========================================
-   状態管理
-========================================== */
 let myPeer = null;
 let myPeerId = '';
 let currentRoomId = '';
 let myName = 'ユーザー';
-
 let localStream = null;
 let screenStream = null;
 
@@ -402,425 +117,280 @@ let isMicOn = true;
 let isCamOn = false;
 let isScreenSharing = false;
 
-const peers = {};
+const peers = {}; // peerId -> { conn, call, stream, name }
 
-/* DOM要素 */
 const videoGrid = document.getElementById('videoGrid');
 const spotlightArea = document.getElementById('spotlightArea');
 const spotlightVideo = document.getElementById('spotlightVideo');
 const spotlightTitle = document.getElementById('spotlightTitle');
 const remoteAudioContainer = document.getElementById('remoteAudioContainer');
 
-const micBtn = document.getElementById('micBtn');
-const camBtn = document.getElementById('camBtn');
-const screenBtn = document.getElementById('screenBtn');
-
-/* ==========================================
-   初期化（マイク取得）
-========================================== */
 async function initLocalStream() {
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: false
-    });
-  } catch (err) {
-    addSystemMessage("⚠️ マイクへのアクセスが拒否されたか、利用できません。");
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch (e) {
+    addSystemMessage("⚠️ マイクを取得できませんでした（無音で開始します）。");
     localStream = new MediaStream();
     isMicOn = false;
     updateControlsUI();
   }
 }
 
-/* ==========================================
-   ルーム参加・接続調停（タイムアウト＋フォールバック付き）
-========================================== */
-function joinOrCreateRoom() {
+function startJoinProcess() {
   myName = document.getElementById('usernameInput').value.trim() || 'ユーザー';
-  const inputRoomId = document.getElementById('roomIdInput').value.trim();
+  currentRoomId = document.getElementById('roomIdInput').value.trim();
 
-  if (!inputRoomId) {
-    return alert("ルームIDを入力してください。");
-  }
+  if (!currentRoomId) return alert("ルームIDを入力してください。");
 
-  currentRoomId = inputRoomId;
-  const hostPeerId = `room-host-${currentRoomId}`;
+  if (myPeer) myPeer.destroy();
 
-  if (myPeer) {
-    myPeer.destroy();
-  }
+  // ランダムな自身のIDを発行（ID衝突防止）
+  myPeer = new Peer();
 
-  addSystemMessage(`接続を開始しています... [${currentRoomId}]`);
-
-  let isHandled = false;
-
-  // ホストIDとして登録を試みる
-  myPeer = new Peer(hostPeerId, {
-    debug: 2
-  });
-
-  // サーバーからの応答遅延対策：2.5秒以内にホストとして確立しなければゲストモードへ移行
-  const timeoutTimer = setTimeout(() => {
-    if (!isHandled) {
-      isHandled = true;
-      addSystemMessage("既存の部屋を検出しました。ゲストとして参加を試みます...");
-      initAsGuest(hostPeerId);
-    }
-  }, 2500);
-
-  myPeer.on('open', (id) => {
-    if (isHandled) return;
-    isHandled = true;
-    clearTimeout(timeoutTimer);
-    
-    myPeerId = id;
-    onJoinedRoom(true);
-  });
-
-  myPeer.on('error', (err) => {
-    if (isHandled) return;
-    
-    // ホストIDの衝突エラー
-    if (err.type === 'unavailable-id') {
-      isHandled = true;
-      clearTimeout(timeoutTimer);
-      initAsGuest(hostPeerId);
-    } else {
-      addSystemMessage(`❌ 接続エラー: ${err.type || err.message}`);
-    }
-  });
-
-  setupPeerEvents(myPeer);
-}
-
-function initAsGuest(hostPeerId) {
-  if (myPeer && !myPeer.destroyed) {
-    myPeer.destroy();
-  }
-
-  myPeer = new Peer({ debug: 2 });
+  addSystemMessage("📡 ネットワークへ接続中...");
 
   myPeer.on('open', (id) => {
     myPeerId = id;
-    onJoinedRoom(false);
-    connectToTarget(hostPeerId);
+    document.getElementById('currentRoomDisplay').textContent = currentRoomId;
+    renderUserTile(myPeerId, myName, getActiveStream(), true);
+
+    const hubId = `room-${currentRoomId}-hub`;
+    
+    // ハブ（部屋の仲介役）への接続を試みる
+    addSystemMessage(`🔍 ルーム [${currentRoomId}] を検索中...`);
+    tryConnectHub(hubId);
   });
 
-  myPeer.on('error', (err) => {
-    addSystemMessage(`❌ ゲスト接続エラー: ${err.type || err.message}`);
-  });
-
-  setupPeerEvents(myPeer);
-}
-
-function setupPeerEvents(peer) {
-  peer.on('call', (call) => {
-    call.answer(getActiveVideoStream());
+  myPeer.on('connection', (conn) => setupDataConnection(conn));
+  myPeer.on('call', (call) => {
+    call.answer(getActiveStream());
     setupCallEvents(call);
   });
 
-  peer.on('connection', (conn) => {
+  myPeer.on('error', (err) => {
+    addSystemMessage(`❌ Peerエラー: ${err.type}`);
+  });
+}
+
+function tryConnectHub(hubId) {
+  const conn = myPeer.connect(hubId);
+  let connected = false;
+
+  const timer = setTimeout(() => {
+    if (!connected) {
+      // 応答がなければ自分が最初のハブ（親）になる
+      conn.close();
+      becomeHub(hubId);
+    }
+  }, 2000);
+
+  conn.on('open', () => {
+    connected = true;
+    clearTimeout(timer);
+    addSystemMessage("✅ ルームに参加しました（ゲスト）");
     setupDataConnection(conn);
   });
 }
 
-function onJoinedRoom(isHost) {
-  document.getElementById('currentRoomDisplay').textContent = currentRoomId;
-  addSystemMessage(`✅ ルーム [${currentRoomId}] に参加しました (${isHost ? 'ホスト' : 'ゲスト'})`);
-  renderUserTile(myPeerId, myName, getActiveVideoStream(), true);
+function becomeHub(hubId) {
+  addSystemMessage("👑 ルームを作成しました（ホスト）");
+  const hubPeer = new Peer(hubId);
+  
+  hubPeer.on('open', () => {
+    hubPeer.on('connection', (conn) => {
+      conn.on('data', (data) => {
+        if (data.type === 'REQ_PEERS') {
+          // 既存の全参加者リストを新規参加者に返信
+          const memberList = Object.keys(peers).concat([myPeerId]);
+          conn.send({ type: 'RES_PEERS', members: memberList });
+        }
+      });
+    });
+  });
+
+  hubPeer.on('error', () => {
+    // 競合した場合は再度通常接続
+    setTimeout(() => tryConnectHub(hubId), 1000);
+  });
 }
 
-function connectToTarget(targetPeerId) {
+function connectToPeer(targetPeerId) {
   if (peers[targetPeerId] || targetPeerId === myPeerId) return;
 
-  const conn = myPeer.connect(targetPeerId, { metadata: { name: myName } });
+  const conn = myPeer.connect(targetPeerId);
   setupDataConnection(conn);
 
-  const call = myPeer.call(targetPeerId, getActiveVideoStream(), { metadata: { name: myName } });
+  const call = myPeer.call(targetPeerId, getActiveStream());
   setupCallEvents(call);
 }
 
 function setupDataConnection(conn) {
-  const targetPeerId = conn.peer;
+  const targetId = conn.peer;
 
   conn.on('open', () => {
-    if (!peers[targetPeerId]) peers[targetPeerId] = {};
-    peers[targetPeerId].dataConn = conn;
+    if (!peers[targetId]) peers[targetId] = {};
+    peers[targetId].conn = conn;
 
     conn.send({ type: 'HANDSHAKE', name: myName, peerId: myPeerId });
-
-    if (isScreenSharing) {
-      conn.send({ type: 'SCREEN_STATE', isSharing: true, name: myName });
-    }
+    conn.send({ type: 'REQ_PEERS' });
   });
 
   conn.on('data', (data) => {
-    switch (data.type) {
-      case 'HANDSHAKE':
-        if (!peers[data.peerId]) peers[data.peerId] = {};
-        peers[data.peerId].dataConn = conn;
-        peers[data.peerId].name = data.name;
-
-        // ホストの場合、他のメンバー一覧を同期する
-        if (myPeerId === `room-host-${currentRoomId}`) {
-          const currentMembers = Object.keys(peers).concat(myPeerId);
-          broadcastData({ type: 'MEMBER_SYNC', members: currentMembers });
-        }
-        break;
-
-      case 'MEMBER_SYNC':
-        data.members.forEach(memberId => {
-          if (memberId !== myPeerId && !peers[memberId]) {
-            connectToTarget(memberId);
-          }
-        });
-        break;
-
-      case 'CHAT':
-        appendChatMessage(data.name, data.text, false);
-        break;
-
-      case 'SCREEN_STATE':
-        if (data.isSharing) {
-          setSpotlight(data.peerId, `${data.name} の共有画面`, peers[data.peerId]?.stream);
-        } else {
-          removeSpotlight();
-        }
-        break;
+    if (data.type === 'HANDSHAKE') {
+      if (!peers[data.peerId]) peers[data.peerId] = {};
+      peers[data.peerId].name = data.name;
+    } else if (data.type === 'RES_PEERS') {
+      data.members.forEach(id => {
+        if (id !== myPeerId) connectToPeer(id);
+      });
+    } else if (data.type === 'CHAT') {
+      appendChatMessage(data.name, data.text, false);
+    } else if (data.type === 'SCREEN') {
+      if (data.isSharing) setSpotlight(data.peerId, `${data.name} の画面`, peers[data.peerId]?.stream);
+      else removeSpotlight();
     }
   });
 
-  conn.on('close', () => {
-    cleanupPeer(targetPeerId);
-  });
+  conn.on('close', () => cleanupPeer(targetId));
 }
 
 function setupCallEvents(call) {
-  const remotePeerId = call.peer;
-  const remoteName = call.metadata?.name || 'ゲスト';
-
-  if (!peers[remotePeerId]) peers[remotePeerId] = {};
-  peers[remotePeerId].call = call;
-  peers[remotePeerId].name = remoteName;
+  const targetId = call.peer;
+  if (!peers[targetId]) peers[targetId] = {};
+  peers[targetId].call = call;
 
   call.on('stream', (remoteStream) => {
-    peers[remotePeerId].stream = remoteStream;
+    peers[targetId].stream = remoteStream;
 
-    let audioEl = document.getElementById(`audio-${remotePeerId}`);
+    let audioEl = document.getElementById(`audio-${targetId}`);
     if (!audioEl) {
       audioEl = document.createElement('audio');
-      audioEl.id = `audio-${remotePeerId}`;
+      audioEl.id = `audio-${targetId}`;
       audioEl.autoplay = true;
-      audioEl.playsInline = true;
       remoteAudioContainer.appendChild(audioEl);
     }
     audioEl.srcObject = remoteStream;
-    audioEl.play().catch(() => {});
 
-    renderUserTile(remotePeerId, peers[remotePeerId].name || remoteName, remoteStream, false);
+    renderUserTile(targetId, peers[targetId].name || '参加者', remoteStream, false);
   });
 
-  call.on('close', () => {
-    cleanupPeer(remotePeerId);
-  });
+  call.on('close', () => cleanupPeer(targetId));
 }
 
-function cleanupPeer(peerId) {
-  removeUserTile(peerId);
-  const audioEl = document.getElementById(`audio-${peerId}`);
-  if (audioEl) audioEl.remove();
-
-  delete peers[peerId];
-  removeSpotlight();
+function cleanupPeer(id) {
+  const tile = document.getElementById(`tile-${id}`);
+  if (tile) tile.remove();
+  const audio = document.getElementById(`audio-${id}`);
+  if (audio) audio.remove();
+  delete peers[id];
 }
 
-/* ==========================================
-   メディア（マイク / カメラ / 画面共有）
-========================================== */
-function getActiveVideoStream() {
-  if (isScreenSharing && screenStream) {
-    return screenStream;
-  }
-  return localStream;
+function getActiveStream() {
+  return isScreenSharing && screenStream ? screenStream : localStream;
 }
 
 function toggleMic() {
   if (!localStream) return;
-  const audioTrack = localStream.getAudioTracks()[0];
-  if (audioTrack) {
+  const t = localStream.getAudioTracks()[0];
+  if (t) {
     isMicOn = !isMicOn;
-    audioTrack.enabled = isMicOn;
+    t.enabled = isMicOn;
     updateControlsUI();
-    updateTileStatus(myPeerId, isMicOn);
   }
 }
 
 async function toggleCamera() {
-  if (isScreenSharing) return alert("画面共有をオフにしてからカメラを切り替えてください。");
-
   if (!isCamOn) {
     try {
-      const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const videoTrack = camStream.getVideoTracks()[0];
-      
-      const oldVideoTrack = localStream.getVideoTracks()[0];
-      if (oldVideoTrack) localStream.removeTrack(oldVideoTrack);
-      localStream.addTrack(videoTrack);
-
+      const s = await navigator.mediaDevices.getUserMedia({ video: true });
+      const vt = s.getVideoTracks()[0];
+      localStream.addTrack(vt);
       isCamOn = true;
-      replaceTracksInConnections(videoTrack);
-    } catch (err) {
-      return alert("カメラの起動に失敗しました。");
-    }
+      replaceTracks(vt);
+    } catch { alert("カメラを起動できません"); }
   } else {
-    const videoTrack = localStream.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.stop();
-      localStream.removeTrack(videoTrack);
-    }
+    const vt = localStream.getVideoTracks()[0];
+    if (vt) { vt.stop(); localStream.removeTrack(vt); }
     isCamOn = false;
-    replaceTracksInConnections(null);
+    replaceTracks(null);
   }
-
   updateControlsUI();
-  renderUserTile(myPeerId, myName, getActiveVideoStream(), true);
+  renderUserTile(myPeerId, myName, getActiveStream(), true);
 }
 
 async function toggleScreenShare() {
   if (!isScreenSharing) {
     try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      const screenVideoTrack = screenStream.getVideoTracks()[0];
-
-      screenVideoTrack.onended = () => {
-        stopScreenShare();
-      };
-
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const st = screenStream.getVideoTracks()[0];
+      st.onended = () => stopScreenShare();
       isScreenSharing = true;
-      replaceTracksInConnections(screenVideoTrack);
-      
-      setSpotlight(myPeerId, `${myName} (あなた) の共有画面`, screenStream);
-      broadcastData({ type: 'SCREEN_STATE', isSharing: true, name: myName });
-
-    } catch (err) {
-      return;
-    }
-  } else {
-    stopScreenShare();
-  }
+      replaceTracks(st);
+      setSpotlight(myPeerId, `${myName} の画面`, screenStream);
+      broadcast({ type: 'SCREEN', isSharing: true, name: myName });
+    } catch { return; }
+  } else stopScreenShare();
   updateControlsUI();
 }
 
 function stopScreenShare() {
-  if (screenStream) {
-    screenStream.getTracks().forEach(t => t.stop());
-    screenStream = null;
-  }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
   isScreenSharing = false;
-
-  const fallbackTrack = isCamOn ? localStream.getVideoTracks()[0] : null;
-  replaceTracksInConnections(fallbackTrack);
-
+  replaceTracks(isCamOn ? localStream.getVideoTracks()[0] : null);
   removeSpotlight();
-  broadcastData({ type: 'SCREEN_STATE', isSharing: false, name: myName });
-  renderUserTile(myPeerId, myName, getActiveVideoStream(), true);
+  broadcast({ type: 'SCREEN', isSharing: false, name: myName });
+  renderUserTile(myPeerId, myName, getActiveStream(), true);
   updateControlsUI();
 }
 
-function replaceTracksInConnections(newVideoTrack) {
+function replaceTracks(track) {
   Object.values(peers).forEach(p => {
     if (p.call && p.call.peerConnection) {
-      const senders = p.call.peerConnection.getSenders();
-      const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-
-      if (videoSender) {
-        videoSender.replaceTrack(newVideoTrack);
-      } else if (newVideoTrack) {
-        p.call.peerConnection.addTrack(newVideoTrack, getActiveVideoStream());
-      }
+      const s = p.call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (s) s.replaceTrack(track);
+      else if (track) p.call.peerConnection.addTrack(track, getActiveStream());
     }
   });
 }
 
-function setSpotlight(peerId, title, stream) {
+function setSpotlight(id, title, stream) {
   spotlightTitle.textContent = `🖥️ ${title}`;
-  if (stream) {
-    spotlightVideo.srcObject = stream;
-  }
+  spotlightVideo.srcObject = stream;
   spotlightArea.classList.add('active');
 }
+function removeSpotlight() { spotlightArea.classList.remove('active'); }
 
-function removeSpotlight() {
-  spotlightVideo.srcObject = null;
-  spotlightArea.classList.remove('active');
-}
-
-function broadcastData(data) {
-  Object.values(peers).forEach(p => {
-    if (p.dataConn && p.dataConn.open) {
-      p.dataConn.send(data);
-    }
-  });
+function broadcast(data) {
+  Object.values(peers).forEach(p => p.conn && p.conn.open && p.conn.send(data));
 }
 
 function updateControlsUI() {
-  micBtn.className = `control-btn ${isMicOn ? 'active' : 'off'}`;
-  micBtn.textContent = isMicOn ? '🎤' : '🔇';
-
-  camBtn.className = `control-btn ${isCamOn ? 'active' : 'off'}`;
-  screenBtn.className = `control-btn ${isScreenSharing ? 'active' : 'off'}`;
+  document.getElementById('micBtn').className = `control-btn ${isMicOn ? 'active' : 'off'}`;
+  document.getElementById('camBtn').className = `control-btn ${isCamOn ? 'active' : 'off'}`;
+  document.getElementById('screenBtn').className = `control-btn ${isScreenSharing ? 'active' : 'off'}`;
 }
 
-/* ==========================================
-   UI描画ロジック
-========================================== */
-function renderUserTile(peerId, name, stream, isSelf = false) {
-  if (!peerId) return;
-
-  let tile = document.getElementById(`tile-${peerId}`);
+function renderUserTile(id, name, stream, isSelf) {
+  let tile = document.getElementById(`tile-${id}`);
   if (!tile) {
     tile = document.createElement('div');
-    tile.id = `tile-${peerId}`;
+    tile.id = `tile-${id}`;
     tile.className = 'user-tile';
     videoGrid.appendChild(tile);
   }
-
   const hasVideo = stream && stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].enabled;
-
   tile.innerHTML = `
-    ${hasVideo 
-      ? `<video id="video-${peerId}" autoplay playsinline muted></video>`
-      : `<div class="avatar-placeholder">${escapeHTML(name).charAt(0)}</div>`
-    }
-    <div class="tile-overlay">
-      <span>${escapeHTML(name)} ${isSelf ? '(自分)' : ''}</span>
-      <span id="mic-status-${peerId}">🎤</span>
-    </div>
+    ${hasVideo ? `<video id="v-${id}" autoplay playsinline muted></video>` : `<div class="avatar-placeholder">${name.charAt(0)}</div>`}
+    <div class="tile-overlay"><span>${name} ${isSelf ? '(自分)' : ''}</span></div>
   `;
-
-  if (hasVideo) {
-    const videoEl = tile.querySelector(`#video-${peerId}`);
-    videoEl.srcObject = stream;
-  }
-}
-
-function updateTileStatus(peerId, micOn) {
-  const micStatus = document.getElementById(`mic-status-${peerId}`);
-  if (micStatus) micStatus.textContent = micOn ? '🎤' : '🔇';
-}
-
-function removeUserTile(peerId) {
-  const tile = document.getElementById(`tile-${peerId}`);
-  if (tile) tile.remove();
+  if (hasVideo) tile.querySelector(`#v-${id}`).srcObject = stream;
 }
 
 function sendChatMessage() {
   const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text) return;
-
-  broadcastData({ type: 'CHAT', name: myName, text: text });
-  appendChatMessage(myName, text, true);
+  if (!input.value.trim()) return;
+  broadcast({ type: 'CHAT', name: myName, text: input.value.trim() });
+  appendChatMessage(myName, input.value.trim(), true);
   input.value = '';
 }
 
@@ -828,10 +398,7 @@ function appendChatMessage(name, text, isMine) {
   const box = document.getElementById('chatMessages');
   const div = document.createElement('div');
   div.className = `msg ${isMine ? 'mine' : ''}`;
-  div.innerHTML = `
-    <div class="author">${escapeHTML(name)}</div>
-    <div>${escapeHTML(text)}</div>
-  `;
+  div.innerHTML = `<div class="author">${name}</div><div>${text}</div>`;
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
@@ -839,27 +406,17 @@ function appendChatMessage(name, text, isMine) {
 function addSystemMessage(text) {
   const box = document.getElementById('chatMessages');
   const div = document.createElement('div');
-  div.style.cssText = "font-size:0.75rem; color:#94a3b8; text-align:center; margin:4px 0;";
+  div.style.cssText = "font-size:0.75rem; color:#94a3b8; text-align:center; margin:2px 0;";
   div.textContent = text;
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
 
 function copyRoomId() {
-  if (!currentRoomId) return;
   navigator.clipboard.writeText(currentRoomId);
-  alert("ルームIDをコピーしました: " + currentRoomId);
+  alert("コピーしました: " + currentRoomId);
 }
-
-function leaveRoom() {
-  if (confirm("ルームから退出しますか？")) {
-    location.reload();
-  }
-}
-
-function escapeHTML(str) {
-  return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-}
+function leaveRoom() { location.reload(); }
 
 initLocalStream();
 </script>
