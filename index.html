@@ -2,128 +2,281 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Ultimate Discord Style Voice Changer</title>
+<title>CYBER-X // Voice Matrix UI</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;700&display=swap');
+
   :root {
-    --bg-dark: #36393f;
-    --bg-darker: #2f3136;
-    --bg-deep: #202225;
-    --accent: #5865f2;
-    --text-main: #dcddde;
-    --text-muted: #8e9297;
-    --green: #3ba55d;
-    --red: #ed4245;
+    --bg-base: #0a0b10;
+    --bg-panel: #121520;
+    --bg-element: #1a1e2e;
+    --accent-cyan: #00f0ff;
+    --accent-purple: #9d00ff;
+    --accent-pink: #ff007f;
+    --text-main: #f0f3f6;
+    --text-muted: #6b7280;
+    --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.4);
+    --glow-pink: 0 0 15px rgba(255, 0, 127, 0.4);
   }
+
+  * {
+    box-sizing: border-box;
+  }
+
   body {
     margin: 0;
-    background: var(--bg-darker);
+    background: var(--bg-base);
     color: var(--text-main);
-    font-family: sans-serif;
-    display: flex;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
     height: 100vh;
+    display: flex;
     overflow: hidden;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.05) 0%, transparent 40%);
   }
-  
+
+  /* 左側コントロールパネル */
   .sidebar {
-    width: 290px;
-    background: var(--bg-dark);
-    padding: 15px;
+    width: 320px;
+    background: var(--bg-panel);
+    border-right: 1px solid rgba(0, 240, 255, 0.15);
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    border-right: 1px solid var(--bg-deep);
+    gap: 15px;
     overflow-y: auto;
+    box-shadow: 5px 0 25px rgba(0,0,0,0.5);
   }
-  h3 { font-size: 13px; color: var(--text-muted); margin: 8px 0 4px; text-transform: uppercase; }
+
+  .brand {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--accent-cyan);
+    text-shadow: var(--glow-cyan);
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+
+  h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    margin: 10px 0 5px;
+    text-transform: uppercase;
+  }
+
   select, button {
     width: 100%;
-    padding: 10px;
-    background: var(--bg-deep);
-    border: 1px solid #202225;
-    color: white;
-    border-radius: 4px;
+    padding: 12px;
+    background: var(--bg-element);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-main);
+    border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
     cursor: pointer;
-    font-size: 13px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  button:hover { background: #40444b; }
-  
+
+  select:hover, button:hover {
+    border-color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f0ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 35px;
+  }
+
+  /* エフェクト選択グリッド */
   .effect-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .effect-btn {
-    background: var(--bg-deep);
-    border: 1px solid #4f545c;
-    padding: 8px;
-    text-align: center;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: 0.1s;
-  }
-  .effect-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    font-weight: bold;
+    gap: 8px;
   }
 
+  .effect-btn {
+    background: var(--bg-element);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 10px;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+
+  .effect-btn:hover {
+    color: var(--text-main);
+    border-color: rgba(0, 240, 255, 0.4);
+  }
+
+  .effect-btn.active {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  /* メインモニター画面 */
   .main {
     flex: 1;
-    padding: 30px;
+    padding: 40px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 25px;
     overflow-y: auto;
   }
+
   .card {
-    background: var(--bg-dark);
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #202225;
+    background: var(--bg-panel);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 25px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   }
-  .slider-group { margin: 15px 0; }
-  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .card h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    margin-top: 0;
+    color: var(--text-main);
+    letter-spacing: 1px;
+  }
+
+  #vcStatus {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
+  /* スライダー */
+  .slider-group {
+    margin-top: 15px;
+  }
+
+  input[type=range] {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-element);
+    border-radius: 3px;
+    outline: none;
+    appearance: none;
+    accent-color: var(--accent-cyan);
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+    cursor: pointer;
+  }
+
+  /* 起動ボタン */
+  #powerBtn {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 2px;
+    font-weight: 900;
+    border: none;
+    box-shadow: var(--glow-cyan);
+    margin-top: auto;
+  }
+
+  #powerBtn.active {
+    background: linear-gradient(135deg, var(--accent-pink), #ff3333);
+    box-shadow: var(--glow-pink);
+  }
+
+  .cyber-badge {
+    font-size: 10px;
+    font-family: 'Orbitron', sans-serif;
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--accent-cyan);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+  }
 </style>
 </head>
 <body>
 
+  <!-- サイドバー -->
   <div class="sidebar">
-    <h3>🎙️ 入力マイク (自分の声)</h3>
+    <div class="brand">
+      <span>⚡</span> CYBER-MATRIX
+    </div>
+
+    <h3>AUDIO INPUT // マイク</h3>
     <select id="micInputSelect"></select>
 
-    <h3>🎧 出力先 (仮想マイク)</h3>
+    <h3>VIRTUAL ROUTE // 仮想出力</h3>
     <select id="audioOutputSelect"></select>
-    <p style="font-size:11px; color:var(--text-muted);">※VB-Cable等を指定するとフォートナイトへ流れます</p>
-
-    <hr style="border:0; border-top:1px solid #4f545c; margin:5px 0;">
-
-    <h3>🎛️ ボイスチェンジャー種類</h3>
-    <div class="effect-grid">
-      <button class="effect-btn active" onclick="setEffect('normal')">ノーマル</button>
-      <button class="effect-btn" onclick="setEffect('female')">👩 女声風</button>
-      <button class="effect-btn" onclick="setEffect('male')">👨 男声風</button>
-      <button class="effect-btn" onclick="setEffect('chipmunk')">🐿️ シマリス</button>
-      <button class="effect-btn" onclick="setEffect('demon')">😈 悪魔・低音</button>
-      <button class="effect-btn" onclick="setEffect('robot')">🤖 ロボット</button>
-      <button class="effect-btn" onclick="setEffect('radio')">📻 無線・無線機</button>
-      <button class="effect-btn" onclick="setEffect('megaphone')">📢 メガホン</button>
-      <button class="effect-btn" onclick="setEffect('cave')">🦇 洞窟・エコー</button>
-      <button class="effect-btn" onclick="setEffect('telephone')">☎️ 古い電話</button>
+    <div style="font-size:11px; color:var(--text-muted); line-height: 1.4;">
+      ※VB-Cable等を指定してフォートナイトへ接続
     </div>
 
-    <button id="powerBtn" style="background:var(--accent); margin-top:auto; font-weight:bold;" onclick="toggleVoiceChanger()">🟢 VC起動 / 停止</button>
+    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:5px 0;">
+
+    <h3>MODULATION // ボイスエフェクト</h3>
+    <div class="effect-grid">
+      <button class="effect-btn active" onclick="setEffect('normal')">NORMAL</button>
+      <button class="effect-btn" onclick="setEffect('female')">FEMALE</button>
+      <button class="effect-btn" onclick="setEffect('male')">MALE</button>
+      <button class="effect-btn" onclick="setEffect('chipmunk')">CHIPMUNK</button>
+      <button class="effect-btn" onclick="setEffect('demon')">DEMON</button>
+      <button class="effect-btn" onclick="setEffect('robot')">CYBORG</button>
+      <button class="effect-btn" onclick="setEffect('radio')">RADIO</button>
+      <button class="effect-btn" onclick="setEffect('megaphone')">MEGAPHONE</button>
+      <button class="effect-btn" onclick="setEffect('cave')">CAVE</button>
+      <button class="effect-btn" onclick="setEffect('telephone')">TELECOM</button>
+    </div>
+
+    <button id="powerBtn" onclick="toggleVoiceChanger()">SYSTEM START</button>
   </div>
 
+  <!-- メイン画面 -->
   <div class="main">
     <div class="card">
-      <h2>🎮 フォートナイト・Discord連携ステータス</h2>
-      <p id="vcStatus" style="color: var(--red);">🔴 停止中 ("VC起動" ボタンを押してください)</p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+        <h2>STATUS MONITOR</h2>
+        <span class="cyber-badge">ONLINE SYNC</span>
+      </div>
+      <p id="vcStatus" style="color: var(--accent-pink);">[ SYSTEM OFFLINE ] // 起動ボタンを押してください</p>
     </div>
     
-    <div class="card">
-      <h3>⚙️ フィルター周波数微調整</h3>
+    <div class="card" style="border-left-color: var(--accent-purple);">
+      <h2>FREQUENCY MATRIX</h2>
       <div class="slider-group">
-        <label>カットオフ周波数: <span id="freqVal">1000</span> Hz</label>
+        <label style="font-size: 13px; color: var(--text-muted);">CUTOFF FREQUENCY: <span id="freqVal" style="color: var(--accent-cyan); font-weight:700;">1000</span> Hz</label>
         <input type="range" id="freqRange" min="100" max="8000" step="100" value="1000" oninput="updateFreq(this.value)">
       </div>
     </div>
@@ -156,7 +309,7 @@ async function getDevices() {
       else if (device.kind === 'audiooutput') outSelect.appendChild(opt);
     });
   } catch (e) {
-    console.error("デバイス取得失敗:", e);
+    console.error("デバイス取得エラー:", e);
   }
 }
 
@@ -168,9 +321,10 @@ async function toggleVoiceChanger() {
     audioCtx.close();
     audioCtx = null;
     if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-    statusElem.textContent = "🔴 停止中";
-    statusElem.style.color = "var(--red)";
-    powerBtn.style.background = "var(--accent)";
+    statusElem.textContent = "[ SYSTEM OFFLINE ] // 停止中";
+    statusElem.style.color = "var(--accent-pink)";
+    powerBtn.classList.remove('active');
+    powerBtn.textContent = "SYSTEM START";
     return;
   }
 
@@ -203,13 +357,13 @@ async function toggleVoiceChanger() {
 
     applyEffectParameters(currentEffect);
 
-    statusElem.textContent = "🟢 稼働中 (女声・男声フィルター適用中)";
-    statusElem.style.color = "var(--green)";
-    powerBtn.style.background = "var(--red)";
-    powerBtn.textContent = "🔴 VC停止";
+    statusElem.textContent = "[ MATRIX ACTIVE ] // 音声ストリーム転送中 (Fortnite連携対応)";
+    statusElem.style.color = "var(--accent-cyan)";
+    powerBtn.classList.add('active');
+    powerBtn.textContent = "SYSTEM SHUTDOWN";
 
   } catch (err) {
-    alert("エラー: " + err.message);
+    alert("初期化エラー: " + err.message);
   }
 }
 
@@ -231,12 +385,12 @@ function applyEffectParameters(type) {
     case 'normal':
       filterNode.type = 'allpass';
       break;
-    case 'female': // 女声風（高めの周波数帯域をブーストしつつこもりを排除）
+    case 'female':
       filterNode.type = 'highpass';
       filterNode.frequency.value = 450;
       gainNode.gain.value = 1.2;
       break;
-    case 'male': // 男声風（太く落ち着いた低音域を強調）
+    case 'male':
       filterNode.type = 'lowpass';
       filterNode.frequency.value = 550;
       gainNode.gain.value = 1.1;
