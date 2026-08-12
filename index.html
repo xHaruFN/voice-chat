@@ -689,7 +689,7 @@ let away = false;
 // SkyWay 関連の変数
 const { SkyWayContext, SkyWayStreamFactory, SkyWayRoom, SkyWayAuthToken } = skyway_room;
 
-// ★ここにご自身のSkyWayのApp IDとシークレットキーを入力してください
+// ★App IDとシークレットキーを設定
 const appId = '54583150-e051-43fc-89bf-c2aa0ae968ad';
 const secretKey = '00Xwdlc3gMFhQzNO1UX55xNM5VNQrQBTN72Wmb0frMQ=';
 
@@ -1300,7 +1300,6 @@ async function createOrJoinPartySkyWay() {
   }
 
   try {
-    // 認証トークンの作成
     const token = new SkyWayAuthToken({
       jti: uuidV4(),
       iat: nowInSec(),
@@ -1333,7 +1332,6 @@ async function createOrJoinPartySkyWay() {
 
     currentMember = await currentRoom.join({ name: currentUser.username });
 
-    // マイクやカメラがONなら一緒に公開
     if (micEnabled && microphone) {
       localAudioStream = microphone.getAudioTracks()[0];
       await currentMember.publish(new SkyWayStreamFactory.createAudioStream(microphone));
@@ -1343,7 +1341,6 @@ async function createOrJoinPartySkyWay() {
       await currentMember.publish(new SkyWayStreamFactory.createVideoStream(cameraStream));
     }
 
-    // 他の人が参加してきたとき、またはすでにいるときのストリーム受信
     currentRoom.onStreamPublished.add(async (e) => {
       if (e.publication.publisher.id === currentMember.id) return;
       const { stream } = await currentMember.subscribe(e.publication.id);
@@ -1380,13 +1377,13 @@ async function createOrJoinPartySkyWay() {
 
   } catch (error) {
     console.error(error);
-    alert("部屋への参加に失敗しました。App IDやシークレットキーを確認してください。");
+    alert("部屋への参加に失敗しました。エラー詳細: " + error.message);
   }
 }
 
 async function leavePartySkyWay() {
   if (currentMember) {
-    await currentMember.leave();
+    try { await currentMember.leave(); } catch(e){}
     currentMember = null;
   }
   if (currentRoom) {
