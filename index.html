@@ -295,7 +295,7 @@ button.secondary:hover {
   font-size: 14px;
 }
 
-/* コントロールバー（下部固定風） */
+/* コントロールバー */
 .voice-controls {
   display: flex;
   gap: 10px;
@@ -517,7 +517,7 @@ let screenStream = null, screenEnabled = false;
 const appId = '54583150-e051-43fc-89bf-c2aa0ae968ad';
 const secretKey = '00Xwdlc3gMFhQzNO1UX55xNM5VNQrQBTN72Wmb0frMQ=';
 
-const { SkyWayContext, SkyWayStreamFactory, SkyWayRoom, SkyWayAuthToken } = skyway_room;
+const { SkyWayContext, SkyWayStreamFactory, SkyWayRoom } = skyway_room;
 let currentRoom = null;
 let currentMember = null;
 
@@ -633,6 +633,9 @@ async function toggleMic() {
       micEnabled = true;
       document.getElementById("micButton").textContent = "🔇 マイクOFF";
       document.getElementById("micButton").className = "success";
+      if (currentMember) {
+        await currentMember.publish(SkyWayStreamFactory.createAudioStream(microphone));
+      }
     } catch(e) { alert("マイクが許可されませんでした"); }
   } else {
     if (microphone) microphone.getTracks().forEach(t => t.stop());
@@ -654,6 +657,9 @@ async function toggleCamera() {
       document.getElementById("cameraEmpty").style.display = "none";
       document.getElementById("cameraButton").textContent = "📷 カメラOFF";
       document.getElementById("cameraButton").className = "success";
+      if (currentMember) {
+        await currentMember.publish(SkyWayStreamFactory.createVideoStream(cameraStream));
+      }
     } catch(e) { alert("カメラが許可されませんでした"); }
   } else {
     if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
@@ -678,6 +684,9 @@ async function toggleScreenShare() {
       document.getElementById("screenEmpty").style.display = "none";
       document.getElementById("screenButton").textContent = "🛑 画面共有停止";
       document.getElementById("screenButton").className = "success";
+      if (currentMember) {
+        await currentMember.publish(SkyWayStreamFactory.createVideoStream(screenStream));
+      }
       screenStream.getVideoTracks()[0].onended = () => toggleScreenShare();
     } catch(e) {}
   } else {
@@ -766,19 +775,20 @@ async function createOrJoinPartySkyWay() {
   if (currentRoom) await leavePartySkyWay();
 
   try {
-    const token = new SkyWayAuthToken({
-      jti: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(),
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 86400,
-      scope: { app: { id: appId, actions: ['read'], channels: [{ id: '*', name: '*', actions: ['write'], members: [{ id: '*', name: '*', actions: ['write'], publication: { actions: ['write'] }, subscription: { actions: ['write'] } }] }] } }
-    }).encode(secretKey);
-
-    const context = await SkyWayContext.Create(token);
+    // 開発用途向けの Context 作成（フロントエンドにシークレットキーがある場合）
+    const context = await SkyWayContext.CreateForDevelopment(appId, secretKey);
     currentRoom = await SkyWayRoom.FindOrCreate(context, { type: 'p2p', name: rName });
     currentMember = await currentRoom.join({ name: currentUser.username });
 
-    if (micEnabled && microphone) await currentMember.publish(SkyWayStreamFactory.createAudioStream(microphone));
-    if (cameraEnabled && cameraStream) await currentMember.publish(SkyWayStreamFactory.createVideoStream(cameraStream));
+    if (micEnabled && microphone) {
+      await currentMember.publish(SkyWayStreamFactory.createAudioStream(microphone));
+    }
+    if (cameraEnabled && cameraStream) {
+      await currentMember.publish(SkyWayStreamFactory.createVideoStream(cameraStream));
+    }
+    if (screenEnabled && screenStream) {
+      await currentMember.publish(SkyWayStreamFactory.createVideoStream(screenStream));
+    }
 
     currentRoom.onStreamPublished.add(async (e) => {
       if (e.publication.publisher.id === currentMember.id) return;
@@ -795,8 +805,12 @@ async function createOrJoinPartySkyWay() {
           <div class="no-video-ph" id="rp_${e.publication.publisher.id}">音声のみ / 映像待機中</div>
           <div class="video-label">${e.publication.publisher.name}</div>
         `;
-        document.getElementById("remoteMediaContainer").innerHTML = "";
-        document.getElementById("remoteMediaContainer").appendChild(container);
+        // 最初の一人目が入ったときに「誰も入室していません」をクリア
+        const rmContainer = document.getElementById("remoteMediaContainer");
+        if (rmContainer.querySelector('div')?.textContent.includes('誰も入室していません')) {
+          rmContainer.innerHTML = "";
+        }
+        rmContainer.appendChild(container);
       }
 
       if (stream.contentType === 'audio') {
@@ -812,7 +826,8 @@ async function createOrJoinPartySkyWay() {
     document.getElementById("leaveRoomBtn").style.display = "block";
     alert("ルームに接続しました！");
   } catch(e) {
-    alert("接続に失敗しました。App IDを確認してください。");
+    console.error(e);
+    alert("接続に失敗しました。App IDやシークレットキーを確認してください。");
   }
 }
 
