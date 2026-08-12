@@ -1,116 +1,1475 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>SkyWay ビデオ通話サンプル</title>
-    <!-- SkyWayのSDK（Roomライブラリ）を読み込み -->
-    <script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/room@latest/dist/skyway_room.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Chat with SkyWay</title>
+<!-- SkyWayのSDK（Roomライブラリ）を読み込み -->
+<script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/room@latest/dist/skyway_room.js"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111827;
+  color: white;
+}
+
+header {
+  height: 64px;
+  background: #1f2937;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+main {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.card {
+  background: #1f2937;
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+h3 {
+  margin-top: 25px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  margin: 6px 4px 6px 0;
+  font-size: 16px;
+  cursor: pointer;
+  background: #4f46e5;
+  color: white;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.logout,
+.red {
+  background: #dc2626;
+}
+
+.green {
+  background: #22c55e;
+}
+
+.gray {
+  background: #4b5563;
+}
+
+.yellow {
+  background: #eab308;
+  color: #111827;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #374151;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  background: #4f46e5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+#status {
+  margin-top: 15px;
+  color: #9ca3af;
+}
+
+#accountStatus,
+#settingsStatus {
+  color: #9ca3af;
+}
+
+#settingsCard,
+#friendCard,
+#partyCard {
+  display: none;
+}
+
+.friend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #374151;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+}
+
+.friendAvatar {
+  width: 45px;
+  height: 45px;
+  background: #4f46e5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.friendInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.online {
+  color: #22c55e;
+  font-size: 13px;
+}
+
+.away {
+  color: #eab308;
+  font-size: 13px;
+}
+
+.offline {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.friend button {
+  padding: 8px 14px;
+  margin: 0 0 0 5px;
+}
+
+.request {
+  background: #374151;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+}
+
+.partyBox {
+  background: #374151;
+  padding: 15px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.empty {
+  color: #9ca3af;
+  padding: 15px 0;
+}
+
+.mediaArea {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.videoBox {
+  background: #111827;
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 220px;
+}
+
+.videoBox h3 {
+  margin: 5px 0 10px;
+}
+
+video {
+  width: 100%;
+  max-height: 400px;
+  background: #000;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.noVideo {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  background: #030712;
+  border-radius: 10px;
+}
+
+.dmBox {
+  background: #111827;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.dmMessages {
+  height: 250px;
+  overflow-y: auto;
+  background: #030712;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.message {
+  background: #374151;
+  padding: 9px 12px;
+  border-radius: 10px;
+  margin: 6px 0;
+  max-width: 80%;
+}
+
+.message.mine {
+  margin-left: auto;
+  background: #4f46e5;
+}
+
+.messageName {
+  font-size: 12px;
+  color: #d1d5db;
+  margin-bottom: 3px;
+}
+
+.remoteVideoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.remoteVideoCard {
+  background: #111827;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.remoteVideoCard h4 {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+@media (max-width: 700px) {
+  .mediaArea,
+  .remoteVideoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .friend {
+    flex-wrap: wrap;
+  }
+}
+</style>
 </head>
+
 <body>
-    <h1>簡単ビデオ通話</h1>
-    
-    <div>
-        <label>部屋名: <input type="text" id="room-name" value="test-room"></label>
-        <button id="join-button">参加する</button>
+
+<header>
+🎙️ Voice Chat with SkyWay
+</header>
+
+<main>
+
+<!-- =========================
+     アカウント
+========================= -->
+
+<div class="card">
+
+<h2>👤 アカウント</h2>
+
+<input
+  id="usernameInput"
+  maxlength="30"
+  placeholder="ユーザー名"
+>
+
+<input
+  id="password"
+  type="password"
+  placeholder="パスワード"
+>
+
+<button onclick="signUp()">
+アカウント作成
+</button>
+
+<button onclick="signIn()">
+ログイン
+</button>
+
+<button
+  class="gray"
+  onclick="createGuest()"
+>
+👻 仮アカウント
+</button>
+
+<button
+  id="logoutButton"
+  class="red"
+  onclick="signOut()"
+  style="display:none"
+>
+ログアウト
+</button>
+
+<button
+  id="deleteAccountButton"
+  class="red"
+  onclick="deleteAccount()"
+  style="display:none"
+>
+🗑️ アカウント削除
+</button>
+
+<p id="accountStatus">
+ログインしていません
+</p>
+
+</div>
+
+
+<!-- =========================
+     アカウント設定
+========================= -->
+
+<div
+  class="card"
+  id="settingsCard"
+>
+
+<h2>⚙️ アカウント設定</h2>
+
+<h3>👤 ユーザー名変更</h3>
+
+<input
+  id="newUsername"
+  maxlength="30"
+  placeholder="新しいユーザー名"
+>
+
+<button onclick="changeUsername()">
+ユーザー名変更
+</button>
+
+<div id="guestUsernameBox" style="display:none; margin-top:15px;">
+  <input
+    id="guestNewUsername"
+    maxlength="30"
+    placeholder="仮アカウントの新しい名前"
+  >
+  <button class="green" onclick="changeGuestUsername()">
+    仮アカウントの名前を変更
+  </button>
+</div>
+
+<h3>🔑 パスワード変更</h3>
+
+<input
+  id="newPassword"
+  type="password"
+  placeholder="新しいパスワード"
+>
+
+<button onclick="changePassword()">
+パスワード変更
+</button>
+
+<p id="settingsStatus"></p>
+
+</div>
+
+
+<!-- =========================
+     自分
+========================= -->
+
+<div class="card">
+
+<h2>自分</h2>
+
+<div class="user">
+
+<div class="avatar">
+👤
+</div>
+
+<div>
+
+<strong id="username">
+未ログイン
+</strong>
+
+<div id="onlineStatus">
+⚪ オフライン
+</div>
+
+</div>
+
+</div>
+
+<br>
+
+<button
+id="awayButton"
+class="yellow"
+onclick="toggleAway()"
+style="display:none"
+>
+🟡 離席
+</button>
+
+<button
+id="micButton"
+onclick="toggleMic()"
+>
+🎤 マイクON
+</button>
+
+<button
+id="cameraButton"
+class="green"
+onclick="toggleCamera()"
+>
+📷 カメラON
+</button>
+
+<button
+id="screenButton"
+class="gray"
+onclick="toggleScreenShare()"
+>
+🖥️ 画面共有
+</button>
+
+<div id="status">
+マイク・カメラ・画面共有を操作できます。
+</div>
+
+
+<div class="mediaArea">
+
+<div class="videoBox">
+
+<h3>
+📷 カメラ
+</h3>
+
+<video
+id="cameraVideo"
+autoplay
+muted
+playsinline
+></video>
+
+<div
+id="cameraEmpty"
+class="noVideo"
+>
+カメラOFF
+</div>
+
+</div>
+
+
+<div class="videoBox">
+
+<h3>
+🖥️ 画面共有
+</h3>
+
+<video
+id="screenVideo"
+autoplay
+muted
+playsinline
+></video>
+
+<div
+id="screenEmpty"
+class="noVideo"
+>
+画面共有OFF
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     フレンド
+========================= -->
+
+<div
+class="card"
+id="friendCard"
+>
+
+<h2>👥 フレンド</h2>
+
+<input
+id="friendSearch"
+placeholder="🔍 プレイヤーを検索"
+>
+
+<button onclick="searchFriend()">
+🔍 検索
+</button>
+
+<div id="searchResult"></div>
+
+<h3>フレンドリスト</h3>
+
+<div id="friendList">
+<div class="empty">
+フレンドはいません。
+</div>
+</div>
+
+<h3>📨 フレンド申請</h3>
+
+<div id="requestList">
+<div class="empty">
+フレンド申請はありません。
+</div>
+</div>
+
+
+<!-- =========================
+     DM
+========================= -->
+
+<div
+id="dmArea"
+class="dmBox"
+style="display:none"
+>
+
+<h3 id="dmTitle">
+💬 DM
+</h3>
+
+<div
+id="dmMessages"
+class="dmMessages"
+></div>
+
+<input
+id="dmInput"
+placeholder="メッセージを入力"
+onkeydown="if(event.key==='Enter')sendDM()"
+>
+
+<button onclick="sendDM()">
+送信
+</button>
+
+<button
+class="gray"
+onclick="closeDM()"
+>
+DMを閉じる
+</button>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     パーティー
+========================= -->
+
+<div
+class="card"
+id="partyCard"
+>
+
+<h2>🎉 パーティー (SkyWay連携)</h2>
+
+<input
+id="partyNameInput"
+maxlength="30"
+placeholder="部屋名を入力 (例: room123)"
+>
+
+<button
+class="green"
+onclick="createOrJoinPartySkyWay()"
+>
+🚪 パーティー作成・参加
+</button>
+
+<div id="partyArea">
+
+<div class="empty">
+パーティーに参加していません。
+</div>
+
+</div>
+
+<!-- 相手の映像や音声を配置するエリア -->
+<div id="remoteMediaContainer" class="remoteVideoGrid"></div>
+
+</div>
+
+</main>
+
+
+<script>
+
+/* ==========================================
+   ローカルデータ
+========================================== */
+
+const DB_KEY = "voice_chat_database_v1";
+const SESSION_KEY = "voice_chat_session_v1";
+
+let db =
+JSON.parse(
+localStorage.getItem(DB_KEY) ||
+'{"users":[],"friendRequests":[],"friendships":[],"messages":[]}'
+);
+
+let currentUser = null;
+let guestMode = false;
+let currentDMUser = null;
+
+let microphone = null;
+let micEnabled = false;
+
+let cameraStream = null;
+let cameraEnabled = false;
+
+let screenStream = null;
+let screenEnabled = false;
+
+let away = false;
+
+// SkyWay 関連の変数
+const { SkyWayContext, SkyWayStreamFactory, SkyWayRoom, SkyWayAuthToken } = skyway_room;
+
+// ★ここにご自身のSkyWayのApp IDとシークレットキーを入力してください
+const appId = 'ここにApp-IDを貼り付け';
+const secretKey = 'ここにシークレットキーを貼り付け';
+
+let currentRoom = null;
+let currentMember = null;
+let localAudioStream = null;
+let localVideoStream = null;
+
+
+/* ==========================================
+   DB保存
+========================================== */
+
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+
+/* ==========================================
+   ID生成
+========================================== */
+
+function randomID(prefix="id") {
+  return prefix + "_" + Date.now() + "_" + Math.random().toString(36).substring(2,8);
+}
+
+
+/* ==========================================
+   ログインUI
+========================================== */
+
+function setLoggedInUI(name) {
+  document.getElementById("username").textContent = name;
+  document.getElementById("accountStatus").textContent = guestMode ? "👻 仮アカウント: " + name : "✅ ログイン中";
+  document.getElementById("logoutButton").style.display = "inline-block";
+  document.getElementById("deleteAccountButton").style.display = "inline-block";
+  document.getElementById("settingsCard").style.display = "block";
+  document.getElementById("friendCard").style.display = "block";
+  document.getElementById("partyCard").style.display = "block";
+  document.getElementById("awayButton").style.display = "inline-block";
+
+  if (guestMode) {
+    document.getElementById("guestUsernameBox").style.display = "block";
+  } else {
+    document.getElementById("guestUsernameBox").style.display = "none";
+  }
+
+  setStatus("online");
+}
+
+
+function setLoggedOutUI() {
+  leavePartySkyWay();
+
+  document.getElementById("username").textContent = "未ログイン";
+  document.getElementById("onlineStatus").textContent = "⚪ オフライン";
+  document.getElementById("accountStatus").textContent = "ログインしていません";
+  document.getElementById("logoutButton").style.display = "none";
+  document.getElementById("deleteAccountButton").style.display = "none";
+  document.getElementById("settingsCard").style.display = "none";
+  document.getElementById("friendCard").style.display = "none";
+  document.getElementById("partyCard").style.display = "none";
+  document.getElementById("awayButton").style.display = "none";
+  document.getElementById("guestUsernameBox").style.display = "none";
+}
+
+
+/* ==========================================
+   アカウント作成・ログイン機能
+========================================== */
+
+function signUp() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const password = document.getElementById("password").value;
+
+  if (!username || !password) {
+    alert("ユーザー名とパスワードを入力してください。");
+    return;
+  }
+  if (username.length < 2) {
+    alert("ユーザー名は2文字以上にしてください。");
+    return;
+  }
+  if (password.length < 6) {
+    alert("パスワードは6文字以上にしてください。");
+    return;
+  }
+
+  const exists = db.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (exists) {
+    alert("そのユーザー名はすでに使用されています。");
+    return;
+  }
+
+  const user = {
+    id: randomID("user"),
+    username: username,
+    password: password,
+    status: "offline",
+    createdAt: Date.now()
+  };
+
+  db.users.push(user);
+  saveDB();
+  alert("アカウントを作成しました！");
+  document.getElementById("usernameInput").value = "";
+  document.getElementById("password").value = "";
+}
+
+function signIn() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const password = document.getElementById("password").value;
+
+  const user = db.users.find(
+    u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+  );
+
+  if (!user) {
+    alert("ユーザー名またはパスワードが違います。");
+    return;
+  }
+
+  currentUser = user;
+  guestMode = false;
+  away = false;
+
+  localStorage.setItem(SESSION_KEY, user.id);
+  user.status = "online";
+  saveDB();
+
+  setLoggedInUI(user.username);
+  loadFriends();
+  loadFriendRequests();
+  alert("ログインしました！");
+}
+
+function createGuest() {
+  if (currentUser) {
+    alert("すでにログインしています。");
+    return;
+  }
+
+  const guestName = "Guest_" + Math.floor(100000 + Math.random() * 900000);
+
+  currentUser = {
+    id: randomID("guest"),
+    username: guestName,
+    password: "",
+    status: "online",
+    guest: true
+  };
+
+  guestMode = true;
+  away = false;
+
+  setLoggedInUI(guestName);
+  loadFriends();
+  loadFriendRequests();
+  alert("仮アカウントを作成しました！");
+}
+
+function signOut() {
+  stopMicrophone();
+  stopCamera();
+  stopScreenShare();
+
+  if (!guestMode && currentUser) {
+    const user = db.users.find(u => u.id === currentUser.id);
+    if (user) {
+      user.status = "offline";
+      saveDB();
+    }
+  }
+
+  currentUser = null;
+  guestMode = false;
+  away = false;
+  currentDMUser = null;
+  localStorage.removeItem(SESSION_KEY);
+
+  document.getElementById("dmArea").style.display = "none";
+  setLoggedOutUI();
+}
+
+function deleteAccount() {
+  if (!currentUser) return;
+  if (!confirm("本当にアカウントを削除しますか？")) return;
+
+  leavePartySkyWay();
+
+  if (guestMode) {
+    signOut();
+    alert("仮アカウントを終了しました。");
+    return;
+  }
+
+  const id = currentUser.id;
+  db.users = db.users.filter(u => u.id !== id);
+  db.friendRequests = db.friendRequests.filter(r => r.senderId !== id && r.receiverId !== id);
+  db.friendships = db.friendships.filter(f => f.userId !== id && f.friendId !== id);
+  db.messages = db.messages.filter(m => m.senderId !== id && m.receiverId !== id);
+  saveDB();
+
+  currentUser = null;
+  localStorage.removeItem(SESSION_KEY);
+  setLoggedOutUI();
+  alert("アカウントを削除しました。");
+}
+
+function changeUsername() {
+  if (!currentUser || guestMode) return;
+  const name = document.getElementById("newUsername").value.trim();
+  if (!name) return alert("新しいユーザー名を入力してください。");
+
+  const exists = db.users.find(u => u.username.toLowerCase() === name.toLowerCase() && u.id !== currentUser.id);
+  if (exists) return alert("そのユーザー名はすでに使用されています。");
+
+  currentUser.username = name;
+  saveDB();
+  document.getElementById("username").textContent = name;
+  document.getElementById("settingsStatus").textContent = "✅ ユーザー名を変更しました。";
+  document.getElementById("newUsername").value = "";
+}
+
+function changeGuestUsername() {
+  if (!currentUser || !guestMode) return;
+  const name = document.getElementById("guestNewUsername").value.trim();
+  if (!name) return alert("新しい名前を入力してください。");
+
+  currentUser.username = name;
+  document.getElementById("username").textContent = name;
+  document.getElementById("accountStatus").textContent = "👻 仮アカウント: " + name;
+  document.getElementById("settingsStatus").textContent = "✅ 仮アカウントの名前を変更しました。";
+  document.getElementById("guestNewUsername").value = "";
+}
+
+function changePassword() {
+  if (!currentUser || guestMode) return;
+  const password = document.getElementById("newPassword").value;
+  if (password.length < 6) return alert("パスワードは6文字以上にしてください。");
+
+  currentUser.password = password;
+  saveDB();
+  document.getElementById("settingsStatus").textContent = "✅ パスワードを変更しました。";
+  document.getElementById("newPassword").value = "";
+}
+
+function toggleAway() {
+  if (!currentUser) return;
+  away = !away;
+  setStatus(away ? "away" : "online");
+}
+
+function setStatus(status) {
+  if (!currentUser) return;
+  away = (status === "away");
+  document.getElementById("onlineStatus").textContent =
+    status === "online" ? "🟢 オンライン" : status === "away" ? "🟡 離席" : "⚪ オフライン";
+
+  const button = document.getElementById("awayButton");
+  button.textContent = away ? "🟢 オンラインに戻る" : "🟡 離席";
+
+  if (!guestMode) {
+    const user = db.users.find(u => u.id === currentUser.id);
+    if (user) {
+      user.status = status;
+      saveDB();
+    }
+  }
+  loadFriends();
+}
+
+
+/* ==========================================
+   メディア（マイク・カメラ・画面共有）
+========================================== */
+
+async function toggleMic() {
+  if (!currentUser) return alert("ログインしてください。");
+
+  if (!micEnabled) {
+    try {
+      microphone = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micEnabled = true;
+      document.getElementById("micButton").textContent = "🔇 マイクOFF";
+      updateMediaStatus();
+    } catch (e) {
+      alert("マイクへのアクセスが許可されませんでした。");
+    }
+  } else {
+    stopMicrophone();
+    updateMediaStatus();
+  }
+}
+
+function stopMicrophone() {
+  if (microphone) {
+    microphone.getTracks().forEach(t => t.stop());
+  }
+  microphone = null;
+  micEnabled = false;
+  const btn = document.getElementById("micButton");
+  if (btn) btn.textContent = "🎤 マイクON";
+}
+
+async function toggleCamera() {
+  if (!currentUser) return alert("ログインしてください。");
+
+  if (!cameraEnabled) {
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      cameraEnabled = true;
+      document.getElementById("cameraVideo").srcObject = cameraStream;
+      document.getElementById("cameraEmpty").style.display = "none";
+      document.getElementById("cameraButton").textContent = "📷 カメラOFF";
+      updateMediaStatus();
+    } catch (e) {
+      alert("カメラへのアクセスが許可されませんでした。");
+    }
+  } else {
+    stopCamera();
+    updateMediaStatus();
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+  }
+  cameraStream = null;
+  cameraEnabled = false;
+  document.getElementById("cameraVideo").srcObject = null;
+  document.getElementById("cameraEmpty").style.display = "flex";
+  document.getElementById("cameraButton").textContent = "📷 カメラON";
+}
+
+async function toggleScreenShare() {
+  if (!currentUser) return alert("ログインしてください。");
+
+  if (!screenEnabled) {
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      screenEnabled = true;
+      document.getElementById("screenVideo").srcObject = screenStream;
+      document.getElementById("screenEmpty").style.display = "none";
+      document.getElementById("screenButton").textContent = "🛑 画面共有OFF";
+      updateMediaStatus();
+
+      const track = screenStream.getVideoTracks()[0];
+      if (track) {
+        track.addEventListener("ended", () => {
+          stopScreenShare();
+          updateMediaStatus();
+        });
+      }
+    } catch (e) {
+      if (e.name !== "AbortError") alert("画面共有を開始できませんでした。");
+    }
+  } else {
+    stopScreenShare();
+    updateMediaStatus();
+  }
+}
+
+function stopScreenShare() {
+  if (screenStream) {
+    screenStream.getTracks().forEach(t => t.stop());
+  }
+  screenStream = null;
+  screenEnabled = false;
+  document.getElementById("screenVideo").srcObject = null;
+  document.getElementById("screenEmpty").style.display = "flex";
+  document.getElementById("screenButton").textContent = "🖥️ 画面共有";
+}
+
+function updateMediaStatus() {
+  const status = [];
+  if (micEnabled) status.push("🎤 マイクON");
+  if (cameraEnabled) status.push("📷 カメラON");
+  if (screenEnabled) status.push("🖥️ 画面共有ON");
+  document.getElementById("status").textContent = status.length ? status.join(" ") : "すべてOFF";
+}
+
+
+/* ==========================================
+   フレンド・DM機能
+========================================== */
+
+function searchFriend() {
+  if (!currentUser) return alert("ログインしてください。");
+  const text = document.getElementById("friendSearch").value.trim().toLowerCase();
+  if (!text) return alert("検索する名前を入力してください。");
+
+  const users = db.users.filter(u => u.username.toLowerCase().includes(text) && u.id !== currentUser.id);
+  const result = document.getElementById("searchResult");
+  result.innerHTML = "";
+
+  if (!users.length) {
+    result.innerHTML = '<div class="empty">プレイヤーが見つかりません。</div>';
+    return;
+  }
+
+  users.forEach(user => {
+    const div = document.createElement("div");
+    div.className = "friend";
+    div.innerHTML = `
+      <div class="friendAvatar">👤</div>
+      <div class="friendInfo">
+        <strong>${escapeHTML(user.username)}</strong>
+        <span class="${user.status === "online" ? "online" : user.status === "away" ? "away" : "offline"}">
+          ● ${user.status === "online" ? "オンライン" : user.status === "away" ? "離席" : "オフライン"}
+        </span>
+      </div>
+      <button class="green" onclick="sendFriendRequest('${user.id}')">＋ 追加</button>
+    `;
+    result.appendChild(div);
+  });
+}
+
+function sendFriendRequest(userId) {
+  if (!currentUser) return;
+  const already = db.friendships.some(f => f.userId === currentUser.id && f.friendId === userId);
+  if (already) return alert("すでにフレンドです。");
+
+  const pending = db.friendRequests.some(r => r.senderId === currentUser.id && r.receiverId === userId && r.status === "pending");
+  if (pending) return alert("すでに申請しています。");
+
+  db.friendRequests.push({
+    id: randomID("request"),
+    senderId: currentUser.id,
+    receiverId: userId,
+    status: "pending"
+  });
+  saveDB();
+  alert("フレンド申請を送りました！");
+  loadFriendRequests();
+}
+
+function loadFriends() {
+  if (!currentUser) return;
+  const list = document.getElementById("friendList");
+  list.innerHTML = "";
+
+  const friends = db.friendships.filter(f => f.userId === currentUser.id);
+  if (!friends.length) {
+    list.innerHTML = '<div class="empty">フレンドはいません。</div>';
+    return;
+  }
+
+  friends.forEach(relation => {
+    const friend = db.users.find(u => u.id === relation.friendId);
+    if (!friend) return;
+
+    const div = document.createElement("div");
+    div.className = "friend";
+    const status = friend.status || "offline";
+    div.innerHTML = `
+      <div class="friendAvatar">👤</div>
+      <div class="friendInfo">
+        <strong>${escapeHTML(friend.username)}</strong>
+        <span class="${status === "online" ? "online" : status === "away" ? "away" : "offline"}">
+          ● ${status === "online" ? "オンライン" : status === "away" ? "離席" : "オフライン"}
+        </span>
+      </div>
+      <button onclick="openDM('${friend.id}')">💬 DM</button>
+      <button class="red" onclick="removeFriend('${friend.id}')">🗑️ 削除</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function removeFriend(friendId) {
+  if (!currentUser || !confirm("このフレンドを削除しますか？")) return;
+  db.friendships = db.friendships.filter(f => !(
+    (f.userId === currentUser.id && f.friendId === friendId) ||
+    (f.userId === friendId && f.friendId === currentUser.id)
+  ));
+  saveDB();
+  loadFriends();
+  alert("フレンドを削除しました。");
+}
+
+function loadFriendRequests() {
+  if (!currentUser) return;
+  const list = document.getElementById("requestList");
+  list.innerHTML = "";
+
+  const requests = db.friendRequests.filter(r => r.receiverId === currentUser.id && r.status === "pending");
+  if (!requests.length) {
+    list.innerHTML = '<div class="empty">フレンド申請はありません。</div>';
+    return;
+  }
+
+  requests.forEach(req => {
+    const sender = db.users.find(u => u.id === req.senderId);
+    if (!sender) return;
+
+    const div = document.createElement("div");
+    div.className = "request";
+    div.innerHTML = `
+      <strong>${escapeHTML(sender.username)}</strong>
+      <p>フレンド申請が届いています。</p>
+      <button class="green" onclick="acceptFriend('${req.id}')">✓ 承認</button>
+      <button class="red" onclick="rejectFriend('${req.id}')">✕ 拒否</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function acceptFriend(requestId) {
+  const req = db.friendRequests.find(r => r.id === requestId);
+  if (!req) return;
+  req.status = "accepted";
+  db.friendships.push({ userId: req.receiverId, friendId: req.senderId });
+  db.friendships.push({ userId: req.senderId, friendId: req.receiverId });
+  saveDB();
+  loadFriends();
+  loadFriendRequests();
+  alert("フレンドになりました！");
+}
+
+function rejectFriend(requestId) {
+  const req = db.friendRequests.find(r => r.id === requestId);
+  if (!req) return;
+  req.status = "rejected";
+  saveDB();
+  loadFriendRequests();
+}
+
+function openDM(friendId) {
+  if (!currentUser) return;
+  currentDMUser = db.users.find(u => u.id === friendId);
+  if (!currentDMUser) return;
+
+  document.getElementById("dmArea").style.display = "block";
+  document.getElementById("dmTitle").textContent = "💬 " + currentDMUser.username + " とのDM";
+  loadDM();
+}
+
+function loadDM() {
+  if (!currentDMUser) return;
+  const box = document.getElementById("dmMessages");
+  const messages = db.messages.filter(m =>
+    (m.senderId === currentUser.id && m.receiverId === currentDMUser.id) ||
+    (m.senderId === currentDMUser.id && m.receiverId === currentUser.id)
+  );
+
+  box.innerHTML = "";
+  messages.forEach(msg => {
+    const mine = msg.senderId === currentUser.id;
+    const div = document.createElement("div");
+    div.className = "message" + (mine ? " mine" : "");
+    div.innerHTML = `
+      <div class="messageName">${escapeHTML(mine ? "自分" : currentDMUser.username)}</div>
+      <div>${escapeHTML(msg.text)}</div>
+    `;
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function sendDM() {
+  if (!currentUser || !currentDMUser) return;
+  const input = document.getElementById("dmInput");
+  const text = input.value.trim();
+  if (!text) return;
+
+  db.messages.push({
+    id: randomID("message"),
+    senderId: currentUser.id,
+    receiverId: currentDMUser.id,
+    text: text,
+    createdAt: Date.now()
+  });
+  saveDB();
+  input.value = "";
+  loadDM();
+}
+
+function closeDM() {
+  currentDMUser = null;
+  document.getElementById("dmArea").style.display = "none";
+}
+
+
+/* ==========================================
+   SkyWay パーティー＆ビデオ通話連携機能
+========================================== */
+
+function nowInSec() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function uuidV4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+async function createOrJoinPartySkyWay() {
+  if (!currentUser) return alert("ログインしてください。");
+  const roomName = document.getElementById("partyNameInput").value.trim();
+  if (!roomName) return alert("部屋名を入力してください。");
+
+  if (currentRoom) {
+    await leavePartySkyWay();
+  }
+
+  try {
+    // 認証トークンの作成
+    const token = new SkyWayAuthToken({
+      jti: uuidV4(),
+      iat: nowInSec(),
+      exp: nowInSec() + 60 * 60 * 24,
+      scope: {
+        app: {
+          id: appId,
+          actions: ['read'],
+          channels: [{
+            id: '*',
+            name: '*',
+            actions: ['write'],
+            members: [{
+              id: '*',
+              name: '*',
+              actions: ['write'],
+              publication: { actions: ['write'] },
+              subscription: { actions: ['write'] }
+            }]
+          }]
+        }
+      }
+    }).encode(secretKey);
+
+    const context = await SkyWayContext.Create(token);
+    currentRoom = await SkyWayRoom.FindOrCreate(context, {
+      type: 'p2p',
+      name: roomName,
+    });
+
+    currentMember = await currentRoom.join({ name: currentUser.username });
+
+    // マイクやカメラがONなら一緒に公開
+    if (micEnabled && microphone) {
+      localAudioStream = microphone.getAudioTracks()[0];
+      await currentMember.publish(new SkyWayStreamFactory.createAudioStream(microphone));
+    }
+    if (cameraEnabled && cameraStream) {
+      localVideoStream = cameraStream.getVideoTracks()[0];
+      await currentMember.publish(new SkyWayStreamFactory.createVideoStream(cameraStream));
+    }
+
+    // 他の人が参加してきたとき、またはすでにいるときのストリーム受信
+    currentRoom.onStreamPublished.add(async (e) => {
+      if (e.publication.publisher.id === currentMember.id) return;
+      const { stream } = await currentMember.subscribe(e.publication.id);
+
+      const containerId = "remote_media_" + e.publication.publisher.id;
+      let container = document.getElementById(containerId);
+      if (!container) {
+        container = document.createElement("div");
+        container.id = containerId;
+        container.className = "remoteVideoCard";
+        container.innerHTML = `
+          <h4>👤 ${escapeHTML(e.publication.publisher.name || 'メンバー')}</h4>
+          <audio id="remote_audio_${e.publication.publisher.id}" autoplay></audio>
+          <video id="remote_video_${e.publication.publisher.id}" autoplay playsinline style="width:100%; max-height:250px; background:#000; border-radius:8px; object-fit:contain; display:none;"></video>
+        `;
+        document.getElementById("remoteMediaContainer").appendChild(container);
+      }
+
+      if (stream.contentType === 'audio') {
+        const audioElem = document.getElementById("remote_audio_" + e.publication.publisher.id);
+        if (audioElem) stream.attach(audioElem);
+      } else if (stream.contentType === 'video') {
+        const videoElem = document.getElementById("remote_video_" + e.publication.publisher.id);
+        if (videoElem) {
+          stream.attach(videoElem);
+          videoElem.style.display = "block";
+        }
+      }
+    });
+
+    renderPartyUI(roomName);
+    alert("部屋「" + roomName + "」に参加しました！");
+    document.getElementById("partyNameInput").value = "";
+
+  } catch (error) {
+    console.error(error);
+    alert("部屋への参加に失敗しました。App IDやシークレットキーを確認してください。");
+  }
+}
+
+async function leavePartySkyWay() {
+  if (currentMember) {
+    await currentMember.leave();
+    currentMember = null;
+  }
+  if (currentRoom) {
+    currentRoom = null;
+  }
+  document.getElementById("remoteMediaContainer").innerHTML = "";
+  renderPartyUI(null);
+}
+
+function renderPartyUI(roomName) {
+  const area = document.getElementById("partyArea");
+  if (!roomName) {
+    area.innerHTML = '<div class="empty">パーティーに参加していません。</div>';
+    return;
+  }
+
+  area.innerHTML = `
+    <div class="partyBox">
+      <h3>🎉 パーティー参加中</h3>
+      <p>部屋名</p>
+      <strong style="font-size:22px;">${escapeHTML(roomName)}</strong>
+      <br><br>
+      <button class="red" onclick="leavePartySkyWay()">🚪 パーティー退出</button>
     </div>
+  `;
+}
 
-    <!-- 映像を表示するエリア -->
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <div>
-            <h3>自分の映像</h3>
-            <video id="my-video" autoplay muted playsinline style="width: 300px; background: #000;"></video>
-        </div>
-        <div>
-            <h3>相手の映像</h3>
-            <div id="their-videos" style="display: flex; gap: 10px;"></div>
-        </div>
-    </div>
 
-    <script>
-        // ※注意: 本番運用時はサーバー側でトークンを発行しますが、開発・テスト用にフロントエンドで直接生成します
-        const { SkyWayContext, SkyWayStreamFactory, SkyWayRoom, SkyWayAuthToken } = skyway_room;
+/* ==========================================
+   HTMLエスケープ
+========================================== */
 
-        // 1. あなたのSkyWayダッシュボードで取得したApp IDとシークレットキーに書き換えてください
-        const appId = '54583150-e051-43fc-89bf-c2aa0ae968ad';
-        const secretKey = '00Xwdlc3gMFhQzNO1UX55xNM5VNQrQBTN72Wmb0frMQ=';
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
 
-        // 開発用の認証トークンを作成
-        const token = new SkyWayAuthToken({
-            jti: uuidV4(),
-            iat: nowInSec(),
-            exp: nowInSec() + 60 * 60 * 24, // 24時間有効
-            scope: {
-                app: {
-                    id: appId,
-                    actions: ['read'],
-                    channels: [
-                        {
-                            id: '*',
-                            name: '*',
-                            actions: ['write'],
-                            members: [
-                                {
-                                    id: '*',
-                                    name: '*',
-                                    actions: ['write'],
-                                    publication: { actions: ['write'] },
-                                    subscription: { actions: ['write'] }
-                                }
-                            ]
-                        }
-                    ]
-                }
-            }
-        }).encode(secretKey);
 
-        document.getElementById('join-button').onclick = async () => {
-            const roomName = document.getElementById('room-name').value;
-            if (!roomName) return alert('部屋名を入力してください');
+/* ==========================================
+   セッション復元＆初期化
+========================================== */
 
-            // 2. カメラとマイクの映像を取得
-            const localAudio = await SkyWayStreamFactory.createMicrophoneAudioStream();
-            const localVideo = await SkyWayStreamFactory.createCameraVideoStream();
+function checkSession() {
+  const id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    setLoggedOutUI();
+    return;
+  }
+  const user = db.users.find(u => u.id === id);
+  if (!user) {
+    localStorage.removeItem(SESSION_KEY);
+    setLoggedOutUI();
+    return;
+  }
 
-            // 自分の映像を画面に表示
-            const myVideo = document.getElementById('my-video');
-            localVideo.attach(myVideo);
+  currentUser = user;
+  guestMode = false;
+  user.status = "online";
+  saveDB();
 
-            // 3. SkyWayに接続してルーム（部屋）に参加
-            const context = await SkyWayContext.Create(token);
-            const room = await SkyWayRoom.FindOrCreate(context, {
-                type: 'p2p', // 少人数ならP2P、大人数なら 'sfu' に変更可能
-                name: roomName,
-            });
+  setLoggedInUI(user.username);
+  loadFriends();
+  loadFriendRequests();
+}
 
-            const me = await room.join();
-            console.log('部屋に参加しました:', me.id);
+window.addEventListener("beforeunload", () => {
+  leavePartySkyWay();
+  if (currentUser && !guestMode) {
+    const user = db.users.find(u => u.id === currentUser.id);
+    if (user) {
+      user.status = "offline";
+      saveDB();
+    }
+  }
+});
 
-            // 自分の映像と音声を部屋に公開（Publish）
-            await me.publish(localAudio);
-            await me.publish(localVideo);
+checkSession();
 
-            // 4. 部屋にいる他の人（または後から入ってきた人）の映像を受信して表示する処理
-            room.onStreamPublished.add(async (e) => {
-                // 自分が公開した映像でなければ受信する
-                if (e.publication.publisher.id === me.id) return;
+</script>
 
-                const { stream } = await me.subscribe(e.publication.id);
-                
-                if (stream.contentType === 'video') {
-                    const theirVideosContainer = document.getElementById('their-videos');
-                    const videoElement = document.createElement('video');
-                    videoElement.autoplay = true;
-                    videoElement.playsInline = true;
-                    videoElement.style.width = '300px';
-                    videoElement.style.background = '#000';
-                    
-                    stream.attach(videoElement);
-                    theirVideosContainer.appendChild(videoElement);
-                }
-            });
-
-            alert('部屋に参加しました！別タブや別端末で同じ部屋名で参加してください。');
-        };
-    </script>
 </body>
 </html>
